@@ -4,7 +4,7 @@ from flask_cors import CORS
 
 # Initialize Flask App
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True) # Allow CORS for all domains on all routes
 
 # Database Configuration (Update for your PostgreSQL settings)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Alaska2013!@localhost/dunderdata'
