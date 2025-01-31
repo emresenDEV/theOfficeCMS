@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
+import Dashboard from "./pages/Dashboard";
 import EmployeePage from "./pages/EmployeesPage";
 
 import reactLogo from './assets/react.svg'
@@ -15,6 +16,7 @@ function App() {
       <div>
     <Router>
       <Routes><Route path ="/" element={<HomePage />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/employees" element={<EmployeePage />} />
       </Routes>
     </Router>
