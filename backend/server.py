@@ -180,5 +180,37 @@ with app.app_context():
 def home():
     return jsonify({'message': 'Flask Backend Running!'})
 
+# Routes
+
+# Employees API
+@app.route("/employees", methods=["GET"])
+def get_employees():
+    employees = Employee.query.all()
+    employee_list = [
+        {"id": emp.employee_id, "name": f"{emp.first_name} {emp.last_name}", "role": emp.role}
+        for emp in employees
+    ]
+    return jsonify(employee_list), 200
+
+# Invoices API
+@app.route("/invoices", methods=["GET"])
+def get_invoices():
+    invoices = Invoice.query.all()
+    invoice_list = [
+        {"id": inv.invoice_id, "amount": float(inv.amount), "status": inv.status}
+        for inv in invoices
+    ]
+    return jsonify(invoice_list), 200
+
+# Commissions API
+@app.route("/commissions", methods=["GET"])
+def get_commissions():
+    commissions = Commissions.query.all()
+    commission_list = [
+        {"id": com.commission_id, "amount": float(com.commission_amount)}
+        for com in commissions
+    ]
+    return jsonify(commission_list), 200
+
 if __name__ == '__main__':
     app.run(debug=True)
