@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
 import EmployeePage from "./pages/EmployeesPage";
 
@@ -15,8 +14,8 @@ function App() {
     <>
       <div>
     <Router>
-      <Routes><Route path ="/" element={<HomePage />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Routes>
+      <Route path="/" element={<Dashboard />} />
       <Route path="/employees" element={<EmployeePage />} />
       </Routes>
     </Router>
