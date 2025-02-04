@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchEmployees, fetchInvoices, fetchCommissions } from "../services/api";
 import { FiUsers, FiFileText, FiDollarSign } from "react-icons/fi";
+import PropTypes from "prop-types";
 
 const Dashboard = () => {
 const [employees, setEmployees] = useState([]);
@@ -27,12 +28,22 @@ return (
 
 const StatCard = ({ icon, label, value }) => (
     <div className="bg-white shadow-md p-4 rounded-lg flex items-center space-x-4">
-    <div className="text-3xl">{icon}</div>
-    <div>
-        <p className="text-lg font-semibold">{label}</p>
-        <p className="text-xl">{value}</p>
-    </div>
+        <div className="text-3xl">{icon}</div>
+            <div>
+                <p className="text-lg font-semibold">{label}</p>
+                <p className="text-xl">{value}</p>
+            </div>
     </div>
 );
+// Define propTypes for the StatCard component
+StatCard.propTypes = {
+    icon: PropTypes.element.isRequired, // icon is a React element
+    label: PropTypes.string.isRequired, // label is a string
+    value: PropTypes.oneOfType([ // value is a number or a string
+        PropTypes.number,
+        PropTypes.string,
+    ]).isRequired,
+};
+
 
 export default Dashboard;
