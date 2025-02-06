@@ -1,9 +1,12 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 # Initialize Flask App
 app = Flask(__name__)
+app.secret_key = "secret_key" # TODO: Change this to a random value for production
 CORS(app, supports_credentials=True) # Allow CORS for all domains on all routes
 
 # Database Configuration (Update for your PostgreSQL settings)
@@ -28,8 +31,8 @@ class Account(db.Model):
     zip_code = db.Column(db.String(10))
     industry = db.Column(db.String(100))
     notes = db.Column(db.Text)
-    date_created = db.Column(db.DateTime)
-    date_updated = db.Column(db.DateTime)
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     industry_id = db.Column(db.Integer)
 
     
@@ -53,7 +56,7 @@ class EmployeeRegions(db.Model):
 class Employee(db.Model):
     __tablename__ = 'employees'
     employee_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), unique=True, nullable=False)
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
     phone_number = db.Column(db.String(20))
@@ -110,13 +113,14 @@ class InvoiceServices(db.Model):
 class Notes(db.Model): 
     __table_name__ = 'notes'
     note_id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer)
-    invoice_id = db.Column(db.Integer)
-    user_id = db.Column(db.Integer)
-    note_text = db.Column(db.Integer)
-    date_created = db.Column(db.DateTime)
-    note_type = db.Column(db.String(50))
-    assigned_to = db.Column(db.Integer)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    note_text = db.Column(db.Text, nullable=False)
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    note_type = db.Column(db.String(50), default="Task")
+    assigned_to = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+    completed = db.Column(db.Boolean, default=False)
     
 class PaymentMethods(db.Model):
     __table_name__ = 'payment_methods'
@@ -165,11 +169,21 @@ class UserRoles(db.Model):
 class Users(db.Model):
     __table_name__ = 'users'
     user_id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50))
-    password = db.Column(db.String(50))
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50))
-    date_updated = db.Column(db.DateTime)
-    date_created = db.Column(db.DateTime)
+    date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    
+    employee = db.relationship("Employee", backref="user", uselist=False, primaryjoin="Users.user_id == Employee.user_id")
+    
+    def set_password(self, password):
+        """Hashes the password before storing it using PBKDF2-SHA256"""
+        self.password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
+
+    def check_password(self, password):
+        """Checks a hashed password against the stored hash."""
+        return check_password_hash(self.password_hash, password)
 
 # Create Tables
 with app.app_context():
@@ -212,5 +226,89 @@ def get_commissions():
     ]
     return jsonify(commission_list), 200
 
+# Get Accounts API
+@app.route("/accounts", methods=["GET"])
+def get_accounts():
+    accounts = Account.query.all()
+    account_list = [
+        {
+            "account_id": acc.account_id,
+            "business_name": acc.business_name,
+            "contact_name": acc.contact_name,
+            "phone_number": acc.phone_number,
+            "email": acc.email,
+            "address": acc.address,
+            "city": acc.city,
+            "state": acc.state,
+            "zip_code": acc.zip_code,
+            "industry": acc.industry,
+            "date_created": acc.date_created,
+            "date_updated": acc.date_updated,
+            "invoice_number": acc.invoice_number if hasattr(acc, 'invoice_number') else None,
+            "notes": acc.notes,
+        }
+        for acc in accounts
+    ]
+    return jsonify(account_list), 200
+
+# Get Notes API
+@app.route("/notes", methods=["GET"])
+def get_notes():
+    assigned_to = request.args.get("assigned_to")
+    if assigned_to:
+        notes = Notes.query.filter_by(assigned_to=assigned_to).all()
+    else:
+        notes = Notes.query.all()
+    
+    return jsonify([
+        {
+            "id": note.note_id,
+            "text": note.note_text,
+            "completed": note.completed
+        } for note in notes
+    ])
+
+#Create Notes API
+@app.route("/notes", methods=["POST"])
+def create_note():
+    data = request.json
+    
+    if not data.get("text") or not data.get("user_id"):
+        return jsonify({"message": "Missing required fields"}), 400
+    
+    new_note = Notes(
+        user_id=data["user_id"],  
+        account_id=data.get("account_id"),
+        invoice_id=data.get("invoice_id"),
+        note_text=data["text"], 
+        note_type=data.get("note_type", "Task"),
+        assigned_to=data.get("assigned_to"),
+        completed=data.get("completed", False),
+    )
+    db.session.add(new_note)
+    db.session.commit()
+
+    return jsonify({"message": "Task created successfully", "note_id": new_note.note_id}), 201
+
+
+
+# User Authentication API (LOGIN)
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    user = Users.query.filter_by(username=data["username"]).first()
+
+    if user and check_password_hash(user.password_hash, data["password"]):
+        session["user_id"] = user.user_id
+        return jsonify({"message": "Login successful", "user": {
+            "id": user.user_id,
+            "username": user.username,
+            "role": user.role
+        }}), 200
+    return jsonify({"message": "Invalid username or password"}), 401
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+

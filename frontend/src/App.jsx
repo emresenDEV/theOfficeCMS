@@ -1,45 +1,67 @@
-import { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-import EmployeePage from "./pages/EmployeesPage";
+import AccountsPage from "./pages/AccountsPage";
+import SettingsPage from "./pages/SettingsPage";
+import EmployeesPage from "./pages/EmployeesPage";
+import LoginPage from "./pages/LoginPage";
 
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [user, setUser] = useState(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    return storedUser || null; // ✅ Ensure stored user persists
+  });
+
+  useEffect(() => {
+    if (!user) return; // ✅ Prevent running effect if user is not logged in
+
+    const checkInactivity = setInterval(() => {
+        const now = Date.now();
+        const lastActiveTime = parseInt(localStorage.getItem("lastActive"), 10) || now;
+
+        if (now - lastActiveTime > 900000) { // 15 min timeout
+            handleLogout();
+        }
+    }, 60000); // Check every 60 seconds
+
+    return () => clearInterval(checkInactivity); // Cleanup function
+  }, [user]);
+
+  useEffect(() => {
+    const updateLastActive = () => {
+      localStorage.setItem("lastActive", Date.now().toString());
+    };
+
+    window.addEventListener("mousemove", updateLastActive);
+    window.addEventListener("keydown", updateLastActive);
+
+    return () => {
+      window.removeEventListener("mousemove", updateLastActive);
+      window.removeEventListener("keydown", updateLastActive);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("lastActive");
+    setUser(null);
+  };
 
   return (
-    <>
-      <div>
     <Router>
       <Routes>
-      <Route path="/" element={<Dashboard />} />
-      <Route path="/employees" element={<EmployeePage />} />
+        <Route path="/login" element={<LoginPage setUser={setUser} />} />
+        {/* ✅ Ensure user is defined before passing it to Dashboard */}
+        <Route path="/" element={user ? <Dashboard user={user} handleLogout={handleLogout} /> : <Navigate to="/login" />} />
+        <Route path="/accounts" element={user ? <AccountsPage user={user} /> : <Navigate to="/login" />} />
+        <Route path="/employees" element={user ? <EmployeesPage user={user} /> : <Navigate to="/login" />} />
+        <Route path="/settings" element={user ? <SettingsPage user={user} /> : <Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+  );
 }
 
-export default App
+export default App;

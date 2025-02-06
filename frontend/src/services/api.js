@@ -119,6 +119,49 @@ export const fetchNotes = async () => {
     }
 }
 
+// Fetch Tasks
+export const fetchTasks = async (userId) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/notes?assigned_to=${userId}`);
+        
+        if (!response.ok) {
+            throw new Error("Failed to fetch tasks.");
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching tasks:", error);
+        return []; // Return an empty array to prevent crashes
+    }
+};
+
+
+
+// Create Task
+export const createTask = async (task) => {
+    try {
+        const response = await fetch("http://127.0.0.1:5000/notes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user_id: task.user_id, // User who created the note
+                note_text: task.text, // Task description
+                assigned_to: task.assigned_to || task.user_id, // Default to self if not assigned
+                completed: task.completed || false,
+                note_type: "Task" // Helps differentiate from other notes
+            }),
+        });
+
+        if (!response.ok) throw new Error("Failed to create task.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error creating task:", error);
+        return null;
+    }
+};
+
+
+
 // Fetch all payment_methods
 export const fetchPaymentMethods = async () => {
     try {
@@ -206,6 +249,28 @@ export const fetchUsers = async () => {
         return [];
     }
 }
+
+// Login User
+export const loginUser = async (username, password) => {
+    try {
+        const response = await fetch("http://127.0.0.1:5000/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include", // Ensure cookies are sent
+            body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+            throw new Error("Login failed");
+        }
+
+        return await response.json(); // Returns user data
+    } catch (error) {
+        console.error("Error logging in:", error);
+        throw error;
+    }
+};
+
 
 
 export default api;
