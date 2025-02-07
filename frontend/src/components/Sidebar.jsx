@@ -5,29 +5,29 @@ import PropTypes from "prop-types";
 const Sidebar = ({ user, handleLogout }) => {
 
 return (
-    <div className="w-64 h-screen bg-gray-800 text-white flex flex-col p-4 fixed">
-    {/* User Info */}
-    <div className="mb-6">
-        <h2 className="text-xl font-bold">{user.firstName} {user.lastName}</h2>
+    <div className="w-64 h-screen bg-gray-800 text-white flex flex-col justify-between p-4 fixed">
+    {/* Upper Sidebar Content */}
+    <div>
+        <h2 className="text-xl font-bold">Hello, {user.firstName}</h2>
+        {/* Navigation Links */}
+        <nav className="space-y-4 mt-4">
+            <NavItem to="/" icon={<FiHome />} label="Dashboard" />
+            <NavItem to="/accounts" icon={<FiBriefcase />} label="Accounts" />
+            <NavItem to="/settings" icon={<FiSettings />} label="Settings" />
+            <NavItem to="/employees" icon={<FiUsers />} label="Employee Info" />
+        </nav>
     </div>
 
-    {/* Navigation Links */}
-    <nav className="space-y-4">
-        <NavItem to="/" icon={<FiHome />} label="Dashboard" />
-        <NavItem to="/accounts" icon={<FiBriefcase />} label="Accounts" />
-        <NavItem to="/settings" icon={<FiSettings />} label="Settings" />
-        <NavItem to="/employees" icon={<FiUsers />} label="Employee Info" />
-    </nav>
-
+    {/* Logout Button (Always at the Bottom) */}
     <button
-        className="mt-auto bg-red-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-        onClick={handleLogout} // ✅ Now handleLogout is passed correctly
+        className="bg-red-500 text-white px-4 py-2 rounded-lg flex items-center justify-center space-x-2 w-full"
+        onClick={handleLogout}
     >
         <FiLogOut />
         <span>Log Out</span>
     </button>
+</div>
 
-    </div>
 );
 };
 

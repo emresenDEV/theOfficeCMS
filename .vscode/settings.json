@@ -1,5 +1,11 @@
 {
     "cSpell.words": [
+        "backref",
+        "dunderdata",
+        "jsonify",
+        "onupdate",
+        "primaryjoin",
+        "uselist",
         "zipcodes"
     ]
 }

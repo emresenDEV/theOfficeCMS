@@ -18,6 +18,7 @@ headers: { "Content-Type": "application/json" },
 // AWAIT: keyword. Pauses execution of function until api.get is resolved. Once resolved, the response is stored in the response variable. Allows for asynchronous code to be written in a synchronous style.
 //  RETURN RESPONSE.DATA: returns the data from the response object. This is the data fetched from the server.
 
+// Fetch Accounts
 export const fetchAccounts = async () => {
     try {
         const response = await api.get("/accounts");
@@ -29,16 +30,57 @@ export const fetchAccounts = async () => {
     }
 }
 
-// Fetch all commissions
-export const fetchCommissions = async () => {
+// Fetch Account By ID
+export const fetchAccountById = async (accountId) => {
     try {
-        const response = await api.get("/commissions");
-        return response.data;
+        const response = await fetch(`http://127.0.0.1:5000/accounts/${accountId}`);
+        if (!response.ok) throw new Error("Failed to fetch account.");
+        const data = await response.json();
+        
+        return {
+            account_id: data.account_id,
+            business_name: data.business_name || "Unknown Business",
+            contact_name: data.contact_name || "N/A",
+            email: data.email || "N/A",
+            phone_number: data.phone_number || "N/A",
+        };
+    } catch (error) {
+        console.error("Error fetching account:", error);
+        return null;
+    }
+};
+
+
+// Fetch Assigned Accounts
+export const fetchAssignedAccounts = async (userId) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/accounts/assigned?user_id=${userId}`);
+        if (!response.ok) throw new Error("Failed to fetch assigned accounts.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching assigned accounts:", error);
+        return [];
+    }
+};
+
+
+// Fetch all commissions
+export const fetchCommissions = async (userId, filter = "month", date = "") => {
+    try {
+        const url = new URL("http://127.0.0.1:5000/commissions");
+        url.searchParams.append("user_id", userId);
+        url.searchParams.append("filter", filter);
+        if (date) url.searchParams.append("date", date);
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch commissions.");
+        return await response.json();
     } catch (error) {
         console.error("Error fetching commissions:", error);
         return [];
     }
 };
+
 
 // Fetch all departments
 export const fetchDepartments = async () => {
@@ -86,6 +128,51 @@ export const fetchIndustries = async () => {
     }
 }
 
+// Fetch Invoices By ID
+export const fetchInvoiceById = async (invoiceId) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/invoices/${invoiceId}`);
+        if (!response.ok) throw new Error("Failed to fetch invoice.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching invoice:", error);
+        return null;
+    }
+};
+// Fetch Update Invoice
+export const updateInvoice = async (invoiceId, updatedData) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/invoices/${invoiceId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedData),
+        });
+
+        if (!response.ok) throw new Error("Failed to update invoice.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error updating invoice:", error);
+        return null;
+        // return { success: false };
+    }
+};
+
+// Delete Invoice
+export const deleteInvoice = async (invoiceId) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/invoices/${invoiceId}`, {
+            method: "DELETE",
+        });
+
+        if (!response.ok) throw new Error("Failed to delete invoice.");
+        return { success: true };
+    } catch (error) {
+        console.error("Error deleting invoice:", error);
+        // return { success: false };
+    }
+};
+
+
 // Fetch all invoice_services
 export const fetchInvoiceServices = async () => {
     try {
@@ -108,6 +195,71 @@ export const fetchInvoices = async () => {
 }
 };
 
+// Fetch invoices for a specific account
+export const fetchInvoicesByAccount = async (accountId) => {
+    try {
+        const response = await api.get(`/invoices?account_id=${accountId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching invoices for account:", error);
+        return [];
+    }
+};
+
+
+// Fetch Paid Invoices
+export const fetchPaidInvoices = async (userId) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/invoices/paid?user_id=${userId}`);
+        if (!response.ok) throw new Error("Failed to fetch paid invoices.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching paid invoices:", error);
+        return [];
+    }
+};
+
+//Fetch Unpaid Invoices
+export const fetchUnpaidInvoices = async (userId) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/invoices/unpaid?user_id=${userId}`);
+        if (!response.ok) throw new Error("Failed to fetch unpaid invoices.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching unpaid invoices:", error);
+        return [];
+    }
+};
+
+// Fetch Past Due Invoices
+export const fetchPastDueInvoices = async (userId) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/invoices/past_due?user_id=${userId}`);
+        if (!response.ok) throw new Error("Failed to fetch past due invoices.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching past due invoices:", error);
+        return [];
+    }
+};
+
+// Create Invoice
+export const createInvoice = async (invoiceData) => {
+    try {
+        const response = await fetch("http://127.0.0.1:5000/invoices", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(invoiceData),
+        });
+
+        if (!response.ok) throw new Error("Failed to create invoice.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error creating invoice:", error);
+        return { success: false };
+    }
+};
+
 // Fetch all notes
 export const fetchNotes = async () => {
     try {
@@ -118,6 +270,29 @@ export const fetchNotes = async () => {
         return [];
     }
 }
+// Fetch notes for a specific account
+export const fetchNotesByAccount = async (accountId) => {
+    try {
+        const response = await api.get(`/notes?account_id=${accountId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching notes for account:", error);
+        return [];
+    }
+};
+
+// Fetch notes for a specific invoice
+export const fetchNotesByInvoice = async (invoiceId) => {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/notes?invoice_id=${invoiceId}`);
+        if (!response.ok) throw new Error("Failed to fetch invoice notes.");
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching notes for invoice:", error);
+        return [];
+    }
+};
+
 
 // Fetch Tasks
 export const fetchTasks = async (userId) => {

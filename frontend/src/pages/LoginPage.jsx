@@ -14,25 +14,19 @@ const LoginPage = ({ setUser }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setError(null); // Clear previous errors
-
+    
         try {
             const userData = await loginUser(username, password);
-            
-            if (!userData || !userData.user) {
-                throw new Error("Invalid login response");
-            }
+            console.log("Login Successful: ", userData); 
     
-            console.log("Login Successful:", userData.user); // ✅ Debug output
-    
-            localStorage.setItem("user", JSON.stringify(userData.user)); // ✅ Store user
-            localStorage.setItem("lastActive", Date.now().toString()); // ✅ Track activity
-            setUser(userData.user);
-            navigate("/"); 
+            localStorage.setItem("user", JSON.stringify(userData.user)); // Store user in localStorage
+            setUser(userData.user); // Set user state
+            navigate("/"); // Redirect to Dashboard
         } catch (error) {
-            console.error("Login Error:", error);
-            setError("Invalid username or password");
+            setError(`Invalid username or password: ${error.message}`);
         }
     };
+    
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
