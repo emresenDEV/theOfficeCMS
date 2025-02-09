@@ -1,0 +1,195 @@
+Table tax_rates {
+  zip_code numeric
+  zip_code numeric
+  zip_code numeric [pk]
+  rate numeric
+  state varchar
+}
+
+Table payment_methods {
+  method_id integer [pk]
+  method_name varchar
+}
+
+Table invoices {
+  invoice_id integer [pk]
+  sales_user_id integer
+  paid boolean
+  amount numeric
+  tax_amount numeric
+  account_id integer
+  service varchar
+  discount_amount numeric
+  notes text
+  payment_method_id integer
+  discount_percent numeric
+  total_paid numeric
+  date_created timestamp
+  date_updated timestamp
+  due_date date
+  final_total numeric
+  payment_method varchar
+  date_paid timestamp
+  commission_amount numeric
+  tax_rate numeric
+  status varchar
+  last_four_payment_method numeric
+}
+
+Table user_roles {
+  reports_to_user_id integer
+  role_id integer [pk]
+  role_name varchar
+  description text
+}
+
+Table industries {
+  industry_id integer [pk]
+  industry_name varchar
+}
+
+Table services {
+  service_id integer [pk]
+  service_name varchar
+  discount numeric
+  service_commission_rate numeric
+  price numeric
+  discount_percent numeric
+}
+
+Table invoice_services {
+  invoice_service_id integer [pk]
+  total_price numeric
+  price numeric
+  service_id integer
+  quantity integer
+  invoice_id integer
+}
+
+Table accounts {
+  account_id integer [pk]
+  email varchar
+  contact_name varchar
+  city varchar
+  state varchar
+  industry_id integer
+  notes text
+  phone_number varchar
+  date_created timestamp
+  business_name varchar
+  zip_code varchar
+  industry varchar
+  sales_employee_id integer
+  date_updated timestamp
+  address varchar
+}
+
+Table commissions {
+  user_id integer
+  commission_id integer [pk]
+  service_commission_rate numeric
+  employee_commission_rate numeric
+  commission_rate numeric
+  commission_amount numeric
+  date_paid timestamp
+  invoice_id integer
+}
+
+Table tasks {
+  created_by_user_id integer
+  assigned_to_user_id integer
+  task_id integer [pk]
+  is_completed boolean
+  user_id integer
+  due_date date
+  assigned_to integer
+  date_created timestamp
+  task_description text
+}
+
+Table departments {
+  department_id integer [pk]
+  department_name varchar
+}
+
+Table roles {
+  role_id integer [pk]
+  role_name varchar
+  department_id integer
+}
+
+Table notes {
+  note_id integer [pk]
+  invoice_id integer
+  note_text text
+  date_created timestamp
+  user_id integer
+  account_id integer
+}
+
+Table users {
+  user_id integer [pk]
+  username varchar
+  phone_number varchar
+  extension varchar
+  email varchar
+  role_id integer
+  department_id integer
+  reports_to integer
+  date_created timestamp
+  last_name varchar
+  is_department_lead boolean
+  commission_rate numeric
+  date_updated timestamp
+  password_hash varchar
+  salary numeric
+  is_active boolean
+  receives_commission boolean
+  first_name varchar
+}
+
+Table calendar_events {
+  event_id integer [pk]
+  account_id integer
+  user_id integer
+  start_time time without time zone
+  notes text
+  start_date date
+  contact_name varchar
+  end_time time without time zone
+  end_date date
+  location varchar
+  phone_number varchar
+  event_title varchar
+}
+
+Table industry {
+  industry_id integer [pk]
+  industry_name varchar
+}
+
+Table role {
+  role_id integer [pk]
+  department_id integer
+  role_name varchar
+}
+
+Table service {
+  service_id integer [pk]
+  discount_percent numeric
+  price numeric
+  service_commission_rate numeric
+  discount numeric
+  service_name varchar
+}
+
+Ref: invoices.sales_user_id > users.user_id
+Ref: commissions.user_id > users.user_id
+Ref: user_roles.reports_to_user_id > users.user_id
+Ref: calendar_events.account_id > accounts.account_id
+Ref: calendar_events.user_id > users.user_id
+Ref: tasks.created_by_user_id > users.user_id
+Ref: tasks.assigned_to_user_id > users.user_id
+Ref: users.role_id > roles.role_id
+Ref: users.department_id > departments.department_id
+Ref: users.reports_to > users.user_id
