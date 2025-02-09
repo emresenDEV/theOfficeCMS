@@ -12,14 +12,14 @@ const InvoicesPage = ({ user, handleLogout }) => {
     const status = searchParams.get("status") || "All"; 
 
     useEffect(() => {
-        if (user) {
+        if (user?.id) {
             fetchInvoices(user.id).then((data) => {
                 if (status === "All") {
                     setInvoices(data);
                 } else {
                     setInvoices(data.filter(inv => inv.status === status));
                 }
-            });
+            }).catch(error => console.error("Error fetching invoices:", error));
         }
     }, [user, status]);
 
@@ -37,6 +37,7 @@ const InvoicesPage = ({ user, handleLogout }) => {
                         <thead>
                             <tr className="bg-gray-100">
                                 <th className="p-2 border">Invoice #</th>
+                                <th className="p-2 border">Account</th>
                                 <th className="p-2 border">Amount</th>
                                 <th className="p-2 border">Status</th>
                                 <th className="p-2 border">Due Date</th>
@@ -47,6 +48,7 @@ const InvoicesPage = ({ user, handleLogout }) => {
                             {invoices.map(inv => (
                                 <tr key={inv.invoice_id} className="border text-center">
                                     <td className="p-2">{inv.invoice_id}</td>
+                                    <td className="p-2">{inv.account_id}</td> 
                                     <td className="p-2">${inv.amount.toFixed(2)}</td>
                                     <td className="p-2">{inv.status}</td>
                                     <td className="p-2">{inv.due_date || "N/A"}</td>

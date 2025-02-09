@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchPastDueInvoices } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
 
 const PastDueInvoicesPage = ({ user }) => {

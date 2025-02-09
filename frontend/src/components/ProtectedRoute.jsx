@@ -6,7 +6,8 @@ import PropTypes from "prop-types";
  */
 const ProtectedRoute = ({ user, children }) => {
     console.log("🔍 Checking Protected Route - User:", user);
-    if (!user || !user.id) {
+    // if (!user || !user.id) {
+    if (!user) {
         return <Navigate to="/login" replace />;
     }
     return children;

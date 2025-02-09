@@ -1,31 +1,51 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
-import AccountsPage from "./pages/AccountsPage";
-import SettingsPage from "./pages/SettingsPage";
-import EmployeesPage from "./pages/EmployeesPage";
 import LoginPage from "./pages/LoginPage";
-import PaidInvoicesPage from "./pages/PaidInvoicesPage";
-import UnpaidInvoicesPage from "./pages/UnpaidInvoicesPage";
-import PastDueInvoicesPage from "./pages/PastDueInvoicesPage";
+import AccountsPage from "./pages/AccountsPage";
+import AccountDetailsPage from "./pages/AccountDetailsPage";
 import AssignedAccountsPage from "./pages/AssignedAccountsPage";
 import CommissionsPage from "./pages/CommissionsPage";
 import CreateInvoicePage from "./pages/CreateInvoicePage";
-import AccountDetailsPage from "./pages/AccountDetailsPage";
+import Dashboard from "./pages/Dashboard";
+import EmployeesPage from "./pages/EmployeesPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import InvoiceDetailsPage from "./pages/InvoiceDetailsPage";
-
-
-
-import "./App.css";
+import SettingsPage from "./pages/SettingsPage";
+import PaidInvoicesPage from "./pages/PaidInvoicesPage";
+import PastDueInvoicesPage from "./pages/PastDueInvoicesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import UnpaidInvoicesPage from "./pages/UnpaidInvoicesPage";
+import { fetchUserSession } from "./services/api"; 
+import "./App.css";
 
 function App() {
-  const [user, setUser] = useState(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    return storedUser || null; // ✅ Ensure stored user persists
-  });
+  // const [user, setUser] = useState(() => {
+  //   // const storedUser = JSON.parse(localStorage.getItem("user"));
+  //   // return storedUser || null; // ✅ Ensure stored user persists
+  //   return JSON.parse(localStorage.getItem("user")) || null;
+  // });
+
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkSession() {
+        const sessionUser = await fetchUserSession();
+        setUser(sessionUser); 
+        setLoading(false);  // ✅ Stop loading once session check is done
+    }
+    checkSession();
+  }, []);
+
+  const handleLogout = () => {
+      localStorage.removeItem("user");
+      setUser(null);
+  };
+
+  if (loading) return <div>Loading...</div>;
+
+
+
 
   useEffect(() => {
     if (!user) return; // ✅ Prevent running effect if user is not logged in
@@ -43,24 +63,14 @@ function App() {
   }, [user]);
 
   useEffect(() => {
-    const updateLastActive = () => {
-      localStorage.setItem("lastActive", Date.now().toString());
-    };
-
+    const updateLastActive = () => localStorage.setItem("lastActive", Date.now().toString());
     window.addEventListener("mousemove", updateLastActive);
     window.addEventListener("keydown", updateLastActive);
-
     return () => {
       window.removeEventListener("mousemove", updateLastActive);
       window.removeEventListener("keydown", updateLastActive);
     };
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("lastActive");
-    setUser(null);
-  };
 
   console.log("Current User in App:", user); // ✅ Debug user
 
@@ -72,7 +82,8 @@ function App() {
         <Route path="/login" element={<LoginPage setUser={setUser} />} />
 
         {/* ✅ Protected Routes */}
-        <Route path="/" element={<ProtectedRoute user={user}><Dashboard user={user} /></ProtectedRoute>} />
+        <Route path="/" element={<ProtectedRoute user={user}><Dashboard user={user} handleLogout={handleLogout} /></ProtectedRoute>} />
+
         <Route path="/settings" element={<ProtectedRoute user={user}><SettingsPage user={user} /></ProtectedRoute>} />
         <Route path="/employees" element={<ProtectedRoute user={user}><EmployeesPage user={user} /></ProtectedRoute>} />
 

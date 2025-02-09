@@ -8,13 +8,18 @@ return (
     <div className="w-64 h-screen bg-gray-800 text-white flex flex-col justify-between p-4 fixed">
     {/* Upper Sidebar Content */}
     <div>
+        <h1 className="text-xl font-bold">Dunder Mifflin Paper Company</h1>
         <h2 className="text-xl font-bold">Hello, {user.firstName}</h2>
+        <h3 className="text-xl font-bold">{user.department_id}</h3> {/* FIXME: change to department name */}
         {/* Navigation Links */}
         <nav className="space-y-4 mt-4">
             <NavItem to="/" icon={<FiHome />} label="Dashboard" />
+            <NavItem to="/tasks" icon={<FiBriefcase />} label="My Tasks" />
+            <NavItem to="/calendar" icon={<FiBriefcase />} label="Calendar" />
             <NavItem to="/accounts" icon={<FiBriefcase />} label="Accounts" />
+            <NavItem to="/commissions" icon={<FiBriefcase />} label="Commissions" />
+            <NavItem to="/employee-info" icon={<FiUsers />} label="My Info" />
             <NavItem to="/settings" icon={<FiSettings />} label="Settings" />
-            <NavItem to="/employees" icon={<FiUsers />} label="Employee Info" />
         </nav>
     </div>
 
