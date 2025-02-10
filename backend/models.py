@@ -15,13 +15,13 @@ class Account(db.Model):
     address = db.Column(db.String(255))
     city = db.Column(db.String(30))
     state = db.Column(db.String(2))
-    zip_code = db.Column(db.String(10))
-    industry = db.Column(db.String(100))
+    zip_code = db.Column(db.String(10), db.ForeignKey('tax_rates.zip_code'))
+    industry_id = db.Column(db.Integer, db.ForeignKey('industries.industry_id'))
+    sales_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     notes = db.Column(db.Text)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    industry_id = db.Column(db.Integer, db.ForeignKey('industries.industry_id'))
-    sales_employee_id = db.Column(db.Integer, db.ForeignKey('users.user_id')) 
+    
 
 class Branches(db.Model):
     __table_name__ = 'branches'
@@ -32,10 +32,10 @@ class Branches(db.Model):
     state = db.Column(db.String(2))
     zip_code = db.Column(db.String(10))
     phone_number = db.Column(db.String(20))
-    branch_email = db.Column(db.String(100))
     
 
 class CalendarEvent(db.Model):
+    __table_name__ = 'calendar_events'
     event_id = db.Column(db.Integer, primary_key=True)
     event_title = db.Column(db.String(255), nullable=False)
     location = db.Column(db.String(255))
@@ -54,11 +54,11 @@ class Commissions(db.Model):
     commission_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
-    commission_rate = db.Column(db.Numeric)
+    commission_rate = db.Column(db.Numeric) #RATE SHOULD BE BASED ON USER ID set commission rate. 
     commission_amount = db.Column(db.Numeric)
     date_paid = db.Column(db.DateTime)
-    employee_commission_rate = db.Column(db.Numeric)
-    service_commission_rate = db.Column(db.Numeric)
+    user_commission_rate = db.Column(db.Numeric, db.ForeignKey('users.commission_rate'))
+
 
 class Departments(db.Model):
     __table_name__ = 'departments'
@@ -74,34 +74,34 @@ class Industry(db.Model):
 class Invoice(db.Model):
     __tablename__ = 'invoices'
     invoice_id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer)
-    service = db.Column(db.String(100))
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'))
+    service = db.Column(db.String(100), db.ForeignKey('services.service_name'))
     amount = db.Column(db.Numeric)
-    tax_rate = db.Column(db.Numeric)
+    tax_rate = db.Column(db.Numeric, db.ForeignKey('tax_rates.rate'))
     tax_amount = db.Column(db.Numeric)
-    discount_percent = db.Column(db.Numeric)
+    discount_percent = db.Column(db.Numeric, db.ForeignKey('services.discount_percent')) 
     discount_amount = db.Column(db.Numeric)
     final_total = db.Column(db.Numeric)
     status = db.Column(db.String(20))
     paid = db.Column(db.Boolean)
-    payment_method = db.Column(db.String(30))
+    payment_method = db.Column(db.String(30), db.ForeignKey('payment_methods.method_name'))
     last_four_payment_method = db.Column(db.Numeric)
     total_paid = db.Column(db.Numeric)
     date_paid = db.Column(db.DateTime)
     notes = db.Column(db.Text)
     date_created = db.Column(db.DateTime)
     date_updated = db.Column(db.DateTime)
-    payment_method_id = db.Column(db.Integer) #FIXME: always null? should be the method id which the payment method column references for the name of the payment method.
-    sales_user_id = db.Column(db.Integer)
-    commission_amount = db.Column(db.Numeric)
+    payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_methods.method_id'))
+    sales_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    commission_amount = db.Column(db.Numeric, db.ForeignKey('commissions.commission_amount'))
     due_date = db.Column(db.Date)
 
 class InvoiceServices(db.Model):
     invoice_service_id = db.Column(db.Integer, primary_key=True)
-    invoice_id = db.Column(db.Integer)
-    service_id = db.Column(db.Integer)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
+    service_id = db.Column(db.Integer, db.ForeignKey('services.service_id'))
     quantity = db.Column(db.Integer)
-    price = db.Column(db.Numeric)
+    price = db.Column(db.Numeric, db.ForeignKey('services.price')) 
     total_price = db.Column(db.Numeric)
 
 class Notes(db.Model): 
@@ -124,7 +124,6 @@ class Service(db.Model):
     service_name = db.Column(db.String(50))
     price = db.Column(db.Numeric)
     discount = db.Column(db.Numeric)
-    service_commission_rate = db.Column(db.Numeric)
     discount_percent = db.Column(db.Numeric)
 
 class TaxRates(db.Model):
@@ -137,21 +136,20 @@ class Tasks(db.Model):
     __table_name__ = 'tasks'
     task_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'))
     assigned_to = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     task_description = db.Column(db.Text)
     due_date = db.Column(db.DateTime)
     is_completed = db.Column(db.Boolean)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
-    created_by_user_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=True)
-    assigned_to_user_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=True)
-    
 
 class UserRoles(db.Model):
     __table_name__ = 'user_roles'
     role_id = db.Column(db.Integer, primary_key=True)
     role_name = db.Column(db.String(50))
-    reports_to = db.Column(db.Integer)
+    reports_to = db.Column(db.Integer, db.ForeignKey('user_roles.role_id'))
     description = db.Column(db.Text)
+    is_lead = db.Column(db.Boolean)
 
 class Users(db.Model):
     __tablename__ = 'users'
@@ -161,12 +159,12 @@ class Users(db.Model):
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
     role_id = db.Column(db.Integer, db.ForeignKey('user_roles.role_id'))
-    reports_to = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True) #FIXME: reports to is based on the department the user is in and who is the lead of the department.
+    reports_to = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.department_id'))
     salary = db.Column(db.Numeric)
     commission_rate = db.Column(db.Numeric)
     is_active = db.Column(db.Boolean, default=True)
-    is_department_lead = db.Column(db.Boolean, default=False)
+    is_department_lead = db.Column(db.Boolean, db.ForeignKey('user_roles.is_lead'))
     receives_commission = db.Column(db.Boolean, default=False)
     phone_number = db.Column(db.String(20))
     extension = db.Column(db.String(5))

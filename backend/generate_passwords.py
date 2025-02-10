@@ -24,7 +24,18 @@ user_passwords = {
     "kkapoo": "talkative",
     "pbeesl": "reception1",
     "cbratt": "whoknows",
-    "rhowar": "temp123"
+    "rhowar": "temp123",
+    "dwall": "corporateking",
+    "jlevin": "strictboss",
+    "jbenn": "ceopower",
+    "glewis": "tallgabe",
+    "dvicke": "basketballrules",
+    "abern": "cornellgrad",
+    "kfilip": "salesqueen",
+    "dcordr": "handsome",
+    "mpalme": "whiskeylover",
+    "dphilb": "warehouseking",
+    "ehanno": "happyreception"
 }
 
 # Connect to PostgreSQL
