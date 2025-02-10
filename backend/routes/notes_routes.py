@@ -2,13 +2,10 @@ from flask import Blueprint, request, jsonify
 from models import Notes
 from database import db
 
-note_bp = Blueprint("note", __name__)
+notes_bp = Blueprint("note", __name__)
 
-# ----------------------------
-# 📌 NOTES API
-# ----------------------------
 # Get Notes API
-@app.route("/notes", methods=["GET"])
+@notes_bp.route("/notes", methods=["GET"])
 def get_notes():
     account_id = request.args.get("account_id")
     assigned_to = request.args.get("assigned_to")
@@ -36,7 +33,7 @@ def get_notes():
     ])
 
 #Create Notes API
-@app.route("/notes", methods=["POST"])
+@notes_bp.route("/notes", methods=["POST"])
 def create_note():
     data = request.json
     

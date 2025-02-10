@@ -21,7 +21,7 @@ tables = {row[0]: [] for row in cursor.fetchall()}  # Store table names
 # ✅ Query for column details
 cursor.execute("""
     SELECT c.table_name, c.column_name, c.data_type, c.column_default, 
-           tc.constraint_type
+            tc.constraint_type
     FROM information_schema.columns c
     LEFT JOIN information_schema.key_column_usage k 
         ON c.table_name = k.table_name AND c.column_name = k.column_name

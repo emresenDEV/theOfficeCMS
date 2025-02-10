@@ -4,6 +4,7 @@ from database import db
 
 commission_bp = Blueprint("commission", __name__)
 
+@commission_bp.route("/commissions", methods=["GET"])
 def get_commissions():
     user_id = request.args.get("user_id")
 

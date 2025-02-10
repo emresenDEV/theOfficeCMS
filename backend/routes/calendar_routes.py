@@ -1,22 +1,18 @@
 from flask import Blueprint, request, jsonify
-from models import CalendarEvents
+from models import CalendarEvent  # ✅ Absolute Import
 from database import db
+from datetime import datetime
 
 calendar_bp = Blueprint("calendar", __name__)
 
 @calendar_bp.route("/events", methods=["GET"])
 def get_events():
     user_id = request.args.get("user_id")
-    events = CalendarEvents.query.filter_by(user_id=user_id).all()
+    events = CalendarEvent.query.filter_by(user_id=user_id).all()
     return jsonify([{"id": e.id, "title": e.title} for e in events])
 
-
-# ----------------------------
-# 📌 CALENDAR EVENTS API
-# ----------------------------
-
 # ✅ Fetch Calendar Events for Logged-in User
-@app.route("/calendar/events", methods=["GET"])
+@calendar_bp.route("/calendar/events", methods=["GET"])
 def get_calendar_events():
     user_id = request.args.get("user_id")
     if not user_id:
@@ -40,7 +36,7 @@ def get_calendar_events():
     ])
 
 # ✅ Create a New Calendar Event
-@app.route("/calendar/events", methods=["POST"])
+@calendar_bp.route("/calendar/events", methods=["POST"])
 def create_calendar_event():
     data = request.json
     if not data.get("event_title") or not data.get("start_time") or not data.get("end_time"):
@@ -65,7 +61,7 @@ def create_calendar_event():
     return jsonify({"message": "Event created successfully", "event_id": new_event.event_id}), 201
 
 # ✅ Update an Existing Calendar Event
-@app.route("/calendar/events/<int:event_id>", methods=["PUT"])
+@calendar_bp.route("/calendar/events/<int:event_id>", methods=["PUT"])
 def update_calendar_event(event_id):
     event = CalendarEvent.query.get(event_id)
     if not event:
@@ -87,7 +83,7 @@ def update_calendar_event(event_id):
     return jsonify({"message": "Event updated successfully"}), 200
 
 # ✅ Delete a Calendar Event
-@app.route("/calendar/events/<int:event_id>", methods=["DELETE"])
+@calendar_bp.route("/calendar/events/<int:event_id>", methods=["DELETE"])
 def delete_calendar_event(event_id):
     event = CalendarEvent.query.get(event_id)
     if not event:

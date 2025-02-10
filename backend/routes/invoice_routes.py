@@ -1,14 +1,13 @@
 from flask import Blueprint, request, jsonify
 from models import Invoice
 from database import db
+from datetime import datetime
 
 invoice_bp = Blueprint("invoice", __name__)
 
-# ----------------------------
-# 📌 INVOICES API
-# ----------------------------
+
 # Invoices API
-@app.route("/invoices", methods=["GET"])
+@invoice_bp.route("/invoices", methods=["GET"])  # ✅ Correct
 def get_invoices():
     user_id = request.args.get("user_id")
 
@@ -30,7 +29,7 @@ def get_invoices():
 
 
 #  GET Invoice (SINGLE) By ID API
-@app.route("/invoices/<int:invoice_id>", methods=["GET"])
+@invoice_bp.route("/invoices/<int:invoice_id>", methods=["GET"])
 def get_invoice(invoice_id):
     invoice = Invoice.query.get(invoice_id)
     if not invoice:
@@ -47,7 +46,7 @@ def get_invoice(invoice_id):
     }), 200
 
 # Update Invoice (SINGLE) API
-@app.route("/invoices/<int:invoice_id>", methods=["PUT"])
+@invoice_bp.route("/invoices/<int:invoice_id>", methods=["PUT"])
 def update_invoice(invoice_id):
     invoice = Invoice.query.get(invoice_id)
     if not invoice:
@@ -63,7 +62,7 @@ def update_invoice(invoice_id):
     return jsonify({"message": "Invoice updated successfully"}), 200
 
 # Delete Invoice (SINGLE) API
-@app.route("/invoices/<int:invoice_id>", methods=["DELETE"])
+@invoice_bp.route("/invoices/<int:invoice_id>", methods=["DELETE"])
 def delete_invoice(invoice_id):
     invoice = Invoice.query.get(invoice_id)
     if not invoice:
@@ -75,7 +74,7 @@ def delete_invoice(invoice_id):
 
 
 # GET Paid Invoices API
-@app.route("/invoices/paid", methods=["GET"])
+@invoice_bp.route("/invoices/paid", methods=["GET"])
 def get_paid_invoices():
     user_id = request.args.get("user_id")
     if not user_id:
@@ -97,7 +96,7 @@ def get_paid_invoices():
 
 
 # GET Unpaid Invoices API
-@app.route("/invoices/unpaid", methods=["GET"])
+@invoice_bp.route("/invoices/unpaid", methods=["GET"])
 def get_unpaid_invoices():
     user_id = request.args.get("user_id")
     if not user_id:
@@ -119,7 +118,7 @@ def get_unpaid_invoices():
     ])
 
 # GET Past Due Invoices API
-@app.route("/invoices/past_due", methods=["GET"])
+@invoice_bp.route("/invoices/past_due", methods=["GET"])
 def get_past_due_invoices():
     user_id = request.args.get("user_id")
     if not user_id:
@@ -143,7 +142,7 @@ def get_past_due_invoices():
     ])
 
 # Create Invoices API
-@app.route("/invoices", methods=["POST"])
+@invoice_bp.route("/invoices", methods=["POST"])
 def create_invoice():
     data = request.json
     new_invoice = Invoice(

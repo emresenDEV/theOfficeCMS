@@ -3,12 +3,9 @@ from models import Users
 from database import db
 
 user_bp = Blueprint("user", __name__)
-# ----------------------------
-# 📌 USERS API
-# ----------------------------
 
 # Users API
-@app.route("/users", methods=["GET"])
+@user_bp.route("/users", methods=["GET"])
 def get_users():
     users = Users.query.all()
     return jsonify([

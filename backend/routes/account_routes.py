@@ -1,16 +1,13 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from models import Account
 from database import db
+from flask_cors import cross_origin
 
-account_bp = Blueprint("account", __name__)
+# ✅ Create Blueprint
+account_bp = Blueprint("accounts", __name__)
 
-# ----------------------------
-# 📌 ACCOUNTS API
-# ----------------------------
-
-#  GET Assigned Accounts API
-@app.route("/accounts/assigned", methods=["GET"])
-# @cross_origin(origin="http://localhost:5173", supports_credentials=True)
+# ✅ GET Assigned Accounts API
+@account_bp.route("/assigned", methods=["GET"])
 @cross_origin()
 def get_assigned_accounts():
     user_id = request.args.get("user_id")
@@ -29,8 +26,8 @@ def get_assigned_accounts():
     ]), 200
 
 
-# Get Accounts API
-@app.route("/accounts", methods=["GET"])
+# ✅ Get All Accounts API
+@account_bp.route("/", methods=["GET"])
 def get_accounts():
     accounts = Account.query.all()
     account_list = [
@@ -54,8 +51,8 @@ def get_accounts():
     ]
     return jsonify(account_list), 200
 
-# Get Accounts By ID API
-@app.route("/accounts/<int:account_id>", methods=["GET"])
+# ✅ Get Account By ID API
+@account_bp.route("/<int:account_id>", methods=["GET"])
 def get_account_by_id(account_id):
     account = Account.query.get(account_id)
     if not account:

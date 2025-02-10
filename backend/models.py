@@ -1,5 +1,5 @@
 from database import db
-
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # =========================================
 #  DATABASE MODELS (Alphabetized)
@@ -21,9 +21,21 @@ class Account(db.Model):
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     industry_id = db.Column(db.Integer, db.ForeignKey('industries.industry_id'))
-    sales_employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id')) 
+    sales_employee_id = db.Column(db.Integer, db.ForeignKey('users.user_id')) 
 
-class CalendarEvents(db.Model):
+class Branches(db.Model):
+    __table_name__ = 'branches'
+    branch_id = db.Column(db.Integer, primary_key=True)
+    branch_name = db.Column(db.String(50))
+    address = db.Column(db.String(255))
+    city = db.Column(db.String(50))
+    state = db.Column(db.String(2))
+    zip_code = db.Column(db.String(10))
+    phone_number = db.Column(db.String(20))
+    branch_email = db.Column(db.String(100))
+    
+
+class CalendarEvent(db.Model):
     event_id = db.Column(db.Integer, primary_key=True)
     event_title = db.Column(db.String(255), nullable=False)
     location = db.Column(db.String(255))
@@ -33,7 +45,7 @@ class CalendarEvents(db.Model):
     end_date = db.Column(db.Date, nullable=False)
     notes = db.Column(db.Text)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
     contact_name = db.Column(db.String(100))
     phone_number = db.Column(db.String(20))
     
@@ -120,6 +132,19 @@ class TaxRates(db.Model):
     state = db.Column(db.String(2))
     zip_code = db.Column(db.Numeric, primary_key=True)
     rate = db.Column(db.Numeric)
+    
+class Tasks(db.Model):
+    __table_name__ = 'tasks'
+    task_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    assigned_to = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    task_description = db.Column(db.Text)
+    due_date = db.Column(db.DateTime)
+    is_completed = db.Column(db.Boolean)
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=True)
+    assigned_to_user_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=True)
+    
 
 class UserRoles(db.Model):
     __table_name__ = 'user_roles'
@@ -148,6 +173,7 @@ class Users(db.Model):
     email = db.Column(db.String(100))
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
@@ -155,6 +181,3 @@ class Users(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-# Create Tables
-with app.app_context():
-    db.create_all()
