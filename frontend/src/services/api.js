@@ -5,8 +5,9 @@ const API_BASE_URL = "http://127.0.0.1:5001";
 
 // Axios instance for API requests
 const api = axios.create({
-baseURL: API_BASE_URL,
-headers: { "Content-Type": "application/json" },
+    baseURL: API_BASE_URL,
+    headers: { "Content-Type": "application/json" },
+    withCredentials: true,
 });
 
 // Fetch all accounts EXPLAINED:

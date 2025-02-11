@@ -10,20 +10,12 @@ account_bp = Blueprint("accounts", __name__)
 @account_bp.route("/assigned", methods=["GET"])
 @cross_origin()
 def get_assigned_accounts():
-    user_id = request.args.get("user_id")
+    user_id = request.args.get("user_id", type=int)
     if not user_id:
         return jsonify({"error": "User ID is required"}), 400
 
-    assigned_accounts = Account.query.filter_by(sales_employee_id=user_id).all()
-
-    return jsonify([
-        {
-            "account_id": acc.account_id,
-            "business_name": acc.business_name,
-            "contact_name": acc.contact_name,
-            "phone_number": acc.phone_number,
-        } for acc in assigned_accounts
-    ]), 200
+    accounts = Account.query.filter_by(user_id=user_id).all()
+    return jsonify([account.to_dict() for account in accounts]), 200
 
 
 # ✅ Get All Accounts API
@@ -41,11 +33,12 @@ def get_accounts():
             "city": acc.city,
             "state": acc.state,
             "zip_code": acc.zip_code,
-            "industry": acc.industry,
+            "industry_id": acc.industry_id,
+            "user_id": acc.user_id,
+            "notes": acc.notes,
             "date_created": acc.date_created,
             "date_updated": acc.date_updated,
-            "invoice_number": acc.invoice_number if hasattr(acc, 'invoice_number') else None,
-            "notes": acc.notes,
+            "branch_id": acc.branch_id,
         }
         for acc in accounts
     ]

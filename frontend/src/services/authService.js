@@ -1,68 +1,80 @@
 //  authService.js
 import api from "./api";
 
-// Fetch user session
+// ✅ Fetch user session with proper credentials
 export const fetchUserSession = async () => {
     try {
-        const response = await api.get("/session", { withCredentials: true });
-        return response.data;
+        const response = await api.get("/auth/session", { withCredentials: true });
+        console.log("✅ Session Response:", response.data);
+
+        if (!response.data.user) return null; // ✅ Return null if user is not logged in
+        
+        return response.data.user;
     } catch (error) {
-        console.error("Error fetching user session:", error);
+        console.error("❌ Error fetching user session:", error.response?.data || error.message);
         return null;
     }
 };
 
-// Login User
-export const loginUser = async (username, password) => {
-    try {
-        const response = await api.post("/login", { username, password }, { withCredentials: true });
-        return response.data;
-    } catch (error) {
-        console.error("Error logging in:", error);
-        throw error;
-    }
-};
 
-// **Logout User**
-export const logoutUser = async () => {
-    try {
-        await api.post("/logout");
-        return true;
-    } catch (error) {
-        return false;
-    }
-};
 
-// // Fetch user session
 // export const fetchUserSession = async () => {
 //     try {
-//         const response = await fetch("http://127.0.0.1:5001/session", {
+//         const response = await fetch("http://127.0.0.1:5001/auth/session", {
 //             credentials: "include",  // ✅ Ensures cookies are sent
 //             method: "GET"
 //         });
-//         if (!response.ok) return null;
-//         return await response.json();
+
+//         if (!response.ok) {
+//             console.error("❌ Session fetch failed:", response.status);
+//             return null;
+//         }
+
+//         const data = await response.json();
+//         console.log("✅ Session Response:", data);
+//         return data; // ✅ Returns full user data object
 //     } catch (error) {
-//         console.error("Error fetching user session:", error);
+//         console.error("❌ Error fetching user session:", error);
 //         return null;
 //     }
 // };
 
+// ✅ Login User with proper session management
+export const loginUser = async (username, password) => {
+    try {
+        const response = await fetch("http://127.0.0.1:5001/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",  // ✅ Ensures session cookies are stored
+            body: JSON.stringify({ username, password }),
+        });
 
-// // Login User
-// export const loginUser = async (username, password) => {
-//     try {
-//         const response = await fetch("http://127.0.0.1:5001/login", {
-//             method: "POST",
-//             headers: { "Content-Type": "application/json" },
-//             credentials: "include", // Ensure cookies are sent
-//             body: JSON.stringify({ username, password }),
-//         });
+        if (!response.ok) throw new Error("❌ Login failed");
 
-//         if (!response.ok) throw new Error("Login failed");
-//         return await response.json(); // Returns user data
-//     } catch (error) {
-//         console.error("Error logging in:", error);
-//         throw error;
-//     }
-// };
+        const data = await response.json();
+        console.log("✅ Login Successful:", data);
+        return data;
+    } catch (error) {
+        console.error("❌ Error logging in:", error);
+        throw error;
+    }
+};
+
+
+// ✅ Logout User
+export const logoutUser = async () => {
+    try {
+        const response = await fetch("http://127.0.0.1:5001/auth/logout", {
+            method: "POST",
+            credentials: "include",  // ✅ Ensures session is properly destroyed
+        });
+
+        if (!response.ok) throw new Error("❌ Logout failed");
+
+        console.log("✅ Logged out successfully");
+        return true;
+    } catch (error) {
+        console.error("❌ Error logging out:", error);
+        return false;
+    }
+};

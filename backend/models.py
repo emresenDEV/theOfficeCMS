@@ -17,14 +17,15 @@ class Account(db.Model):
     state = db.Column(db.String(2))
     zip_code = db.Column(db.String(10), db.ForeignKey('tax_rates.zip_code'))
     industry_id = db.Column(db.Integer, db.ForeignKey('industries.industry_id'))
-    sales_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     notes = db.Column(db.Text)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
     
 
 class Branches(db.Model):
-    __table_name__ = 'branches'
+    __tablename__ = 'branches'
     branch_id = db.Column(db.Integer, primary_key=True)
     branch_name = db.Column(db.String(50))
     address = db.Column(db.String(255))
@@ -35,7 +36,7 @@ class Branches(db.Model):
     
 
 class CalendarEvent(db.Model):
-    __table_name__ = 'calendar_events'
+    __tablename__ = 'calendar_events'
     event_id = db.Column(db.Integer, primary_key=True)
     event_title = db.Column(db.String(255), nullable=False)
     location = db.Column(db.String(255))
@@ -50,7 +51,7 @@ class CalendarEvent(db.Model):
     phone_number = db.Column(db.String(20))
     
 class Commissions(db.Model):
-    __table_name__ = 'commissions'
+    __tablename__ = 'commissions'
     commission_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
@@ -61,13 +62,14 @@ class Commissions(db.Model):
 
 
 class Departments(db.Model):
-    __table_name__ = 'departments'
+    __tablename__ = 'departments'
     department_id = db.Column(db.Integer, primary_key=True)
     department_name = db.Column(db.String(50))
     
+    users = db.relationship("Users", back_populates="department")
     
 class Industry(db.Model):
-    __table_name__ = 'industries'
+    __tablename__ = 'industries'
     industry_id = db.Column(db.Integer, primary_key = True)
     industry_name = db.Column(db.String(100))
 
@@ -92,11 +94,12 @@ class Invoice(db.Model):
     date_created = db.Column(db.DateTime)
     date_updated = db.Column(db.DateTime)
     payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_methods.method_id'))
-    sales_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     commission_amount = db.Column(db.Numeric, db.ForeignKey('commissions.commission_amount'))
     due_date = db.Column(db.Date)
 
 class InvoiceServices(db.Model):
+    __tablename__ = 'invoice_services'
     invoice_service_id = db.Column(db.Integer, primary_key=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
     service_id = db.Column(db.Integer, db.ForeignKey('services.service_id'))
@@ -105,7 +108,7 @@ class InvoiceServices(db.Model):
     total_price = db.Column(db.Numeric)
 
 class Notes(db.Model): 
-    __table_name__ = 'notes'
+    __tablename__ = 'notes'
     note_id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=True)
@@ -114,12 +117,12 @@ class Notes(db.Model):
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     
 class PaymentMethods(db.Model):
-    __table_name__ = 'payment_methods'
+    __tablename__ = 'payment_methods'
     method_id = db.Column(db.Integer, primary_key=True)
     method_name = db.Column(db.String(50))
 
 class Service(db.Model):
-    __table_name__ = 'services'
+    __tablename__ = 'services'
     service_id = db.Column(db.Integer, primary_key=True)
     service_name = db.Column(db.String(50))
     price = db.Column(db.Numeric)
@@ -127,13 +130,13 @@ class Service(db.Model):
     discount_percent = db.Column(db.Numeric)
 
 class TaxRates(db.Model):
-    __table_name__ = 'tax_rates'
+    __tablename__ = 'tax_rates'
     state = db.Column(db.String(2))
     zip_code = db.Column(db.Numeric, primary_key=True)
     rate = db.Column(db.Numeric)
     
 class Tasks(db.Model):
-    __table_name__ = 'tasks'
+    __tablename__ = 'tasks'
     task_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'))
@@ -144,7 +147,7 @@ class Tasks(db.Model):
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 class UserRoles(db.Model):
-    __table_name__ = 'user_roles'
+    __tablename__ = 'user_roles'
     role_id = db.Column(db.Integer, primary_key=True)
     role_name = db.Column(db.String(50))
     reports_to = db.Column(db.Integer, db.ForeignKey('user_roles.role_id'))
@@ -160,7 +163,7 @@ class Users(db.Model):
     last_name = db.Column(db.String(50))
     role_id = db.Column(db.Integer, db.ForeignKey('user_roles.role_id'))
     reports_to = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
-    department_id = db.Column(db.Integer, db.ForeignKey('departments.department_id'))
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.department_id'), nullable=True)
     salary = db.Column(db.Numeric)
     commission_rate = db.Column(db.Numeric)
     is_active = db.Column(db.Boolean, default=True)
@@ -172,6 +175,8 @@ class Users(db.Model):
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
+    
+    department = db.relationship("Departments", back_populates="users")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)

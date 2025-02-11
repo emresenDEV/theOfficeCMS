@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "../services/api";
+import { fetchCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "../services/calendarService";
 import Sidebar from "../components/Sidebar";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -8,7 +8,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import Modal from "../components/Modal";
 import PropTypes from "prop-types";
 
-const CalendarPage = ({ user, handleLogout }) => {
+
+const CalendarPage = ({ user }) => {
     const [events, setEvents] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [showModal, setShowModal] = useState(false);
@@ -83,7 +84,7 @@ const CalendarPage = ({ user, handleLogout }) => {
     return (
         <div className="flex bg-blue-gray-100 min-h-screen">
             {/* Sidebar */}
-            <Sidebar user={user} handleLogout={handleLogout} />
+            <Sidebar user={user} />
 
             {/* Main Calendar View */}
             <div className="flex-1 p-6 ml-64">
@@ -143,7 +144,6 @@ CalendarPage.propTypes = {
         lastName: PropTypes.string.isRequired,
         role: PropTypes.string,
     }).isRequired,
-    handleLogout: PropTypes.func.isRequired,
 };
 
 export default CalendarPage;

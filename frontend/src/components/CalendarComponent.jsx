@@ -2,22 +2,23 @@ import PropTypes from "prop-types";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 
-const CalendarComponent = ({ meetings }) => {
+const CalendarComponent = ({ events }) => {
     return (
         <FullCalendar
             plugins={[dayGridPlugin]}
             initialView="dayGridMonth"
-            events={meetings.map(meeting => ({
-                title: meeting.event_title,
-                start: meeting.start_date,
-                end: meeting.end_date,
+            events={events.map(event => ({
+                title: event.event_title,
+                start: event.start_date,
+                end: event.end_date,
             }))}
         />
     );
 };
 
+
 CalendarComponent.propTypes = {
-    meetings: PropTypes.arrayOf(
+    events: PropTypes.arrayOf(
         PropTypes.shape({
             event_title: PropTypes.string.isRequired,
             start_date: PropTypes.string.isRequired,

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { fetchInvoices } from "../services/api";
+import { fetchInvoices } from "../services/invoiceService";
 import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar"; 
 import PropTypes from "prop-types";
 
-const InvoicesPage = ({ user, handleLogout }) => {
+const InvoicesPage = ({ user }) => {
     const [invoices, setInvoices] = useState([]);
     const navigate = useNavigate();
     const location = useLocation();
@@ -83,7 +83,6 @@ InvoicesPage.propTypes = {
     user: PropTypes.shape({
         id: PropTypes.number.isRequired
     }).isRequired,
-    handleLogout: PropTypes.func.isRequired,
 };
 
 export default InvoicesPage;

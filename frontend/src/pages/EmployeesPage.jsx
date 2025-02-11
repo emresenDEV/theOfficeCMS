@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
-import { fetchUsers } from "../services/api";
+import { fetchUsers } from "../services/userService";
 
 const EmployeesPage = ({ user }) => {
     const [userData, setUserData] = useState(null);
@@ -31,10 +31,8 @@ const EmployeesPage = ({ user }) => {
         department_name,
         salary,
         receives_commission,
-        commission_rate,
-        regions,
-        region_zipcodes,
-        industries,
+        commission_rate
+        // industries,
     } = userData;
 
     return (
@@ -58,9 +56,7 @@ const EmployeesPage = ({ user }) => {
                         <>
                             <p><strong>Commission Rate:</strong> {commission_rate}%</p>
                             <h2 className="text-lg font-semibold mt-4">Sales Information</h2>
-                            <p><strong>Assigned Regions:</strong> {regions?.join(", ") || "N/A"}</p>
-                            <p><strong>Region Zipcodes:</strong> {region_zipcodes?.join(", ") || "N/A"}</p>
-                            <p><strong>Industries Served:</strong> {industries?.join(", ") || "N/A"}</p>
+                            {/* <p><strong>Industries Served:</strong> {industries?.join(", ") || "N/A"}</p> */}
                         </>
                     )}
                 </div>
@@ -72,8 +68,8 @@ const EmployeesPage = ({ user }) => {
 EmployeesPage.propTypes = {
     user: PropTypes.shape({
         id: PropTypes.number.isRequired,
-        firstName: PropTypes.string.isRequired,
-        lastName: PropTypes.string.isRequired,
+        first_name: PropTypes.string.isRequired,
+        last_name: PropTypes.string.isRequired,
         role: PropTypes.string,
     }).isRequired,
 };

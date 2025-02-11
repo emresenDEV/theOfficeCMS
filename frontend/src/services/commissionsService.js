@@ -1,16 +1,22 @@
 // commissionsService.js
 import api from "./api";
 
-// Fetch User's Commissions
+// ✅ Fetch User's Commissions
 export const fetchCommissions = async (userId) => {
     try {
-        const response = await api.get(`/commissions?user_id=${userId}`);
-        return response.data;
+        const response = await api.get(`/commissions/user?user_id=${userId}`);
+        return response.data.map(com => ({
+            commission_id: com.commission_id,
+            invoice_id: com.invoice_id,
+            commission_amount: parseFloat(com.commission_amount),
+            date_paid: com.date_paid
+        }));
     } catch (error) {
         console.error("Error fetching commissions:", error);
         return [];
     }
 };
+
 
 
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../services/api";
+import { loginUser } from "../services/authService";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import PropTypes from "prop-types";
 

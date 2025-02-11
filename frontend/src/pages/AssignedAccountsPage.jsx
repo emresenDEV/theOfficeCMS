@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchAssignedAccounts } from "../services/api";
+import { fetchAssignedAccounts } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";

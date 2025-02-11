@@ -25,7 +25,7 @@ export const fetchNotesByAccount = async (accountId) => {
 // Fetch notes for a specific invoice
 export const fetchNotesByInvoice = async (invoiceId) => {
     try {
-        const response = await fetch(`http://127.0.0.1:5001/notes?invoice_id=${invoiceId}`);
+        const response = await api.get(`/notes?invoice_id=${invoiceId}`);
         if (!response.ok) throw new Error("Failed to fetch invoice notes.");
         return await response.json();
     } catch (error) {

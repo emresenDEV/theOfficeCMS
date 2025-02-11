@@ -1,59 +1,58 @@
 import { useEffect, useState } from "react";
-import { fetchInvoices, fetchCommissions, fetchTasks, fetchAssignedAccounts, fetchMeetings } from "../services/api";
+import { fetchInvoices } from "../services/invoiceService";
+import { fetchCommissions } from "../services/commissionsService";
+import { fetchTasks } from "../services/tasksService";
+import { fetchAssignedAccounts } from "../services/accountService";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { FiCheck, FiCalendar } from "react-icons/fi";
 import PropTypes from "prop-types";
 import SalesChart from "../components/SalesChart";  
 import CalendarComponent from "../components/CalendarComponent"; 
+import TasksComponent from "../components/TaskComponent";
+import { fetchCalendarEvents } from "../services/calendarService";
 
-const Dashboard = ({ user, handleLogout }) => {
+
+const Dashboard = ({ user }) => {
     const navigate = useNavigate();
-    const [invoices, setInvoices] = useState([]);
-    const [commissions, setCommissions] = useState([]);
+    // const [invoices, setInvoices] = useState([]);
+    // const [commissions, setCommissions] = useState([]);
     const [tasks, setTasks] = useState([]);
     const [completedTasks, setCompletedTasks] = useState([]);
-    const [assignedAccounts, setAssignedAccounts] = useState([]);
-    const [meetings, setMeetings] = useState([]);
+    // const [assignedAccounts, setAssignedAccounts] = useState([]);
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (user && user.id) {
-            fetchInvoices(user.id).then(setInvoices);
-            fetchCommissions(user.id).then(setCommissions);
-            fetchTasks(user.id).then((tasks) => {
-                setTasks(tasks.filter(task => !task.completed));
-                setCompletedTasks(tasks.filter(task => task.completed));
-            });
-            fetchAssignedAccounts(user.id).then(setAssignedAccounts);
-            fetchMeetings(user.id).then(setMeetings);
+        if (!user || !user.id) return;
+    
+        async function fetchData() {
+            setLoading(true);
+            try {
+                const [tasksData, eventsData] = await Promise.all([
+                    fetchTasks(user.id),
+                    fetchCalendarEvents(user.id),
+                ]);
+                
+                setTasks(tasksData.filter(task => !task.completed));
+                setCompletedTasks(tasksData.filter(task => task.completed));
+                setEvents(eventsData);
+    
+            } catch (error) {
+                console.error("❌ Error fetching data:", error);
+            } finally {
+                setLoading(false);
+            }
         }
+    
+        fetchData();
     }, [user]);
+    
+    
 
-    if (!user || !user.id || !user.firstName) {
-        return <p className="text-center text-gray-600">Loading...</p>;
+    if (loading) {
+        return <p className="text-center text-gray-600">Loading dashboard...</p>;
     }
-
-    // ✅ Invoices & Commission Logic
-    const assignedInvoices = invoices.filter(inv => inv.sales_user_id === user.id);
-    const paidInvoicesCount = assignedInvoices.filter(inv => inv.status === "Paid").length;
-    const unpaidInvoicesCount = assignedInvoices.filter(inv => inv.status === "Unpaid").length;
-    const pastDueInvoicesCount = assignedInvoices.filter(inv => inv.status === "Past Due").length;
-    const assignedAccountsCount = assignedAccounts.length;
-
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
-
-    const currentMonthCommission = commissions
-        .filter(com => {
-            const comDate = new Date(com.date_paid);
-            return comDate.getMonth() + 1 === currentMonth && comDate.getFullYear() === currentYear;
-        })
-        .reduce((total, com) => total + com.commission_amount, 0);
-
-    const yearlyCommission = commissions
-        .filter(com => new Date(com.date_paid).getFullYear() === currentYear)
-        .reduce((total, com) => total + com.commission_amount, 0);
 
     // ✅ Task Completion Logic
     const toggleTaskCompletion = (taskId) => {
@@ -64,12 +63,14 @@ const Dashboard = ({ user, handleLogout }) => {
     return (
         <div className="flex bg-blue-gray-100 min-h-screen">
             {/* Sidebar */}
-            <Sidebar user={user} handleLogout={handleLogout} />
+            <Sidebar user={user} />
 
             {/* Main Content */}
             <div className="flex-1 p-6 ml-64">
                 {/* Header */}
-                <h1 className="text-3xl font-semibold text-dark-cornflower">Hello, {user.firstName}</h1>
+                <h1 className="text-3xl font-semibold text-dark-cornflower">
+                    Hello, {user?.first_name || "Guest"}
+                </h1>
                 <h2 className="text-xl text-gray-600">Sales Dashboard</h2>
 
                 {/* Grid Layout */}
@@ -77,54 +78,33 @@ const Dashboard = ({ user, handleLogout }) => {
                     {/* Paper Sales Report */}
                     <div className="col-span-2 bg-white shadow-md p-6 rounded-lg">
                         <h3 className="text-xl font-bold text-dark-cornflower mb-4">Paper Sales Report</h3>
-                        <SalesChart />
+                        <SalesChart user={user} />
+
                     </div>
 
                     {/* My Tasks Section */}
-                    <div className="bg-white shadow-md p-6 rounded-lg">
-                        <h3 className="text-lg font-bold text-dark-cornflower mb-3">My Tasks</h3>
-                        <ul className="space-y-2">
-                            {tasks.slice(0, 4).map(task => (
-                                <li key={task.id} className="flex items-center justify-between bg-gray-100 p-2 rounded-md">
-                                    <span className={task.completed ? "line-through text-gray-500" : "text-black"}>
-                                        {task.text}
-                                    </span>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={task.completed} 
-                                        onChange={() => toggleTaskCompletion(task.id)} 
-                                        className="cursor-pointer"
-                                    />
-                                </li>
-                            ))}
-                        </ul>
-                        <button 
-                            className="mt-3 w-full bg-true-blue text-white py-2 rounded-lg"
-                            onClick={() => navigate("/tasks")}
-                        >
-                            New Task
-                        </button>
-                    </div>
+                    <TasksComponent tasks={tasks} toggleTaskCompletion={toggleTaskCompletion} />
+
 
                     {/* Calendar Section */}
                     <div className="col-span-3 bg-white shadow-md p-6 rounded-lg mt-6">
                         <h3 className="text-lg font-bold text-dark-cornflower mb-3">My Calendar</h3>
-                        <CalendarComponent meetings={meetings} />
+                        <CalendarComponent events={events} />
 
                         {/* Today's Meetings */}
-                        <h4 className="text-md font-semibold text-gray-700 mt-4">Today's Meetings</h4>
-                        {meetings.length > 0 ? (
-                            meetings.map(meeting => (
-                                <div key={meeting.id} className="flex items-center justify-between bg-blue-gray-100 p-3 rounded-lg mt-2">
+                        <h4 className="text-md font-semibold text-gray-700 mt-4">My Meetings</h4>
+                        {events.length > 0 ? (
+                            events.map(event => (
+                                <div key={event.event_id} className="flex items-center justify-between bg-blue-gray-100 p-3 rounded-lg mt-2">
                                     <div className="flex items-center">
                                         <FiCalendar className="text-true-blue text-xl mr-3" />
                                         <div>
-                                            <p className="font-semibold">{meeting.event_title}</p>
-                                            {meeting.notes && <p className="text-sm text-gray-600">{meeting.notes}</p>}
+                                            <p className="font-semibold">{event.event_title}</p>
+                                            {event.notes && <p className="text-sm text-gray-600">{event.notes}</p>}
                                         </div>
                                     </div>
                                     <p className="text-md font-bold">
-                                        {meeting.start_time} - {meeting.end_time}
+                                        {event.start_time} - {event.end_time}
                                     </p>
                                 </div>
                             ))
@@ -139,25 +119,14 @@ const Dashboard = ({ user, handleLogout }) => {
 };
 
 // ✅ PropTypes Validation
-// Dashboard.propTypes = {
-//     user: PropTypes.shape({
-//         id: PropTypes.number.isRequired,
-//         firstName: PropTypes.string.isRequired,
-//         lastName: PropTypes.string.isRequired,
-//         role: PropTypes.string,
-//     }).isRequired,
-//     handleLogout: PropTypes.func.isRequired,
-// };
-
 Dashboard.propTypes = {
     user: PropTypes.shape({
-        id: PropTypes.number,
-        firstName: PropTypes.string,
-        lastName: PropTypes.string,
+        id: PropTypes.number.isRequired,
+        username: PropTypes.string,
+        first_name: PropTypes.string,
+        last_name: PropTypes.string,
         role: PropTypes.string,
-    }),
-    handleLogout: PropTypes.func,
+    }).isRequired
 };
-
 
 export default Dashboard;

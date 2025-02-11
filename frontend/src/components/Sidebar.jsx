@@ -9,8 +9,12 @@ return (
     {/* Upper Sidebar Content */}
     <div>
         <h1 className="text-xl font-bold">Dunder Mifflin Paper Company</h1>
-        <h2 className="text-xl font-bold">Hello, {user.firstName}</h2>
-        <h3 className="text-xl font-bold">{user.department_id}</h3> {/* FIXME: change to department name */}
+        <h2 className="text-xl font-bold">Hello, {user.first_name}</h2>
+        <h3 className="text-xl font-bold">
+            {user?.department_name ? `${user.department_name} Department` : "Department Unknown"}
+        </h3>
+
+
         {/* Navigation Links */}
         <nav className="space-y-4 mt-4">
             <NavItem to="/" icon={<FiHome />} label="Dashboard" />

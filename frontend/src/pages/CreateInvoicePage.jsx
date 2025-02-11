@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { fetchAccountById, createInvoice } from "../services/api";
+import { createInvoice } from "../services/invoiceService";
+import { fetchAccountById } from "../services/accountService";
 import PropTypes from "prop-types";
-
+// FIXME: Missing teh Sidebar component import
 const CreateInvoicePage = ({ user }) => {
     const { accountId } = useParams(); // Retrieve account ID if passed
     const navigate = useNavigate();

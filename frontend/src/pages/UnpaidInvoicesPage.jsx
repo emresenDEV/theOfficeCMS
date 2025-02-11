@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchUnpaidInvoices, fetchAccountById } from "../services/api";
+import { fetchUnpaidInvoices } from "../services/invoiceService";
+import { fetchAccountById } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchCommissions } from "../services/api";
+import { fetchCommissions } from "../services/commissionsService";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { Bar } from "react-chartjs-2";

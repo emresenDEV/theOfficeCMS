@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchAccounts, fetchInvoices } from "../services/api";
+import { fetchAccounts } from "../services/accountService";
+import { fetchInvoices } from "../services/invoiceService";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
@@ -11,8 +12,12 @@ const AccountsPage = ({ user }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchAccounts(user.id).then(setAccounts);
-    }, [user.id]);
+        if (!user) return; // ✅ Ensure user exists before making API call
+        fetchAccounts().then(setAccounts);
+    }, [user]); // ✅ Runs when user state changes
+    
+    
+    
 
     useEffect(() => {
         const lowerQuery = searchQuery.toLowerCase();
@@ -63,8 +68,8 @@ const AccountsPage = ({ user }) => {
 AccountsPage.propTypes = {
     user: PropTypes.shape({
         id: PropTypes.number.isRequired,
-        firstName: PropTypes.string.isRequired,
-        lastName: PropTypes.string.isRequired,
+        firstName: PropTypes.string,
+        lastName: PropTypes.string,
         role: PropTypes.string,
     }).isRequired,
 };

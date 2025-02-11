@@ -6,15 +6,18 @@ from datetime import datetime
 invoice_bp = Blueprint("invoice", __name__)
 
 
-# Invoices API
+# Invoices (PLURAL) API
 @invoice_bp.route("/invoices", methods=["GET"])  # ✅ Correct
 def get_invoices():
     user_id = request.args.get("user_id")
 
     if user_id:
-        invoices = Invoice.query.filter_by(sales_user_id=user_id).all()
+        invoices = Invoice.query.filter_by(user_id=user_id).all()
     else:
         invoices = Invoice.query.all()
+    
+    if not invoices:
+        return jsonify([]), 200
 
     return jsonify([
         {
@@ -22,7 +25,7 @@ def get_invoices():
             "account_id": inv.account_id,
             "amount": float(inv.amount),
             "status": inv.status,
-            "sales_user_id": inv.sales_user_id,
+            "user_id": inv.user_id,
             "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else None
         } for inv in invoices
     ])
@@ -30,8 +33,8 @@ def get_invoices():
 
 #  GET Invoice (SINGLE) By ID API
 @invoice_bp.route("/invoices/<int:invoice_id>", methods=["GET"])
-def get_invoice(invoice_id):
-    invoice = Invoice.query.get(invoice_id)
+def get_invoice_by_id(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
     if not invoice:
         return jsonify({"error": "Invoice not found"}), 404
 
@@ -81,7 +84,7 @@ def get_paid_invoices():
         return jsonify({"error": "User ID is required"}), 400
 
     paid_invoices = Invoice.query.filter(
-        Invoice.sales_employee_id == user_id,
+        Invoice.user_id == user_id,
         Invoice.status == "Paid"
     ).all()
 
@@ -102,10 +105,12 @@ def get_unpaid_invoices():
     if not user_id:
         return jsonify({"error": "User ID is required"}), 400
 
-    unpaid_invoices = db.session.query(Invoice, Account.business_name).join(Account, Invoice.account_id == Account.account_id).filter(
-        Invoice.sales_employee_id == user_id,
-        Invoice.status == "Unpaid"
-    ).all()
+    unpaid_invoices = (
+        db.session.query(Invoice, Account.business_name)
+        .join(Account, Invoice.account_id == Account.account_id)
+        .filter(Invoice.user_id == user_id, Invoice.status == "Unpaid")
+        .all()
+)
 
     return jsonify([
         {
@@ -126,7 +131,7 @@ def get_past_due_invoices():
 
     today = datetime.utcnow().date()
     past_due_invoices = db.session.query(Invoice, Account.business_name).join(Account, Invoice.account_id == Account.account_id).filter(
-        Invoice.sales_employee_id == user_id,
+        Invoice.user_id == user_id,
         Invoice.due_date < today,
         Invoice.status != "Paid"
     ).all()
@@ -155,7 +160,7 @@ def create_invoice():
         status="Unpaid",
         paid=False,
         due_date=datetime.strptime(data["due_date"], "%Y-%m-%d"),
-        sales_employee_id=data.get("sales_employee_id"),
+        user_id=data.get("user_id"),
         date_created=datetime.utcnow(),
         date_updated=datetime.utcnow(),
     )

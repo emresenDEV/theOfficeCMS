@@ -85,7 +85,7 @@ CREATE TABLE invoices (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     payment_method_id INTEGER REFERENCES payment_methods(method_id),
-    sales_user_id INTEGER REFERENCES users(user_id),
+    user_id INTEGER REFERENCES users(user_id),
     commission_amount NUMERIC,
     due_date DATE
 );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchInvoice, updateInvoice } from "../services/api";
+import { fetchInvoice, updateInvoice } from "../services/invoiceService";
 import PropTypes from "prop-types";
 
 const EditInvoice = () => {

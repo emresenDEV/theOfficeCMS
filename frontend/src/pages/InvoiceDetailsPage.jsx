@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchInvoiceById, fetchNotesByInvoice, updateInvoice, deleteInvoice } from "../services/api";
+import { fetchInvoiceById, updateInvoice, deleteInvoice } from "../services/invoiceService";
+import { fetchNotesByInvoice } from "../services/notesService";
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
 

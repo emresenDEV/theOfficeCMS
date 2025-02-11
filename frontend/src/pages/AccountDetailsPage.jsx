@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchAccountById, fetchInvoicesByAccount, fetchNotesByAccount } from "../services/api";
+import { fetchAccountById } from "../services/accountService";
+import { fetchInvoiceByAccount } from "../services/invoiceService";
+import { fetchNotesByAccount } from "../services/notesService";
 import PropTypes from "prop-types";
 
 const AccountDetailsPage = () => {
@@ -12,7 +14,7 @@ const AccountDetailsPage = () => {
 
     useEffect(() => {
         fetchAccountById(accountId).then(setAccount);
-        fetchInvoicesByAccount(accountId).then(setInvoices);
+        fetchInvoiceByAccount(accountId).then(setInvoices);
         fetchNotesByAccount(accountId).then(setNotes);
     }, [accountId]);
 

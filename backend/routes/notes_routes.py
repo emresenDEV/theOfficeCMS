@@ -8,12 +8,9 @@ notes_bp = Blueprint("note", __name__)
 @notes_bp.route("/notes", methods=["GET"])
 def get_notes():
     account_id = request.args.get("account_id")
-    assigned_to = request.args.get("assigned_to")
 
     if account_id:
         notes = Notes.query.filter_by(account_id=account_id).all()
-    elif assigned_to:
-        notes = Notes.query.filter_by(assigned_to=assigned_to).all()
     else:
         notes = Notes.query.all()
 
@@ -25,9 +22,8 @@ def get_notes():
             "id": note.note_id,
             "account_id": note.account_id,
             "invoice_id": note.invoice_id,
-            "text": note.note_text,
+            "note_text": note.note_text,
             "completed": note.completed,
-            "assigned_to": note.assigned_to,
             "date_created": note.date_created.strftime('%Y-%m-%d %H:%M:%S')
         } for note in notes
     ])
@@ -37,7 +33,7 @@ def get_notes():
 def create_note():
     data = request.json
     
-    if not data.get("text") or not data.get("user_id"):
+    if not data.get("note_text") or not data.get("user_id"):
         return jsonify({"message": "Missing required fields"}), 400
     
     new_note = Notes(
@@ -46,7 +42,6 @@ def create_note():
         invoice_id=data.get("invoice_id"),
         note_text=data["text"], 
         note_type=data.get("note_type", "Task"),
-        assigned_to=data.get("assigned_to"),
         completed=data.get("completed", False),
     )
     db.session.add(new_note)

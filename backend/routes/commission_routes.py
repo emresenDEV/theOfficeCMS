@@ -6,7 +6,7 @@ commission_bp = Blueprint("commission", __name__)
 
 @commission_bp.route("/commissions", methods=["GET"])
 def get_commissions():
-    user_id = request.args.get("user_id")
+    user_id = int(request.args.get("user_id", 0))
 
     if not user_id:
         return jsonify({"error": "User ID is required"}), 400
@@ -17,7 +17,7 @@ def get_commissions():
         {
             "commission_id": com.commission_id,
             "invoice_id": com.invoice_id,
-            "commission_amount": float(com.commission_amount),
+            "commission_amount": float(com.commission_amount) if com.commission_amount else 0.0,
             "date_paid": com.date_paid.strftime("%Y-%m-%d") if com.date_paid else "N/A",
         } for com in commissions
     ])
