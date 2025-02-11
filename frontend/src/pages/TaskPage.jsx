@@ -5,7 +5,7 @@ import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { format } from "date-fns";
-import { FiEdit, FiXCircle, FiChevronDown, FiChevronUp } from "react-icons/fi"; // ✅ Icons
+import { FiEdit, FiXCircle, FiChevronDown, FiChevronUp, FiCheckSquare, FiSquare } from "react-icons/fi"; // ✅ Icons
 
 const TasksPage = ({ user }) => {
     const navigate = useNavigate();
@@ -82,6 +82,19 @@ const TasksPage = ({ user }) => {
                 setCompletedTasks(completedTasks.filter(task => task.task_id !== taskId));
             });
         }
+    };
+
+    const handleToggleComplete = (task) => {
+        const updatedTask = { ...task, is_completed: !task.is_completed };
+        updateTask(task.task_id, updatedTask).then(() => {
+            if (updatedTask.is_completed) {
+                setTasks(tasks.filter(t => t.task_id !== task.task_id));
+                setCompletedTasks([...completedTasks, updatedTask]);
+            } else {
+                setCompletedTasks(completedTasks.filter(t => t.task_id !== task.task_id));
+                setTasks([...tasks, updatedTask]);
+            }
+        });
     };
 
     return (
@@ -176,6 +189,11 @@ const TasksPage = ({ user }) => {
                                         ) : "None"}
                                     </td>
                                     <td className="p-2 flex justify-center gap-2">
+                                        <FiSquare 
+                                            className="text-green-600 cursor-pointer" 
+                                            onClick={() => handleToggleComplete(task)} 
+                                            title="Complete Task"
+                                            />
                                         <FiEdit 
                                             className="text-[#1A6CFA] cursor-pointer" 
                                             onClick={() => handleEditTask(task)} 
@@ -210,6 +228,7 @@ const TasksPage = ({ user }) => {
                                     <th className="p-2">Task</th>
                                     <th className="p-2">Due Date</th>
                                     <th className="p-2">Account</th>
+                                    <th className="p-2">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -218,6 +237,12 @@ const TasksPage = ({ user }) => {
                                         <td className="p-2">{task.task_description}</td>
                                         <td className="p-2">{format(new Date(task.due_date), "EEE, MMMM dd, yyyy")}</td>
                                         <td className="p-2">{task.account_id || "None"}</td>
+                                        <td className="p-2">
+                                            <FiCheckSquare 
+                                                className="text-green-600 cursor-pointer" 
+                                                onClick={() => handleToggleComplete(task)} 
+                                            />
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -227,6 +252,16 @@ const TasksPage = ({ user }) => {
             </div>
         </div>
     );
+};
+
+// ✅ **PropTypes Validation**
+TasksPage.propTypes = {
+    user: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        first_name: PropTypes.string.isRequired,
+        last_name: PropTypes.string.isRequired,
+        username: PropTypes.string,
+    }).isRequired,
 };
 
 export default TasksPage;
