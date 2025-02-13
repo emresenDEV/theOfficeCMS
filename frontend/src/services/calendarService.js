@@ -1,13 +1,16 @@
 // calendarService.js
 import api from "./api";
 
+
+
 // ✅ Fetch Calendar Events
 export const fetchCalendarEvents = async (userId) => {
     try {
-        const response = await api.get(`/calendar/events`, { params: { user_id: userId } });
+        const response = await api.get(`/calendar/events?user_id=${userId}`);
+        console.log("✅ Fetched Events:", response.data);
         return response.data;
     } catch (error) {
-        console.error("Error fetching calendar events:", error);
+        console.error("❌ Error fetching calendar events:", error.response?.data || error.message);
         return [];
     }
 };

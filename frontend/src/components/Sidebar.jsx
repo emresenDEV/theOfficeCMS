@@ -40,7 +40,7 @@ return (
 );
 };
 
-// Helper Component for Sidebar Links
+
 const NavItem = ({ to, label }) => (
     <Link to={to} className="block p-2 hover:text-gray-300">
         {label}

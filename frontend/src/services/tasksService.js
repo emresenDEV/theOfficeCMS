@@ -4,8 +4,10 @@ import api from "./api";
 // ✅ Fetch Tasks (Assigned to a User)
 export const fetchTasks = async (userId) => {
     try {
-        const response = await api.get(`/tasks?user_id=${userId}`);
-        console.log("✅ Tasks Response:", response.data);
+        const response = await api.get(`/tasks?user_id=${userId}`, {
+            params: { assigned_to: userId },
+        });
+        console.log("✅ Fetched Tasks:", response.data);
         return response.data;
     } catch (error) {
         console.error("❌ Error fetching tasks:", error.response?.data || error.message);
@@ -16,7 +18,14 @@ export const fetchTasks = async (userId) => {
 // ✅ Create a Task
 export const createTask = async (task) => {
     try {
-        const response = await api.post("/tasks", task);
+        const response = await api.post("tasks", task, {
+
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        });
+        console.log("✅ Task Created:", response.data);
         return response.data;
     } catch (error) {
         console.error("❌ Error creating task:", error.response?.data || error.message);
@@ -43,6 +52,45 @@ export const deleteTask = async (taskId) => {
     } catch (error) {
         console.error("❌ Error deleting task:", error.response?.data || error.message);
         return false;
+    }
+};
+
+// ✅ Fetch All Branches
+export const fetchBranches = async () => {
+    try {
+        const response = await api.get("/branches");
+        console.log("✅ Fetched Branches:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching branches:", error.response?.data || error.message);
+        return [];
+    }
+};
+
+// ✅ Fetch All Departments (No Filtering by Branch-Completed on Frontend)
+export const fetchDepartments = async () => {
+    try {
+        const response = await api.get("/departments");
+        console.log("✅ Fetched Departments:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching departments:", error.response?.data || error.message);
+        return [];
+    }
+};
+
+
+// ✅ Fetch Employees in a Specific Department and Include Department Name
+export const fetchEmployees = async (departmentId) => {
+    try {
+        const response = await api.get("/employees", {
+            params: departmentId ? { department_id: departmentId } : {},
+        });
+        console.log("✅ Fetched Employees:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching employees:", error.response?.data || error.message);
+        return [];
     }
 };
 

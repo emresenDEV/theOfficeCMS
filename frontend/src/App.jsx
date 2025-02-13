@@ -117,8 +117,7 @@ function App() {
 
   console.log("Current User in App:", user); // ✅ Debugging log
 
-  // ✅ 5️⃣ Display loading screen until session check is complete
-  if (loading) return <div>Loading...</div>;
+  
 
   return (
     <Router>

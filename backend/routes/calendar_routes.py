@@ -5,6 +5,17 @@ from datetime import datetime
 
 calendar_bp = Blueprint("calendar", __name__)
 
+@calendar_bp.route("/", methods=["OPTIONS"])
+def options_tasks():
+    """✅ Handle CORS preflight for /tasks"""
+    response = jsonify({"message": "CORS preflight OK"})
+    response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "http://localhost:5174")
+    response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response, 200
+
+
 @calendar_bp.route("/events", methods=["GET"])
 def get_calendar_events():
     user_id = request.args.get("user_id")

@@ -5,9 +5,10 @@ import api from "./api";
 export const fetchAccounts = async () => {
     try {
         const response = await api.get("/accounts");
+        console.log("✅ Fetched Accounts:", response.data);
         return response.data;
     } catch (error) {
-        console.error("Error fetching accounts:", error);
+        console.error("❌ Error fetching accounts:", error.response?.data || error.message);
         return [];
     }
 };
@@ -33,6 +34,19 @@ export const fetchAssignedAccounts = async (userId) => {
         return [];
     }
 };
+
+// ✅ Fetch Account Details by Account ID
+export const fetchAccountDetails = async (accountId) => {
+    try {
+        const response = await api.get(`/accounts/${accountId}`);
+        console.log(`✅ Fetched Account Details for ID ${accountId}:`, response.data);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Error fetching account details for ID ${accountId}:`, error.response?.data || error.message);
+        return null;
+    }
+};
+
 
 // // Fetch Accounts
 // export const fetchAccounts = async () => {

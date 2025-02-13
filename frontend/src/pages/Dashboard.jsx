@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { fetchInvoices } from "../services/invoiceService";
-import { fetchCommissions } from "../services/commissionsService";
-import { fetchTasks } from "../services/tasksService";
-import { fetchAssignedAccounts } from "../services/accountService";
+// import { fetchInvoices } from "../services/invoiceService";
+// import { fetchCommissions } from "../services/commissionsService";
+import { fetchTasks, updateTask } from "../services/tasksService";
+// import { fetchAssignedAccounts } from "../services/accountService";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import { FiCheck, FiCalendar } from "react-icons/fi";
@@ -15,39 +15,84 @@ import { fetchCalendarEvents } from "../services/calendarService";
 
 const Dashboard = ({ user }) => {
     const navigate = useNavigate();
+    const [tasks, setTasks] = useState([]);
+    const [events, setEvents] = useState([]);
+    const [completedTasks, setCompletedTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
     // const [invoices, setInvoices] = useState([]);
     // const [commissions, setCommissions] = useState([]);
-    const [tasks, setTasks] = useState([]);
-    const [completedTasks, setCompletedTasks] = useState([]);
     // const [assignedAccounts, setAssignedAccounts] = useState([]);
-    const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
 
+    // useEffect(() => {
+    //     if (!user || !user.id) return;
+    
+    //     async function fetchData() {
+    //         setLoading(true);
+            // try {
+            //     // ✅ Fetch tasks and calendar events in parallel
+            //     const [tasksData, eventsData] = await Promise.all([
+            //         fetchTasks(user.id),
+            //         fetchCalendarEvents(user.id),
+            //     ]);
+    
+            //     console.log("✅ Fetched Tasks:", tasksData);
+            //     console.log("✅ Fetched Calendar Events:", eventsData);
+    
+            //     // ✅ Ensure tasks are correctly categorized
+            //     setTasks(tasksData.filter(task => !task.is_completed));
+            //     setCompletedTasks(tasksData.filter(task => task.is_completed));
+    
+            //     // ✅ Set events in state
+            //     setEvents(eventsData);
+    
+            // } catch (error) {
+            //     console.error("❌ Error fetching data:", error);
+            // } finally {
+            //     setLoading(false);
+            // }
+    //         try {
+    //             const tasksData = await fetchTasks(user.id);
+    //             console.log("✅ Fetched Tasks in Dashboard:", tasksData);
+    //             setTasks(tasksData.filter(task => !task.is_completed));
+    //             setCompletedTasks(tasksData.filter(task => task.is_completed));
+    //         } catch (error) {
+    //             console.error("❌ Error fetching tasks:", error);
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     }
+    
+    //     fetchData();
+    // }, [user]);
+    
     useEffect(() => {
         if (!user || !user.id) return;
     
         async function fetchData() {
             setLoading(true);
             try {
+                // ✅ Fetch tasks and calendar events at the same time
                 const [tasksData, eventsData] = await Promise.all([
                     fetchTasks(user.id),
                     fetchCalendarEvents(user.id),
                 ]);
-                
-                setTasks(tasksData.filter(task => !task.completed));
-                setCompletedTasks(tasksData.filter(task => task.completed));
-                setEvents(eventsData);
     
+                console.log("✅ Fetched Tasks in Dashboard:", tasksData);
+                console.log("✅ Fetched Calendar Events in Dashboard:", eventsData);
+    
+                // ✅ Update state correctly
+                setTasks(tasksData.filter(task => !task.is_completed));
+                setCompletedTasks(tasksData.filter(task => task.is_completed));
+                setEvents(eventsData);
             } catch (error) {
-                console.error("❌ Error fetching data:", error);
+                console.error("❌ Error fetching dashboard data:", error);
             } finally {
                 setLoading(false);
             }
         }
     
         fetchData();
-    }, [user]);
-    
+    }, [user]); 
     
 
     if (loading) {
@@ -55,10 +100,22 @@ const Dashboard = ({ user }) => {
     }
 
     // ✅ Task Completion Logic
-    const toggleTaskCompletion = (taskId) => {
-        setTasks(tasks.map(task => task.id === taskId ? { ...task, completed: !task.completed } : task));
-        setCompletedTasks(completedTasks.map(task => task.id === taskId ? { ...task, completed: !task.completed } : task));
+    const toggleTaskCompletion = (task) => {
+        const updatedTask = { ...task, is_completed: !task.is_completed };
+    
+        // ✅ Optimistically update UI
+        setTasks(prevTasks => 
+            prevTasks.map(t => (t.task_id === task.task_id ? updatedTask : t))
+        );
+    
+        // ✅ Update backend
+        updateTask(task.task_id, updatedTask).then(() => {
+            console.log("✅ Task Updated:", updatedTask);
+        }).catch(error => {
+            console.error("❌ Error updating task:", error);
+        });
     };
+    
 
     return (
         <div className="flex bg-blue-gray-100 min-h-screen">
@@ -84,6 +141,8 @@ const Dashboard = ({ user }) => {
 
                     {/* My Tasks Section */}
                     <TasksComponent tasks={tasks} toggleTaskCompletion={toggleTaskCompletion} />
+                    
+
 
 
                     {/* Calendar Section */}
@@ -121,12 +180,25 @@ const Dashboard = ({ user }) => {
 // ✅ PropTypes Validation
 Dashboard.propTypes = {
     user: PropTypes.shape({
-        id: PropTypes.number.isRequired,
+        id: PropTypes.number.isRequired, // ✅ User's ID (unchanged)
         username: PropTypes.string,
         first_name: PropTypes.string,
         last_name: PropTypes.string,
         role: PropTypes.string,
-    }).isRequired
+    }).isRequired,
+    tasks: PropTypes.arrayOf(
+        PropTypes.shape({
+            task_id: PropTypes.number.isRequired,  // ✅ Ensure task_id is a number
+            user_id: PropTypes.number.isRequired,  // ✅ User ID instead of assigned_to
+            assigned_to: PropTypes.number.isRequired,  // ✅ Assigned user ID instead of user_id
+            task_description: PropTypes.string.isRequired,
+            due_date: PropTypes.string.isRequired, // ✅ Due date should be a string (formatted later)
+            is_completed: PropTypes.bool.isRequired, // ✅ Boolean for completed status
+            account_id: PropTypes.number, // ✅ Optional field, if task is linked to an account
+        })
+    ).isRequired,
+    toggleTaskCompletion: PropTypes.func.isRequired, // ✅ Function to toggle task completion
 };
+
 
 export default Dashboard;
