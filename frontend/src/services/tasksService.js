@@ -1,19 +1,8 @@
 // tasksService.js
 import api from "./api";
 
-// ✅ Fetch Tasks (Assigned to a User)
-export const fetchTasks = async (userId) => {
-    try {
-        const response = await api.get(`/tasks?user_id=${userId}`, {
-            params: { assigned_to: userId },
-        });
-        console.log("✅ Fetched Tasks:", response.data);
-        return response.data;
-    } catch (error) {
-        console.error("❌ Error fetching tasks:", error.response?.data || error.message);
-        return [];
-    }
-};
+
+// CRUD Operations for Task Events
 
 // ✅ Create a Task
 export const createTask = async (task) => {
@@ -32,6 +21,21 @@ export const createTask = async (task) => {
         return null;
     }
 };
+
+// ✅ Fetch Tasks (Assigned to a User)
+export const fetchTasks = async (userId) => {
+    try {
+        const response = await api.get(`/tasks?user_id=${userId}`, {
+            params: { assigned_to: userId },
+        });
+        console.log("✅ Fetched Tasks:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching tasks:", error.response?.data || error.message);
+        return [];
+    }
+};
+
 
 // ✅ Update a Task (Mark Complete / Edit)
 export const updateTask = async (taskId, updatedData) => {
@@ -55,29 +59,59 @@ export const deleteTask = async (taskId) => {
     }
 };
 
+// FILTER FOR DESIRED USER CALLS
+
 // ✅ Fetch All Branches
 export const fetchBranches = async () => {
     try {
         const response = await api.get("/branches");
         console.log("✅ Fetched Branches:", response.data);
-        return response.data;
+        return response.data.map(branch => ({
+            branch_id: branch.branch_id,
+            branch_name: branch.branch_name
+        }));
     } catch (error) {
         console.error("❌ Error fetching branches:", error.response?.data || error.message);
         return [];
     }
 };
 
-// ✅ Fetch All Departments (No Filtering by Branch-Completed on Frontend)
+// export const fetchBranches = async () => {
+//     try {
+//         const response = await api.get("/branches");
+//         console.log("✅ Fetched Branches:", response.data);
+//         return response.data;
+//     } catch (error) {
+//         console.error("❌ Error fetching branches:", error.response?.data || error.message);
+//         return [];
+//     }
+// };
+
+// ✅ Fetch All Departments 
 export const fetchDepartments = async () => {
     try {
         const response = await api.get("/departments");
         console.log("✅ Fetched Departments:", response.data);
-        return response.data;
+        return response.data.map(dept => ({
+            department_id: dept.department_id,
+            department_name: dept.department_name
+        }));
     } catch (error) {
         console.error("❌ Error fetching departments:", error.response?.data || error.message);
         return [];
     }
 };
+// ✅ Fetch All Departments (No Filtering by Branch-Completed on Frontend)
+// export const fetchDepartments = async () => {
+//     try {
+//         const response = await api.get("/departments");
+//         console.log("✅ Fetched Departments:", response.data);
+//         return response.data;
+//     } catch (error) {
+//         console.error("❌ Error fetching departments:", error.response?.data || error.message);
+//         return [];
+//     }
+// };
 
 
 // ✅ Fetch Employees in a Specific Department and Include Department Name
@@ -93,6 +127,58 @@ export const fetchEmployees = async (departmentId) => {
         return [];
     }
 };
+// ✅ Fetch Users in a Specific Branch and Department and Include Department Name
+export const fetchUsers = async (branchId = null, departmentId = null) => {
+    try {
+        const params = {};
+        if (branchId) params.branch_id = branchId;
+        if (departmentId) params.department_id = departmentId;
+
+        const response = await api.get("/users", { params });
+        console.log("✅ Fetched Users:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching users:", error.response?.data || error.message);
+        return [];
+    }
+};
+
+
+
+// Fetch all departments
+// export const fetchDepartments = async () => {
+//     try {
+//         const response = await api.get("/departments.department_name");
+//         return response.data;
+//     }
+//     catch (error) {
+//         console.error("Error fetching departments:", error);
+//         return [];
+//     }
+// }
+
+// Fetch all roles
+export const fetchRoles = async () => {
+    try {
+        const response = await api.get("/user_roles.role_name");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching roles", error);
+        return [];
+    }
+}
+
+// ✅ Fetch All Branches
+// export const fetchBranches = async () => {
+//     try {
+//         const response = await api.get("/branches");
+//         console.log("✅ Fetched Branches:", response.data);
+//         return response.data;
+//     } catch (error) {
+//         console.error("❌ Error fetching branches:", error.response?.data || error.message);
+//         return [];
+//     }
+// };
 
 
 // // Fetch Tasks

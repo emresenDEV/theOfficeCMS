@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import AccountsPage from "./pages/AccountsPage";
 import AccountDetailsPage from "./pages/AccountDetailsPage";
 import AssignedAccountsPage from "./pages/AssignedAccountsPage";
+import CalendarPage from "./pages/CalendarPage";
 import CommissionsPage from "./pages/CommissionsPage";
 import CreateInvoicePage from "./pages/CreateInvoicePage";
 import Dashboard from "./pages/Dashboard";
@@ -20,6 +21,7 @@ import Sidebar from "./components/Sidebar";
 import { fetchUserSession } from "./services/authService";
 
 import "./App.css";
+
 
 function App() {
   const [user, setUser] = useState(null);
@@ -133,6 +135,7 @@ function App() {
         <Route path="/settings" element={<ProtectedRoute user={user}><SettingsPage user={user} /></ProtectedRoute>} />
         <Route path="/employees" element={<ProtectedRoute user={user}><EmployeesPage user={user} /></ProtectedRoute>} />
         <Route path="/tasks" element={<ProtectedRoute user={user}><TasksPage user={user} /></ProtectedRoute>} />
+        <Route path="/calendar" element={<ProtectedRoute user={user}><CalendarPage user={user} /></ProtectedRoute>} />
 
 
         {/* ✅ Invoice Routes */}

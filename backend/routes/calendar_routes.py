@@ -18,23 +18,15 @@ def options_tasks():
 
 @calendar_bp.route("/events", methods=["GET"])
 def get_calendar_events():
-    user_id = request.args.get("user_id")
+    user_id = request.args.get("user_id", type=int)
 
     if not user_id:
         return jsonify({"message": "User ID is required"}), 400
 
-    try:
-        user_id = int(user_id)  # 🔥 Convert user_id to integer
-    except ValueError:
-        return jsonify({"message": "Invalid user ID"}), 400
+    events = CalendarEvent.query.filter_by(user_id=user_id).all()  # ✅ Fetch events for the selected user
 
-    events = CalendarEvent.query.filter_by(user_id=user_id).all()
-
-    # 🔹 Debugging: Print fetched events
     if not events:
         print(f"❌ No events found for user_id: {user_id}")
-    else:
-        print(f"✅ Found {len(events)} events for user_id: {user_id}")
 
     return jsonify([
         {
@@ -45,10 +37,12 @@ def get_calendar_events():
             "end_time": event.end_time.strftime('%H:%M'),
             "start_date": event.start_date.strftime('%Y-%m-%d'),
             "end_date": event.end_date.strftime('%Y-%m-%d'),
-            "notes": event.notes
+            "notes": event.notes,
+            "user_id": event.user_id 
         }
         for event in events
     ])
+
 
 
 # ✅ Fetch Calendar Events for Logged-in User

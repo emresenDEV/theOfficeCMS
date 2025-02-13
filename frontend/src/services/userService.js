@@ -1,7 +1,18 @@
 // userService.js
 import api from "./api";
 
-// Fetch all user_roles
+// ✅ Fetch all users
+export const fetchUsers = async () => {
+    try {
+        const response = await api.get("/users");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching user_roles:", error);
+        return [];
+    }
+};
+
+// ✅ Fetch all user roles
 export const fetchUserRoles = async () => {
     try {
         const response = await api.get("/user_roles");
@@ -10,38 +21,15 @@ export const fetchUserRoles = async () => {
         console.error("Error fetching user_roles:", error);
         return [];
     }
-}
+};
 
-// Fetch all users
-export const fetchUsers = async () => {
+// ✅ Fetch user profile
+export const fetchUserProfile = async (userId) => {
     try {
-        const response = await api.get("/users");
+        const response = await api.get(`/users/${userId}`);
         return response.data;
     } catch (error) {
-        console.error("Error fetching users:", error);
-        return [];
+        console.error("Error fetching user profile:", error);
+        return null;
     }
-}
-
-// Fetch all departments
-export const fetchDepartments = async () => {
-    try {
-        const response = await api.get("/departments.department_name");
-        return response.data;
-    }
-    catch (error) {
-        console.error("Error fetching departments:", error);
-        return [];
-    }
-}
-
-// Fetch all roles
-export const fetchRoles = async () => {
-    try {
-        const response = await api.get("/user_roles.role_name");
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching roles", error);
-        return [];
-    }
-}
+};
