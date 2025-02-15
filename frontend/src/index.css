@@ -4,7 +4,55 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities"; */
 
+/* Define CSS variables for light and dark themes */
+:root {
+    --color-primary: #2563EB; /* Modern blue */
+    --color-primary-dark: #1E40AF; /* Dark blue */
+    --color-background: #F3F4F6; /* Light gray */
+    --color-background-dark: #1E40AF; /* Dark blue */
+    --color-text: #1E40AF; /* Dark blue */
+    --color-text-dark: #F3F4F6; /* Light gray */
+    --color-button: #2563EB; /* Modern blue */
+    --color-button-hover: #1E40AF; /* Dark blue */
+    --color-button-dark: #2563EB; /* Modern blue */
+    --color-button-hover-dark: #1C3FAF; /* Slightly darker blue */
+    }
 
+/* Apply CSS variables to Tailwind classes */
+@layer components {
+    .text-theme {
+    color: var(--color-text);
+    }
+
+    .dark .text-theme {
+    color: var(--color-text-dark);
+    }
+
+    .bg-theme {
+    background-color: var(--color-background);
+    }
+
+    .dark .bg-theme {
+    background-color: var(--color-background-dark);
+    }
+
+    .button-theme {
+    background-color: var(--color-button);
+    color: white;
+    }
+
+    .button-theme:hover {
+    background-color: var(--color-button-hover);
+    }
+
+    .dark .button-theme {
+    background-color: var(--color-button-dark);
+    }
+
+    .dark .button-theme:hover {
+    background-color: var(--color-button-hover-dark);
+    }
+}
 
 /* High Contrast Mode */
 .high-contrast {
