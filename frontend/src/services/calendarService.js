@@ -42,18 +42,24 @@ export const fetchMeetings = async (userId) => {
 // ✅ Update an Existing Calendar Event
 export const updateCalendarEvent = async (eventId, updatedData) => {
     try {
-        const response = await api.put(`/calendar/events/${eventId}`, updatedData);
+        const response = await api.put(`/calendar/events/${eventId}`, updatedData, {
+            headers: {
+                "Content-Type": "application/json"
+            },
+            withCredentials: true,
+        });
         return response.data;
     } catch (error) {
-        console.error("Error updating event:", error);
+        console.error("❌ Error updating event:", error.response?.data || error.message);
         return null;
     }
 };
 
+
 // ✅ Delete a Calendar Event
 export const deleteCalendarEvent = async (eventId) => {
     try {
-        await api.delete(`/calendar/events/${eventId}`);
+        await api.delete(`/events/${eventId}`);
         return { success: true };
     } catch (error) {
         console.error("Error deleting event:", error.response?.data || error.message);

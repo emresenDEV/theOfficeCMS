@@ -2,20 +2,22 @@ from flask import Blueprint, request, jsonify
 from models import CalendarEvent  
 from database import db
 from datetime import datetime
+from flask_cors import cross_origin
 
 calendar_bp = Blueprint("calendar", __name__)
 
-@calendar_bp.route("/", methods=["OPTIONS"])
-def options_tasks():
-    """✅ Handle CORS preflight for /tasks"""
+
+@calendar_bp.route("/events/<int:event_id>", methods=["OPTIONS"])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+def options_update_event(event_id):
     response = jsonify({"message": "CORS preflight OK"})
-    response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "http://localhost:5174")
-    response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+    response.headers["Access-Control-Allow-Origin"] = "http://localhost:5174"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Credentials"] = "true"
     return response, 200
 
-
+# READ
 @calendar_bp.route("/events", methods=["GET"])
 def get_calendar_events():
     user_id = request.args.get("user_id", type=int)
@@ -86,7 +88,7 @@ def get_calendar_events():
 
 
 # ✅ Create a New Calendar Event
-@calendar_bp.route("/calendar/events", methods=["POST"])
+@calendar_bp.route("/events", methods=["POST"])
 def create_calendar_event():
     data = request.json
     if not data.get("event_title") or not data.get("start_time") or not data.get("end_time"):
@@ -111,13 +113,19 @@ def create_calendar_event():
     return jsonify({"message": "Event created successfully", "event_id": new_event.event_id}), 201
 
 # ✅ Update an Existing Calendar Event
-@calendar_bp.route("/calendar/events/<int:event_id>", methods=["PUT"])
+@calendar_bp.route("/events/<int:event_id>", methods=["PUT", "OPTIONS"])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def update_calendar_event(event_id):
+    print(f"🔍 Received PUT request for event ID: {event_id}")
     event = CalendarEvent.query.get(event_id)
     if not event:
         return jsonify({"error": "Event not found"}), 404
 
-    data = request.json
+    data = request.json  # ✅ Ensure JSON is parsed correctly
+    if not data:
+        return jsonify({"error": "Invalid JSON data"}), 400
+
+    # ✅ Update event fields safely
     event.event_title = data.get("event_title", event.event_title)
     event.location = data.get("location", event.location)
     event.start_time = datetime.strptime(data["start_time"], "%H:%M").time() if "start_time" in data else event.start_time
@@ -132,8 +140,11 @@ def update_calendar_event(event_id):
     db.session.commit()
     return jsonify({"message": "Event updated successfully"}), 200
 
+
+
+
 # ✅ Delete a Calendar Event
-@calendar_bp.route("/calendar/events/<int:event_id>", methods=["DELETE"])
+@calendar_bp.route("/events/<int:event_id>", methods=["DELETE"])
 def delete_calendar_event(event_id):
     event = CalendarEvent.query.get(event_id)
     if not event:

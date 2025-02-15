@@ -17,19 +17,31 @@ import PropTypes from "prop-types";
 import { format } from "date-fns";
 
 const CalendarPage = ({ user }) => {
+    const [branches, setBranches] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [events, setEvents] = useState([]);
+    const [users, setUsers] = useState([]);
+
     const [selectedDayEvents, setSelectedDayEvents] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedDate, setSelectedDate] = useState("");
-    const [showModal, setShowModal] = useState(false);
-    const [users, setUsers] = useState([]);
-    const [branches, setBranches] = useState([]);
-    const [departments, setDepartments] = useState([]);
-    const [filteredDepartments, setFilteredDepartments] = useState([]);
-    const [filteredUsers, setFilteredUsers] = useState([]);
+
     const [selectedBranch, setSelectedBranch] = useState(user.branch_id || "");
     const [selectedDepartment, setSelectedDepartment] = useState(user.department_id || "");
     const [selectedUserId, setSelectedUserId] = useState(user.id);
+
+    const [showModal, setShowModal] = useState(false);
+
+    const [filteredDepartments, setFilteredDepartments] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
+
+    const [calendarView, setCalendarView] = useState("dayGridMonth"); // Default: Month View
+    const [selectedWeekEvents, setSelectedWeekEvents] = useState([]);
+
+    const today = format(new Date(), "yyyy-MM-dd"); // Get today's date
+    const upcomingEvents = events.filter(event => event.start_date >= today);
+    const pastEvents = events.filter(event => event.start_date < today); // Past events still appear on the calendar
+
 
     /** ✅ Fetch Users, Branches, and Departments */
     useEffect(() => {
@@ -89,6 +101,38 @@ const CalendarPage = ({ user }) => {
         }
     }, [selectedDepartment, selectedBranch, users]);
     
+    // ✅ Filter events based on calendar view
+    useEffect(() => {
+        const today = new Date();
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+        let filteredEvents = [];
+    
+        if (calendarView === "dayGridMonth") {
+            // ✅ Show all events in the current month
+            filteredEvents = events.filter(event => 
+                new Date(event.start_date) >= monthStart && 
+                new Date(event.start_date) <= monthEnd
+            );
+        } else if (calendarView === "timeGridWeek") {
+            // ✅ Show only events for the selected week
+            const weekStart = new Date(selectedDate);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            
+            filteredEvents = events.filter(event => 
+                new Date(event.start_date) >= weekStart && 
+                new Date(event.start_date) <= weekEnd
+            );
+        } else if (calendarView === "timeGridDay") {
+            // ✅ Show only events for the selected day
+            filteredEvents = events.filter(event => event.start_date === selectedDate);
+        }
+    
+        setSelectedWeekEvents(filteredEvents);
+    }, [calendarView, selectedDate, events]);
+    
 
     /** ✅ Handle Clicking on an Event */
     const handleEventClick = (clickInfo) => {
@@ -119,14 +163,15 @@ const CalendarPage = ({ user }) => {
     
         setSelectedDate(clickedDate); // ✅ Store selected date
     
-        const filteredEvents = events.filter(event => {
-            const eventDate = format(new Date(event.start_date), "yyyy-MM-dd"); // ✅ Ensure correct format
-            return eventDate === clickedDate;
-        });
+        // const filteredEvents = events.filter(event => {
+        //     const eventDate = format(new Date(event.start_date), "yyyy-MM-dd"); // ✅ Ensure correct format
+        //     return eventDate === clickedDate;
+        // });
     
-        console.log("📅 Events on Selected Date:", filteredEvents); // ✅ Debugging log
+        // console.log("📅 Events on Selected Date:", filteredEvents); // ✅ Debugging log
     
-        setSelectedDayEvents(filteredEvents);
+        // setSelectedDayEvents(filteredEvents);
+        setSelectedDayEvents(events.filter(event => event.start_date === clickedDate));
     };
     
 
@@ -201,24 +246,28 @@ const CalendarPage = ({ user }) => {
                 </div>
 
                 {/* ✅ Full Calendar Component */}
-                <FullCalendar
-                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                    initialView="dayGridMonth"
-                    headerToolbar={{
+                <div className="p-6 bg-white rounded-lg shadow-md">
+                    <FullCalendar
+                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                        initialView="dayGridMonth"
+                        headerToolbar={{
                         left: "prev,next today",
                         center: "title",
                         right: "dayGridMonth,timeGridWeek,timeGridDay",
-                    }}
-                    events={events.map(event => ({
+                        }}
+                        events={events.map(event => ({
                         id: event.event_id,
                         title: event.event_title,
                         start: new Date(`${event.start_date}T${event.start_time}`),
                         end: new Date(`${event.end_date}T${event.end_time}`),
                         extendedProps: event,
-                    }))}
-                    dateClick={handleDateClick}
-                    eventClick={handleEventClick}
-                />
+                        }))}
+                        dateClick={handleDateClick}
+                        eventClick={handleEventClick}
+                        viewDidMount={(view) => setCalendarView(view.view.type)}
+                        className="font-sans"
+                    />
+                </div>
 
                 {/* ✅ Create Event Component */}
                 <CreateCalendarEvent userId={parseInt(selectedUserId, 10)} setEvents={setEvents} />
@@ -227,6 +276,97 @@ const CalendarPage = ({ user }) => {
                 {selectedDayEvents.map(event => (
                     <SelectedEventDetails key={event.event_id} event={event} />
                 ))}
+
+                {/* ✅ Display Upcoming Events for the Selected View */}
+                <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-lg font-bold text-gray-700 mb-4">
+                        {calendarView === "dayGridMonth" && "📆 This Month’s Events"}
+                        {calendarView === "timeGridWeek" && "📅 This Week’s Events"}
+                        {calendarView === "timeGridDay" && `📍 Events on ${format(new Date(selectedDate), "EEEE, MMMM d, yyyy")}`}
+                    </h2>
+
+
+                    {/* month/week/day EVENT card */}
+                    {selectedWeekEvents.length > 0 ? (
+                        selectedWeekEvents.map((event, index) => (
+                            <div
+                            key={event.event_id}
+                            className={`p-5 rounded-lg transition-all duration-300 ease-in-out shadow-md ${
+                                index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                            } hover:shadow-lg hover:bg-gray-100 mb-4`} // 🔹 Added mb-4 for spacing between cards
+                            >
+                            {/* Date and Time Row */}
+                            <div className="flex justify-between items-center">
+                                {/* Date */}
+                                <p className="text-sm text-gray-600 font-bold"> {/* 🔹 Added font-bold */}
+                                {format(new Date(event.start_date), "EEEE, MMM. d, yyyy")}
+                                </p>
+
+                                {/* Time */}
+                                <p className="text-sm text-gray-600 font-bold"> {/* 🔹 Added font-bold */}
+                                {format(new Date(`${event.start_date}T${event.start_time}`), "h:mm a")} -{" "}
+                                {format(new Date(`${event.end_date}T${event.end_time}`), "h:mm a")}
+                                </p>
+                            </div>
+
+                            {/* Event Title */}
+                            <p className="text-sm text-gray-800 font-semibold mt-2 text-left"> {/* 🔹 Added text-left */}
+                                {event.event_title}
+                            </p>
+
+                            {/* Event Location */}
+                            <p className="text-sm text-gray-700 mt-1 text-left"> {/* 🔹 Added text-left */}
+                                📍 {event.location || "No location provided"}
+                            </p>
+
+                            {/* Account ID */}
+                            {event.account_id && (
+                                <p className="text-sm text-gray-700 mt-1 text-left"> {/* 🔹 Added text-left */}
+                                🏢 Account: {event.account_id}
+                                </p>
+                            )}
+
+                            {/* Contact Name */}
+                            {event.contact_name && (
+                                <p className="text-sm text-gray-700 mt-1 text-left"> {/* 🔹 Added text-left */}
+                                📞 Contact: {event.contact_name}
+                                </p>
+                            )}
+
+                            {/* Phone Number */}
+                            {event.phone_number && (
+                                <p className="text-sm text-gray-700 mt-1 text-left"> {/* 🔹 Added text-left */}
+                                📱 Phone: {event.phone_number}
+                                </p>
+                            )}
+
+                            {/* Notes and Edit Button Row */}
+                            <div className="flex items-center mt-2">
+                                {/* Notes */}
+                                <p className="text-sm text-gray-500 italic text-left flex-grow"> {/* 🔹 Added flex-grow */}
+                                📝 {event.notes}
+                                </p>
+
+                                {/* Edit Button */}
+                                <button
+                                className="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-opacity-50"
+                                onClick={() => {
+                                    setSelectedEvent(event);
+                                    setShowModal(true);
+                                }}
+                                >
+                                Edit
+                                </button>
+                            </div>
+                            </div>
+                        ))
+                        ) : (
+                        <p className="text-gray-500 text-center text-lg mt-4 italic">
+                            No events scheduled.
+                        </p>
+                        )}
+                </div>
+
 
                 {/* ✅ Edit Event Component */}
                 {showModal && <EditCalendarEvent event={selectedEvent} setShowModal={setShowModal} setEvents={setEvents} />}
