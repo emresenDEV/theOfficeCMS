@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+import plugin from "tailwindcss/plugin";
+
 export default {
-  darkMode: "media", // or 'media' or 'class'. Media changes based on system settings, class changes manually with a class
+  darkMode: "class", // or 'media' or 'class'. Media changes based on system settings, class changes manually with a class
   content: [
     "./index.html", 
     "./src/**/*.{js,jsx,ts,tsx}"
@@ -25,5 +27,28 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+      plugin(function ({ addUtilities }) {
+        addUtilities({
+          ".high-contrast": {
+            backgroundColor: "black !important",
+            color: "yellow !important",
+          },
+          ".high-contrast .bg-white": {
+            backgroundColor: "black !important",
+            color: "yellow !important",
+          },
+          ".high-contrast .text-gray-600": {
+            color: "yellow !important",
+          },
+          ".high-contrast .dark\\:bg-gray-800": {
+            backgroundColor: "black !important",
+            color: "yellow !important",
+          },
+          ".high-contrast .dark\\:text-gray-300": {
+            color: "yellow !important",
+          },
+      });
+    }),
+  ],
 };

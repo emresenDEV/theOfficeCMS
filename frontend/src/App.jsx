@@ -78,6 +78,29 @@ function App() {
     checkSession();
   }, []);
 
+//   useEffect(() => {
+//     async function checkSession() {
+//         try {
+//             const storedUser = localStorage.getItem("user");
+//             if (storedUser) {
+//                 setUser(JSON.parse(storedUser)); // ✅ Restore user from localStorage
+//                 return;
+//             }
+
+//             const sessionUser = await fetchUserSession();
+//             if (sessionUser) {
+//                 console.log("✅ Session Restored:", sessionUser);
+//                 setUser(sessionUser);
+//                 localStorage.setItem("user", JSON.stringify(sessionUser)); // ✅ Store session in localStorage
+//             }
+//         } catch (error) {
+//             console.error("❌ Session Check Failed:", error);
+//         } finally {
+//             setLoading(false);
+//         }
+//     }
+//     checkSession();
+// }, []);
 
 
   // ✅ 2️⃣ Logout function

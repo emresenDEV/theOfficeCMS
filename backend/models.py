@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 class Account(db.Model): 
     __tablename__ = 'accounts'
     account_id = db.Column(db.Integer, primary_key=True)
-    business_name = db.Column(db.String(100))
+    business_name = db.Column(db.String(100), nullable=False)
     contact_name = db.Column(db.String(100))
     phone_number = db.Column(db.String(20))
     email = db.Column(db.String(100))
@@ -23,6 +23,8 @@ class Account(db.Model):
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
     
+    # Relationship to invoices
+    invoices = db.relationship('Invoice', back_populates='account')
 
 class Branches(db.Model):
     __tablename__ = 'branches'
@@ -53,13 +55,16 @@ class CalendarEvent(db.Model):
 class Commissions(db.Model):
     __tablename__ = 'commissions'
     commission_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
-    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
-    commission_rate = db.Column(db.Numeric) #RATE SHOULD BE BASED ON USER ID set commission rate. 
-    commission_amount = db.Column(db.Numeric)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=False)
+    commission_rate = db.Column(db.Numeric, nullable=False) #RATE SHOULD BE BASED ON USER ID set commission rate. 
+    commission_amount = db.Column(db.Numeric, nullable=False)
     date_paid = db.Column(db.DateTime)
-    user_commission_rate = db.Column(db.Numeric, db.ForeignKey('users.commission_rate'))
-
+    
+    # Relationships
+    user = db.relationship('Users', back_populates='commissions', foreign_keys=[user_id])
+    invoice = db.relationship('Invoice', back_populates='commissions', foreign_keys=[invoice_id])
+# Commissions table stores all of the commissions for each invoice. Commissions have an ID, a user_id they are linked to, and an invoice_id they are linked to. The invoice_id links to commission to a specific account (which is connected to the invoice via na account_id). The rate is determined by the user_id and the rate associated with said user. The commission amount is calculated by multiplying the com rate by the amount of the invoice (not total_due, because we dont earn commission on taxes). The date_paid is the date the commission was paid out. This table simply stores commission data. 
 
 class Departments(db.Model):
     __tablename__ = 'departments'
@@ -76,7 +81,7 @@ class Industry(db.Model):
 class Invoice(db.Model):
     __tablename__ = 'invoices'
     invoice_id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'))
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable = False)
     service = db.Column(db.String(100), db.ForeignKey('services.service_name'))
     amount = db.Column(db.Numeric)
     tax_rate = db.Column(db.Numeric, db.ForeignKey('tax_rates.rate'))
@@ -94,9 +99,13 @@ class Invoice(db.Model):
     date_created = db.Column(db.DateTime)
     date_updated = db.Column(db.DateTime)
     payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_methods.method_id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable = False)
     commission_amount = db.Column(db.Numeric, db.ForeignKey('commissions.commission_amount'))
     due_date = db.Column(db.Date)
+    
+    # Relationships
+    account = db.relationship('Account', back_populates='invoices', foreign_keys=[account_id])
+    commissions = db.relationship('Commissions', back_populates='invoice', foreign_keys=[Commissions.invoice_id])
 
 class InvoiceServices(db.Model):
     __tablename__ = 'invoice_services'
@@ -165,7 +174,7 @@ class Users(db.Model):
     reports_to = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.department_id'), nullable=True)
     salary = db.Column(db.Numeric)
-    commission_rate = db.Column(db.Numeric)
+    commission_rate = db.Column(db.Numeric) # Commission rate is set and stored here
     is_active = db.Column(db.Boolean, default=True)
     is_department_lead = db.Column(db.Boolean, db.ForeignKey('user_roles.is_lead'))
     receives_commission = db.Column(db.Boolean, default=False)
@@ -176,11 +185,15 @@ class Users(db.Model):
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
     
+    # Relationship to Departments
     department = db.relationship("Departments", back_populates="users")
-
+    
+    # Password Hashing
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
-
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    # Relationship to Commissions
+    commissions = db.relationship("Commissions", back_populates="user")
 

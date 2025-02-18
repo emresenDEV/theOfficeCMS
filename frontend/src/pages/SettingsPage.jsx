@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import { useTheme } from "../components/ThemeContext";
 import PropTypes from "prop-types";
 
 /**
  * SettingsPage Component
  * 
  * Allows users to customize their experience by adjusting settings such as:
- * - Dark Mode (manual or system preference)
+ * - Light Mode
+ * - Dark Mode
+ * - Use System Theme (Auto)
  * - Font Size
  * - High Contrast Mode
  * 
@@ -14,27 +17,25 @@ import PropTypes from "prop-types";
  * @param {object} props.user - User information (firstName, lastName, role).
  * @returns {JSX.Element} - The rendered SettingsPage component.
  */
-
 const SettingsPage = ({ user }) => {
-  // State for dark mode, font size, high contrast, and system preference
-  const [darkMode, setDarkMode] = useState(localStorage.getItem("theme") === "dark");
+  // State for theme, font size, high contrast
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "system");
   const [fontSize, setFontSize] = useState(parseInt(localStorage.getItem("fontSize")) || 16);
   const [highContrast, setHighContrast] = useState(localStorage.getItem("highContrast") === "true");
-  const [useSystemTheme, setUseSystemTheme] = useState(localStorage.getItem("useSystemTheme") === "true");
 
   // Apply theme changes when toggled
   useEffect(() => {
-    if (useSystemTheme) {
+    if (theme === "system") {
       // Sync with system preference
       const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
       document.documentElement.classList.toggle("dark", systemDarkMode);
-      localStorage.setItem("theme", systemDarkMode ? "dark" : "light");
+      localStorage.setItem("theme", "system");
     } else {
-      // Use manual dark mode setting
-      document.documentElement.classList.toggle("dark", darkMode);
-      localStorage.setItem("theme", darkMode ? "dark" : "light");
+      // Use manual theme setting
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      localStorage.setItem("theme", theme);
     }
-  }, [darkMode, useSystemTheme]);
+  }, [theme]);
 
   // Apply high contrast mode
   useEffect(() => {
@@ -51,7 +52,7 @@ const SettingsPage = ({ user }) => {
   // Handle system preference changes
   useEffect(() => {
     const handleSystemThemeChange = (e) => {
-      if (useSystemTheme) {
+      if (theme === "system") {
         document.documentElement.classList.toggle("dark", e.matches);
       }
     };
@@ -62,18 +63,16 @@ const SettingsPage = ({ user }) => {
     return () => {
       systemThemeQuery.removeEventListener("change", handleSystemThemeChange);
     };
-  }, [useSystemTheme]);
+  }, [theme]);
 
   // Reset all settings to default
   const resetSettings = () => {
-    setDarkMode(false);
+    setTheme("system");
     setFontSize(16);
     setHighContrast(false);
-    setUseSystemTheme(true);
     localStorage.removeItem("theme");
     localStorage.removeItem("fontSize");
     localStorage.removeItem("highContrast");
-    localStorage.removeItem("useSystemTheme");
   };
 
   return (
@@ -83,32 +82,48 @@ const SettingsPage = ({ user }) => {
 
       {/* Main Settings Page */}
       <div className="flex-1 p-6 ml-64">
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-2xl font-bold text-left">Settings</h1>
 
-        {/* Dark Mode Toggle */}
-        <div className="mt-6 flex items-center justify-between bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-          <span className="font-semibold text-gray-700 dark:text-gray-300">Dark Mode</span>
-          <div className="flex items-center space-x-3">
+        {/* Theme Selection */}
+        <div className="mt-6 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+          <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4 text-left">Appearance</h2>
+
+          {/* Light Mode */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-gray-700 dark:text-gray-300">Light Mode</span>
             <button
               className={`px-4 py-2 rounded-lg transition ${
-                darkMode ? "bg-gray-700 text-white" : "bg-gray-300 text-black"
+                theme === "light" ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
               }`}
-              onClick={() => {
-                setDarkMode(!darkMode);
-                setUseSystemTheme(false); // Disable system theme when manually toggling
-              }}
-              disabled={useSystemTheme}
+              onClick={() => setTheme("light")}
             >
-              {darkMode ? "Disable" : "Enable"}
+              {theme === "light" ? "Enabled" : "Enable"}
             </button>
-            <span className="text-gray-700 dark:text-gray-300">or</span>
+          </div>
+
+          {/* Dark Mode */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-gray-700 dark:text-gray-300">Dark Mode</span>
             <button
               className={`px-4 py-2 rounded-lg transition ${
-                useSystemTheme ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
+                theme === "dark" ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
               }`}
-              onClick={() => setUseSystemTheme(!useSystemTheme)}
+              onClick={() => setTheme("dark")}
             >
-              {useSystemTheme ? "Using System" : "Use System Theme"}
+              {theme === "dark" ? "Enabled" : "Enable"}
+            </button>
+          </div>
+
+          {/* Use System Theme (Auto) */}
+          <div className="flex items-center justify-between">
+            <span className="text-gray-700 dark:text-gray-300">Use System Theme (Auto)</span>
+            <button
+              className={`px-4 py-2 rounded-lg transition ${
+                theme === "system" ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
+              }`}
+              onClick={() => setTheme("system")}
+            >
+              {theme === "system" ? "Auto" : "Set to Auto"}
             </button>
           </div>
         </div>

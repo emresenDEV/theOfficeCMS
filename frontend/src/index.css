@@ -60,3 +60,19 @@
     background-color: black !important;
     color: yellow !important;
 }
+.high-contrast .bg-white {
+    background-color: black !important;
+    color: yellow !important;
+}
+.high-contrast .text-gray-600 {
+    color: yellow !important;
+}
+
+.high-contrast .dark\:bg-gray-800 {
+    background-color: black !important;
+    color: yellow !important;
+}
+
+.high-contrast .dark\:text-gray-300 {
+    color: yellow !important;
+}
