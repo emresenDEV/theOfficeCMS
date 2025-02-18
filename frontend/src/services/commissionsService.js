@@ -2,30 +2,30 @@
 import api from "./api";
 
 // ✅ Fetch User's Commissions
-// export const fetchCommissions = async (userId) => {
-//     try {
-//         console.log(`🔍 Fetching commissions for user ${userId}...`);
+export const fetchCommissions = async (userId) => {
+    try {
+        console.log(`🔍 Fetching commissions for user ${userId}...`);
         
-//         const response = await api.get(`/commissions?user_id=${userId}`);
+        const response = await api.get(`/commissions?user_id=${userId}`);
         
-//         if (!response.data || !Array.isArray(response.data)) {
-//             console.warn("⚠️ API returned no valid data:", response.data);
-//             return [];
-//         }
+        if (!response.data || !Array.isArray(response.data)) {
+            console.warn("⚠️ API returned no valid data:", response.data);
+            return [];
+        }
 
-//         // 🚀 Ensure `date_paid` is properly converted to a Date object
-//         const formattedData = response.data.map(com => ({
-//             ...com,
-//             date_paid: com.date_paid ? new Date(com.date_paid + "T00:00:00Z") : null,  // Convert string to Date object
-//         }));
+        // 🚀 Ensure `date_paid` is properly converted to a Date object
+        const formattedData = response.data.map(com => ({
+            ...com,
+            date_paid: com.date_paid ? new Date(com.date_paid + "T00:00:00Z") : null,  // Convert string to Date object
+        }));
 
-//         console.log("✅ Commissions Data Loaded:", formattedData);
-//         return formattedData;
-//     } catch (error) {
-//         console.error("❌ Error fetching commissions:", error);
-//         return [];
-//     }
-// };
+        console.log("✅ Commissions Data Loaded:", formattedData);
+        return formattedData;
+    } catch (error) {
+        console.error("❌ Error fetching commissions:", error);
+        return [];
+    }
+};
 
 // export const fetchCurrentMonthCommissions = (userId) =>
 //     api.get(`/commissions/current_month?user_id=${userId}`).then(res => res.data);

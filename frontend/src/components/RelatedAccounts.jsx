@@ -1,10 +1,19 @@
 import PropTypes from "prop-types";
 
 const RelatedAccounts = ({ commissions }) => {
-    // ✅ Group invoices by account
+    console.log("🔍 Received Commissions in RelatedAccounts:", commissions);
+
+    if (!Array.isArray(commissions) || commissions.length === 0) {
+        console.warn("⚠️ No commissions available.");
+        return <p className="text-center text-gray-500">No commission data available.</p>;
+    }
+
+    // ✅ Group invoices by account while ensuring correct filtering
     const groupedAccounts = commissions.reduce((acc, com) => {
-        const account = com.invoice?.account || {};
-        const accountId = account.account_id || "unknown";
+        const account = com?.invoice?.account;
+        if (!account) return acc; // ✅ Skip if no account
+
+        const accountId = account.account_id;
 
         if (!acc[accountId]) {
             acc[accountId] = {
@@ -14,11 +23,21 @@ const RelatedAccounts = ({ commissions }) => {
             };
         }
 
-        acc[accountId].invoices.push({
-            invoiceId: com.invoice?.invoice_id || "N/A",
-            finalTotal: com.invoice?.final_total || 0,
-            commissionAmount: com.commission_amount || 0,
-        });
+        // ✅ Ensure invoices meet selected criteria (i.e., paid invoices)
+        if (com.invoice?.paid) {
+            acc[accountId].invoices.push({
+                invoiceId: com.invoice.invoice_id ?? "N/A",
+                finalTotal: com.invoice.final_total ? Number(com.invoice.final_total).toFixed(2) : "0.00",
+                commissionAmount: com.commission_amount ? Number(com.commission_amount).toFixed(2) : "0.00",
+                datePaid: com.invoice.date_paid
+                    ? new Date(com.invoice.date_paid).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                    })
+                    : "Not Paid",
+            });
+        }
 
         return acc;
     }, {});
@@ -29,7 +48,7 @@ const RelatedAccounts = ({ commissions }) => {
             {Object.keys(groupedAccounts).length > 0 ? (
                 Object.values(groupedAccounts).map((account, index) => (
                     <div key={index} className="border rounded-lg p-4 mb-4 bg-white shadow-lg">
-                        {/* Account Section */}
+                        {/* ✅ Account Section with View Account Button */}
                         <div className="flex justify-between items-center">
                             <h2 className="text-lg font-bold">
                                 <a href={`/account/${account.accountId}`} className="text-blue-600 underline">
@@ -45,30 +64,37 @@ const RelatedAccounts = ({ commissions }) => {
                         </div>
                         <hr className="my-2" />
 
-                        {/* Invoice List */}
+                        {/* ✅ Invoice List */}
                         <div className="mt-2">
-                            {account.invoices.map((invoice, idx) => (
-                                <div key={idx} className="flex justify-between items-center p-2 border-b">
-                                    <div>
-                                        <p className="text-sm font-medium">
-                                            Invoice{" "}
-                                            <a href={`/invoice/${invoice.invoiceId}`} className="text-blue-600 underline">
-                                                #{invoice.invoiceId}
-                                            </a>
-                                        </p>
-                                        <p className="text-gray-600 text-xs">
-                                            Total: <span className="font-semibold">${invoice.finalTotal.toFixed(2)}</span> |
-                                            Commission: <span className="text-green-600 font-semibold">${invoice.commissionAmount.toFixed(2)}</span>
-                                        </p>
+                            {account.invoices.length > 0 ? (
+                                account.invoices.map((invoice, idx) => (
+                                    <div key={idx} className="flex justify-between items-center p-2 border-b">
+                                        <div>
+                                            <p className="text-sm font-medium text-left">
+                                                Invoice{" "}
+                                                <a href={`/invoice/${invoice.invoiceId}`} className="text-blue-600 underline">
+                                                    #{invoice.invoiceId}
+                                                </a>
+                                            </p>
+                                            <p className="text-gray-600 text-xs">
+                                                <span className="font-semibold">Total:</span> ${invoice.finalTotal} |
+                                                <span className="text-green-600 font-semibold"> Commission:</span> ${invoice.commissionAmount}
+                                            </p>
+                                            <p className="text-gray-500 text-xs text-left">
+                                                <span className="font-semibold">Date Paid:</span> {invoice.datePaid}
+                                            </p>
+                                        </div>
+                                        <a
+                                            href={`/invoice/${invoice.invoiceId}`}
+                                            className="px-3 py-1 bg-gray-200 rounded shadow"
+                                        >
+                                            View Invoice
+                                        </a>
                                     </div>
-                                    <a
-                                        href={`/invoice/${invoice.invoiceId}`}
-                                        className="px-3 py-1 bg-gray-200 rounded shadow"
-                                    >
-                                        View Invoice
-                                    </a>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-500">No paid invoices available.</p>
+                            )}
                         </div>
                     </div>
                 ))
@@ -99,6 +125,5 @@ RelatedAccounts.propTypes = {
         })
     ).isRequired,
 };
-
 
 export default RelatedAccounts;
