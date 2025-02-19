@@ -60,7 +60,7 @@ def get_account_by_id(account_id):
     })
 
 # ✅ Get Account Details API
-@account_bp.route("/<int:account_id>", methods=["GET"])
+@account_bp.route("/details/<int:account_id>", methods=["GET"])
 def get_account_details(account_id):
     account = Account.query.get(account_id)
     
@@ -112,9 +112,9 @@ def get_account_details(account_id):
         "city": account.city,
         "state": account.state,
         "zip_code": account.zip_code,
-        "industry": industry_name if industry_name else "N/A",  # ✅ Return "N/A" if missing
-        "sales_person": sales_person if sales_person else "N/A",  # ✅ Return "N/A" if missing
-        "branch": branch_info if branch_info else "N/A",  # ✅ Return "N/A" if missing
+        "industry": industry_name if industry_name else "N/A",  
+        "sales_person": sales_person if sales_person else "N/A", 
+        "branch": branch_info if branch_info else "N/A", 
         "notes": account.notes if account.notes else "No notes available",
         "date_created": account.date_created,
         "date_updated": account.date_updated,

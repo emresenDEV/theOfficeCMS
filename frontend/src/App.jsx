@@ -172,7 +172,7 @@ function App() {
         {/* ✅ Accounts Routes */}
         <Route path="/accounts" element={<ProtectedRoute user={user}><AccountsPage user={user} /></ProtectedRoute>} />
         <Route path="/accounts/assigned" element={<ProtectedRoute user={user}><AssignedAccountsPage user={user} /></ProtectedRoute>} />
-        <Route path="/account/:accountId" element={<ProtectedRoute user={user}><AccountDetailsPage user={user} /></ProtectedRoute>} />
+        <Route path="/accounts/details/:accountId" element={<ProtectedRoute user={user}><AccountDetailsPage user={user} /></ProtectedRoute>} />
 
         {/* ✅ Commissions */}
         <Route path="/commissions" element={<ProtectedRoute user={user}><CommissionsPage user={user} /></ProtectedRoute>} />

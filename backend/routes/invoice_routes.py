@@ -7,7 +7,7 @@ invoice_bp = Blueprint("invoice", __name__)
 
 
 # Invoices (PLURAL) API
-@invoice_bp.route("/invoices", methods=["GET"])  # ✅ Correct
+@invoice_bp.route("/", methods=["GET"])  # ✅ Correct
 def get_invoices():
     user_id = request.args.get("user_id")
 
@@ -47,6 +47,31 @@ def get_invoice_by_id(invoice_id):
         "due_date": invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date else None,
         "payment_method": invoice.payment_method
     }), 200
+    
+# ✅ Fetch invoices by account ID
+@invoice_bp.route("/account/<int:account_id>", methods=["GET"])
+def get_invoices_by_account(account_id):
+    invoices = Invoice.query.filter_by(account_id=account_id).all()
+
+    if not invoices:
+        return jsonify([]), 200  # ✅ Return an empty list instead of a 404 error
+
+    return jsonify([
+        {
+            "invoice_id": inv.invoice_id,
+            "account_id": inv.account_id,
+            "service": inv.service,
+            "amount": float(inv.amount),
+            "final_total": float(inv.final_total) if inv.final_total is not None else 0.00,
+            "status": inv.status,
+            "user_id": inv.user_id,
+            "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else None,
+            "payment_method": inv.payment_method if inv.payment_method else None
+        } for inv in invoices
+    ]), 200
+            
+            
+
 
 # Update Invoice (SINGLE) API
 @invoice_bp.route("/invoices/<int:invoice_id>", methods=["PUT"])

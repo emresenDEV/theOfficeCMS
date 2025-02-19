@@ -38,7 +38,7 @@ export const fetchAssignedAccounts = async (userId) => {
 // ✅ Fetch Account Details by Account ID
 export const fetchAccountDetails = async (accountId) => {
     try {
-        const response = await api.get(`/accounts/${accountId}`);
+        const response = await api.get(`/accounts/details/${accountId}`);
         console.log(`✅ Fetched Account Details for ID ${accountId}:`, response.data);
         return response.data;
     } catch (error) {

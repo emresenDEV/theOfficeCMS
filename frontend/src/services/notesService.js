@@ -14,7 +14,8 @@ export const fetchNotes = async () => {
 // Fetch notes for a specific account
 export const fetchNotesByAccount = async (accountId) => {
     try {
-        const response = await api.get(`/notes?account_id=${accountId}`);
+        const response = await api.get(`/notes/account/${accountId}`);
+        console.log(`✅ Fetched Notes for Account ${accountId}:`, response.data);
         return response.data;
     } catch (error) {
         console.error("Error fetching notes for account:", error);

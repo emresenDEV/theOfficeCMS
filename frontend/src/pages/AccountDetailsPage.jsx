@@ -49,7 +49,7 @@ const AccountDetailsPage = () => {
     }
 
     return (
-        <div className="p-6 max-w-4xl mx-auto bg-white shadow-lg rounded-lg">
+        <div className="p-6 max-w-4xl mx-auto bg-white shadow-lg rounded-lg ml-64">
             {/* ✅ Account Details */}
             <h1 className="text-2xl font-bold text-blue-700">{account.business_name}</h1>
             <p className="text-gray-700"><strong>Contact:</strong> {account.contact_name || "N/A"}</p>
@@ -64,7 +64,8 @@ const AccountDetailsPage = () => {
                     {invoices.map(inv => (
                         <li key={inv.invoice_id} className="flex justify-between items-center border-b p-3">
                             <span className="font-medium">
-                                Invoice #{inv.invoice_id} - ${inv.final_total.toFixed(2)}
+                                Invoice #{inv.invoice_id} - $
+                                {inv.final_total ? inv.final_total.toFixed(2) : "0.00"}
                             </span>
                             <span 
                                 className={`px-2 py-1 text-sm font-semibold rounded 

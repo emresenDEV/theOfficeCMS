@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchAccounts } from "../services/accountService";
-import { fetchInvoices } from "../services/invoiceService";
+
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
@@ -12,13 +12,13 @@ const AccountsPage = ({ user }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!user) return; // ✅ Ensure user exists before making API call
+        if (!user) return; 
         fetchAccounts().then(setAccounts);
-    }, [user]); // ✅ Runs when user state changes
+    }, [user]); 
     
     
     
-
+// TODO: Add section to show sales representative of account
     useEffect(() => {
         const lowerQuery = searchQuery.toLowerCase();
         const filtered = accounts.filter(acc =>
@@ -29,8 +29,7 @@ const AccountsPage = ({ user }) => {
             acc.address.toLowerCase().includes(lowerQuery) ||
             acc.city.toLowerCase().includes(lowerQuery) ||
             acc.state.toLowerCase().includes(lowerQuery) ||
-            acc.zip_code.includes(searchQuery) ||
-            (acc.invoice_number && acc.invoice_number.includes(searchQuery))
+            acc.zip_code.includes(searchQuery)
         );
         setFilteredAccounts(filtered);
     }, [searchQuery, accounts]);
@@ -40,6 +39,7 @@ const AccountsPage = ({ user }) => {
             <Sidebar user={user} />
             <div className="flex-1 p-6 ml-64">
                 <h1 className="text-2xl font-bold">Accounts</h1>
+                {/* ✅ Search Bar */}
                 <input
                     type="text"
                     placeholder="Search Accounts"
@@ -47,16 +47,35 @@ const AccountsPage = ({ user }) => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full p-2 border rounded my-4"
                 />
-                <div>
+                {/* ✅ Account List Layout */}
+                <div className="space-y-4">
                     {filteredAccounts.map(account => (
-                        <div key={account.account_id} className="border p-4 rounded-lg shadow my-2">
-                            <h2 className="text-lg font-semibold">{account.business_name}</h2>
-                            <p>Contact: {account.contact_name} | Phone: {account.phone_number}</p>
-                            <p>Email: {account.email}</p>
-                            <p>Address: {account.address}, {account.city}, {account.state} {account.zip_code}</p>
-                            <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => navigate(`/create-invoice?account_id=${account.account_id}`)} >
-                                Create Invoice
+                        <div 
+                            key={account.account_id} 
+                            className="border p-4 rounded-lg shadow flex justify-between items-center bg-white"
+                        >
+                            {/* 🔹 Account Details (Left-aligned) */}
+                            <div className="text-left">
+                                <h2 className="text-lg font-semibold">{account.business_name}</h2>
+                                <p className="text-gray-600">
+                                    <span className="font-medium">Contact:</span> {account.contact_name} | 
+                                    <span className="font-medium"> Phone:</span> {account.phone_number}
+                                </p>
+                                <p className="text-gray-500"><span className="font-medium">Email:</span> {account.email}</p>
+                                <p className="text-gray-500"><span className="font-medium">Address:</span> {account.address}, {account.city}, {account.state} {account.zip_code}</p>
+                            </div>
+
+                            {/* 🔹 Button (Right-aligned) */}
+                            <button 
+                                className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg"
+                                onClick={() => {
+                                    console.log(`Navigating to /accounts/details/${account.account_id}`);
+                                    navigate(`/accounts/details/${account.account_id}`);
+                                }}
+                            >
+                                View Account
                             </button>
+
                         </div>
                     ))}
                 </div>
