@@ -11,6 +11,7 @@ from routes.calendar_routes import calendar_bp
 from routes.commission_routes import commission_bp
 from routes.department_routes import department_bp
 from routes.employee_routes import employee_bp
+from routes.industry_routes import industry_bp
 from routes.invoice_routes import invoice_bp
 from routes.notes_routes import notes_bp
 from routes.sales_routes import sales_bp 
@@ -64,6 +65,7 @@ app.register_blueprint(calendar_bp, url_prefix="/calendar")
 app.register_blueprint(commission_bp, url_prefix="/commissions")
 app.register_blueprint(department_bp, url_prefix="/departments")
 app.register_blueprint(employee_bp, url_prefix="/employees")
+app.register_blueprint(industry_bp, url_prefix="/industries")
 app.register_blueprint(invoice_bp, url_prefix="/invoices")
 app.register_blueprint(notes_bp, url_prefix="/notes")
 app.register_blueprint(sales_bp, url_prefix="/sales")
