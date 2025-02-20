@@ -290,7 +290,7 @@ departments: PropTypes.arrayOf(
     PropTypes.shape({
     department_id: PropTypes.number.isRequired,
     department_name: PropTypes.string.isRequired,
-    branch_id: PropTypes.number.isRequired,
+    // branch_id: PropTypes.number.isRequired, //departments table doesnt have branch_id column
     })
 ).isRequired,
 
