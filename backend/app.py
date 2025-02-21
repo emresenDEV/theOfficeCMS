@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_session import Session
 from flask_cors import CORS
+from flask_cors import cross_origin
 from config import Config
 from database import db
 import logging
@@ -76,6 +77,13 @@ app.register_blueprint(user_bp, url_prefix="/users")
 @app.route('/')
 def home():
     return jsonify({'message': 'Flask Backend Running!'})
+
+# CORS Test Route
+@app.route('/test-cors', methods=['GET', 'OPTIONS'])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+def test_cors():
+    return jsonify({"message": "CORS is working!"}), 200
+
 
 if __name__ == "__main__":
     with app.app_context():  # ✅ Proper Context

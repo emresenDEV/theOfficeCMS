@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { 
     fetchCalendarEvents, 
     fetchDepartments,
-    fetchBranches,
     fetchUsers
 } from "../services/calendarService";
+import { fetchBranches } from "../services/branchService";
 import Sidebar from "../components/Sidebar";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";

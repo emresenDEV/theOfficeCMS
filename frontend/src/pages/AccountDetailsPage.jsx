@@ -3,13 +3,21 @@ import { useParams, useNavigate } from "react-router-dom";
 import { fetchAccountDetails } from "../services/accountService";
 import { fetchInvoiceByAccount } from "../services/invoiceService";
 import { fetchNotesByAccount } from "../services/notesService";
+import { fetchTasksByAccount } from "../services/tasksService";
 import PropTypes from "prop-types";
+
+import InvoicesSection from "../components/InvoicesSection";
+import NotesSection from "../components/NotesSection";
+import TasksSection from "../components/TasksSection";
+import CreateNote from "../components/CreateNote";
+import CreateTask from "../components/CreateTask";
 
 const AccountDetailsPage = () => {
     const { accountId } = useParams();
     const navigate = useNavigate();
     const [account, setAccount] = useState(null);
     const [invoices, setInvoices] = useState([]);
+    const [tasks, setTasks] = useState([]);
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -17,19 +25,10 @@ const AccountDetailsPage = () => {
         async function loadData() {
             try {
                 setLoading(true);
-
-                // ✅ Fetch account details
-                const fetchedAccount = await fetchAccountDetails(accountId);
-                setAccount(fetchedAccount);
-
-                // ✅ Fetch invoices associated with this account
-                const fetchedInvoices = await fetchInvoiceByAccount(accountId);
-                setInvoices(fetchedInvoices);
-
-                // ✅ Fetch notes/tasks linked to the account
-                const fetchedNotes = await fetchNotesByAccount(accountId);
-                setNotes(fetchedNotes);
-
+                setAccount(await fetchAccountDetails(accountId));
+                setInvoices(await fetchInvoiceByAccount(accountId));
+                setNotes(await fetchNotesByAccount(accountId));
+                setTasks(await fetchTasksByAccount(accountId));
             } catch (error) {
                 console.error("❌ Error loading account details:", error);
             } finally {
@@ -40,80 +39,57 @@ const AccountDetailsPage = () => {
         loadData();
     }, [accountId]);
 
-    if (loading) {
-        return <p className="text-gray-600 text-center">Loading account details...</p>;
-    }
-
-    if (!account) {
-        return <p className="text-red-600 text-center">Account not found.</p>;
-    }
+    if (loading) return <p className="text-gray-600 text-center">Loading account details...</p>;
+    if (!account) return <p className="text-red-600 text-center">Account not found.</p>;
 
     return (
-        <div className="p-6 max-w-4xl mx-auto bg-white shadow-lg rounded-lg ml-64">
-            {/* ✅ Account Details */}
-            <h1 className="text-2xl font-bold text-blue-700">{account.business_name}</h1>
-            <p className="text-gray-700"><strong>Contact:</strong> {account.contact_name || "N/A"}</p>
-            <p className="text-gray-700"><strong>Email:</strong> {account.email || "No email provided"}</p>
-            <p className="text-gray-700"><strong>Phone:</strong> {account.phone_number || "No phone number"}</p>
-            <p className="text-gray-700"><strong>Industry:</strong> {account.industry || "N/A"}</p>
+        <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-lg ml-64">
+            {/* ✅ Header Section */}
+            <div className="flex justify-between items-start">
+                <div className="w-1/2">
+                    <h1 className="text-3xl font-bold text-blue-700">{account.business_name}</h1>
+                    <p className="text-gray-500">Created: {account.date_created} | Updated: {account.date_updated}</p>
+                    <p className="text-gray-700"><strong>Contact:</strong> {account.contact_name}</p>
+                    <p className="text-gray-700"><strong>Phone:</strong> {account.phone_number}</p>
+                    <p className="text-gray-700"><strong>Email:</strong> {account.email}</p>
+                    <p className="text-gray-700"><strong>Address:</strong> {account.address}</p>
+                    <p className="text-gray-700">{account.city}, {account.state} {account.zip_code}</p>
+                    <p className="text-gray-700"><strong>Industry:</strong> {account.industry || "N/A"}</p>
+                    <p className="text-gray-700"><strong>Notes:</strong> {account.notes || "N/A"}</p>
+                </div>
+                <div className="w-1/2 text-right">
+                    <p className="text-lg font-semibold">Account Number: {account.account_id}</p>
+                    {/* Update Account Button */}
+                    <button
+                        className="bg-yellow-500 text-white px-4 py-2 rounded my-2"
+                        onClick={() => navigate(`/accounts/update/${account.account_id}`)}
+                    >
+                        Update Account
+                    </button>
+                    <p><strong>Sales Rep:</strong> {account.sales_rep?.first_name} {account.sales_rep?.last_name || "N/A"}</p>
+                    <p><strong>Branch:</strong> {account.branch?.branch_name || "N/A"}</p>
+                    <p>{account.branch?.address}</p>
+                    <p>{account.branch?.city}, {account.branch?.state} {account.branch?.zip_code}</p>
+                    <p>Phone Number: {account.branch?.phone_number} | Ext: {account.sales_rep?.extension || "N/A"}</p>
+                    <p>Email: {account.sales_rep?.email}</p>
+                </div>
+            </div>
 
-            {/* ✅ Invoice Section */}
-            <h2 className="text-xl font-semibold mt-6">Invoices</h2>
-            {invoices.length > 0 ? (
-                <ul className="mt-2 border rounded-lg overflow-hidden">
-                    {invoices.map(inv => (
-                        <li key={inv.invoice_id} className="flex justify-between items-center border-b p-3">
-                            <span className="font-medium">
-                                Invoice #{inv.invoice_id} - $
-                                {inv.final_total ? inv.final_total.toFixed(2) : "0.00"}
-                            </span>
-                            <span 
-                                className={`px-2 py-1 text-sm font-semibold rounded 
-                                    ${inv.status === "Paid" ? "bg-green-500 text-white" : 
-                                    inv.status === "Past Due" ? "bg-red-500 text-white" : 
-                                    "bg-yellow-500 text-black"}`}
-                            >
-                                {inv.status}
-                            </span>
-                            <button 
-                                className="bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
-                                onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
-                            >
-                                View
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className="text-gray-500 mt-2">No invoices found.</p>
-            )}
+            {/* ✅ Sections */}
+            <InvoicesSection invoices={invoices} onCreateInvoice={() => navigate("/create-invoice")} />
+            <NotesSection notes={notes} onCreateNote={() => navigate("/create-note")} />
+            <TasksSection tasks={tasks} onCreateTask={() => navigate("/create-task")} />
 
-            {/* ✅ Notes/Tasks Section */}
-            <h2 className="text-xl font-semibold mt-6">Notes & Tasks</h2>
-            {notes.length > 0 ? (
-                <ul className="mt-2 border rounded-lg overflow-hidden">
-                    {notes.map(note => (
-                        <li key={note.note_id} className="border-b p-3">
-                            <span className={note.completed ? "line-through text-gray-500" : "text-black"}>
-                                {note.note_text}
-                            </span>
-                            <span className="ml-3 text-sm">
-                                {note.completed ? "✅ Completed" : "⏳ Pending"}
-                            </span>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className="text-gray-500 mt-2">No notes or tasks available.</p>
-            )}
+            {/* ✅ Create New Note and Task Forms */}
+            <div className="mt-6">
+                <h2 className="text-xl font-semibold">Create a New Note</h2>
+                <CreateNote accountId={account.account_id} />
+            </div>
 
-            {/* ✅ Create Invoice Button */}
-            <button 
-                className="mt-6 bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded-lg"
-                onClick={() => navigate(`/create-invoice/${account.account_id}`)}
-            >
-                ➕ Create Invoice
-            </button>
+            <div className="mt-6">
+                <h2 className="text-xl font-semibold">Create a New Task</h2>
+                <CreateTask accountId={account.account_id} />
+            </div>
         </div>
     );
 };
@@ -122,7 +98,79 @@ const AccountDetailsPage = () => {
 AccountDetailsPage.propTypes = {
     user: PropTypes.shape({
         id: PropTypes.number.isRequired,
+        firstName: PropTypes.string,
+        lastName: PropTypes.string,
+        email: PropTypes.string,
+        role: PropTypes.string,
     }).isRequired,
+
+    account: PropTypes.shape({
+        account_id: PropTypes.number.isRequired,
+        business_name: PropTypes.string.isRequired,
+        contact_name: PropTypes.string,
+        phone_number: PropTypes.string,
+        email: PropTypes.string,
+        address: PropTypes.string,
+        city: PropTypes.string,
+        state: PropTypes.string,
+        zip_code: PropTypes.string,
+        industry: PropTypes.string,
+        date_created: PropTypes.string,
+        date_updated: PropTypes.string,
+        
+        // ✅ Assigned Sales Representative (Sales Rep Info)
+        sales_rep: PropTypes.shape({
+            user_id: PropTypes.number.isRequired,
+            first_name: PropTypes.string,
+            last_name: PropTypes.string,
+            email: PropTypes.string,
+            phone_number: PropTypes.string,
+            extension: PropTypes.string,
+        }),
+
+        // ✅ Branch Details for Sales Rep
+        branch: PropTypes.shape({
+            branch_id: PropTypes.number,
+            branch_name: PropTypes.string,
+            address: PropTypes.string,
+            city: PropTypes.string,
+            state: PropTypes.string,
+            zip_code: PropTypes.string,
+            phone_number: PropTypes.string,
+        }),
+    }),
+
+    invoices: PropTypes.arrayOf(
+        PropTypes.shape({
+            invoice_id: PropTypes.number.isRequired,
+            date_created: PropTypes.string,
+            date_updated: PropTypes.string,
+            due_date: PropTypes.string,
+            final_total: PropTypes.number,
+            status: PropTypes.string.isRequired,
+        })
+    ),
+
+    notes: PropTypes.arrayOf(
+        PropTypes.shape({
+            note_id: PropTypes.number.isRequired,
+            user_id: PropTypes.number,
+            username: PropTypes.string,
+            date_created: PropTypes.string.isRequired,
+            note_text: PropTypes.string.isRequired,
+        })
+    ),
+
+    tasks: PropTypes.arrayOf(
+        PropTypes.shape({
+            task_id: PropTypes.number.isRequired,
+            created_by: PropTypes.number,
+            assigned_to: PropTypes.number,
+            task_description: PropTypes.string.isRequired,
+            due_date: PropTypes.string,
+            completed: PropTypes.bool,
+        })
+    ),
 };
 
 export default AccountDetailsPage;

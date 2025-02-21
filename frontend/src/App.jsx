@@ -5,6 +5,7 @@ import AccountsPage from "./pages/AccountsPage";
 import AccountDetailsPage from "./pages/AccountDetailsPage";
 import AssignedAccountsPage from "./pages/AssignedAccountsPage";
 import CalendarPage from "./pages/CalendarPage";
+import CreateNewAccountPage from "./pages/CreateNewAccount";
 import CommissionsPage from "./pages/CommissionsPage";
 import CreateInvoicePage from "./pages/CreateInvoicePage";
 import Dashboard from "./pages/Dashboard";
@@ -17,6 +18,7 @@ import PastDueInvoicesPage from "./pages/PastDueInvoicesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import TasksPage from "./pages/TaskPage";
 import UnpaidInvoicesPage from "./pages/UnpaidInvoicesPage";
+import UpdateAccountPage from "./pages/UpdateAccountPage";
 import Sidebar from "./components/Sidebar";
 import { fetchUserSession } from "./services/authService";
 
@@ -172,7 +174,11 @@ function App() {
         {/* ✅ Accounts Routes */}
         <Route path="/accounts" element={<ProtectedRoute user={user}><AccountsPage user={user} /></ProtectedRoute>} />
         <Route path="/accounts/assigned" element={<ProtectedRoute user={user}><AssignedAccountsPage user={user} /></ProtectedRoute>} />
+        <Route path="/accounts/new" element={<ProtectedRoute user={user}><CreateNewAccountPage user={user} /></ProtectedRoute>} />
         <Route path="/accounts/details/:accountId" element={<ProtectedRoute user={user}><AccountDetailsPage user={user} /></ProtectedRoute>} />
+        <Route path="/accounts/update/:accountId" element={<ProtectedRoute user={user}><UpdateAccountPage /></ProtectedRoute>} />
+        <Route path="/accounts/create" element={<ProtectedRoute user={user}><CreateNewAccountPage /></ProtectedRoute>} />
+
 
         {/* ✅ Commissions */}
         <Route path="/commissions" element={<ProtectedRoute user={user}><CommissionsPage user={user} /></ProtectedRoute>} />

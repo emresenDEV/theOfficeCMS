@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { fetchAccounts } from "../services/accountService";
-
+import { fetchUsers } from "../services/userService";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
 
 const AccountsPage = ({ user }) => {
     const [accounts, setAccounts] = useState([]);
+    const [users, setUsers] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredAccounts, setFilteredAccounts] = useState([]);
     const navigate = useNavigate();
@@ -14,39 +15,59 @@ const AccountsPage = ({ user }) => {
     useEffect(() => {
         if (!user) return; 
         fetchAccounts().then(setAccounts);
+        fetchUsers().then(setUsers);
     }, [user]); 
     
-    
-    
-// TODO: Add section to show sales representative of account
     useEffect(() => {
         const lowerQuery = searchQuery.toLowerCase();
-        const filtered = accounts.filter(acc =>
-            acc.business_name.toLowerCase().includes(lowerQuery) ||
-            acc.contact_name.toLowerCase().includes(lowerQuery) ||
-            acc.phone_number.includes(searchQuery) ||
-            acc.email.toLowerCase().includes(lowerQuery) ||
-            acc.address.toLowerCase().includes(lowerQuery) ||
-            acc.city.toLowerCase().includes(lowerQuery) ||
-            acc.state.toLowerCase().includes(lowerQuery) ||
-            acc.zip_code.includes(searchQuery)
-        );
+        const filtered = accounts.map(acc => {
+            const salesRep = users.find(user => user.user_id === acc.user_id) || {};
+            return {
+                ...acc,
+                sales_rep: salesRep
+            };        
+        }).filter(acc =>
+                acc.business_name.toLowerCase().includes(lowerQuery) ||
+                acc.contact_name.toLowerCase().includes(lowerQuery) ||
+                acc.phone_number.includes(searchQuery) ||
+                acc.email.toLowerCase().includes(lowerQuery) ||
+                acc.address.toLowerCase().includes(lowerQuery) ||
+                acc.city.toLowerCase().includes(lowerQuery) ||
+                acc.state.toLowerCase().includes(lowerQuery) ||
+                acc.zip_code.includes(searchQuery) ||
+                (acc.sales_rep && (
+                    acc.sales_rep.first_name.toLowerCase().includes(lowerQuery) ||
+                    acc.sales_rep.last_name.toLowerCase().includes(lowerQuery)
+                ))
+            );
         setFilteredAccounts(filtered);
-    }, [searchQuery, accounts]);
+    }, [searchQuery, accounts, users]);
 
     return (
         <div className="flex">
             <Sidebar user={user} />
             <div className="flex-1 p-6 ml-64">
                 <h1 className="text-2xl font-bold">Accounts</h1>
-                {/* ✅ Search Bar */}
-                <input
-                    type="text"
-                    placeholder="Search Accounts"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full p-2 border rounded my-4"
-                />
+                {/* ✅ Search Bar and New Account Button*/}
+                <div className="flex justify-between items-center gap-4">
+                    <div className="flex-grow">
+                        <input
+                            type="text"
+                            placeholder="Search Accounts"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full p-2 border rounded my-4"
+                        />
+                    </div>
+                    <div>
+                        <button 
+                            className="bg-green-600 text-white px-4 py-2 rounded shadow-lg"
+                            onClick={() => navigate("/accounts/create")}
+                        >
+                            + New Account
+                        </button>
+                    </div>
+                </div>
                 {/* ✅ Account List Layout */}
                 <div className="space-y-4">
                     {filteredAccounts.map(account => (
@@ -63,6 +84,14 @@ const AccountsPage = ({ user }) => {
                                 </p>
                                 <p className="text-gray-500"><span className="font-medium">Email:</span> {account.email}</p>
                                 <p className="text-gray-500"><span className="font-medium">Address:</span> {account.address}, {account.city}, {account.state} {account.zip_code}</p>
+                                {/* ✅ Sales Representative Section */}
+                                {account.sales_rep ? (
+                                    <p className="text-gray-700">
+                                        <span className="font-medium">Sales Representative:</span> {account.sales_rep.first_name} {account.sales_rep.last_name}
+                                    </p>
+                                ) : (
+                                    <p className="text-gray-500">No assigned sales representative.</p>
+                                )}
                             </div>
 
                             {/* 🔹 Button (Right-aligned) */}
@@ -70,7 +99,11 @@ const AccountsPage = ({ user }) => {
                                 className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg"
                                 onClick={() => {
                                     console.log(`Navigating to /accounts/details/${account.account_id}`);
-                                    navigate(`/accounts/details/${account.account_id}`);
+                                    if (account.account_id) {
+                                        navigate(`/accounts/details/${account.account_id}`);
+                                    } else {
+                                        console.error("❌ Invalid account_id detected!");
+                                    }
                                 }}
                             >
                                 View Account

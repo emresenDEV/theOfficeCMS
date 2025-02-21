@@ -25,6 +25,26 @@ class Account(db.Model):
     
     # Relationship to invoices
     invoices = db.relationship('Invoice', back_populates='account')
+    
+    # ✅ Convert object to dictionary for JSON responses
+    def to_dict(self):
+        return {
+            "account_id": self.account_id,
+            "business_name": self.business_name,
+            "contact_name": self.contact_name,
+            "phone_number": self.phone_number,
+            "email": self.email,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+            "zip_code": self.zip_code,
+            "industry_id": self.industry_id,
+            "user_id": self.user_id,
+            "branch_id": self.branch_id,
+            "notes": self.notes,
+            "date_created": self.date_created.strftime("%Y-%m-%d %H:%M:%S") if self.date_created else None,
+            "date_updated": self.date_updated.strftime("%Y-%m-%d %H:%M:%S") if self.date_updated else None,
+        }
 
 class Branches(db.Model):
     __tablename__ = 'branches'

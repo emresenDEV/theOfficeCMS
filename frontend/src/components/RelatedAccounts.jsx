@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom"; 
 import PropTypes from "prop-types";
 
 const RelatedAccounts = ({ commissions }) => {
+    const navigate = useNavigate();
     console.log("🔍 Received Commissions in RelatedAccounts:", commissions);
 
     if (!Array.isArray(commissions) || commissions.length === 0) {
@@ -50,17 +52,20 @@ const RelatedAccounts = ({ commissions }) => {
                     <div key={index} className="border rounded-lg p-4 mb-4 bg-white shadow-lg">
                         {/* ✅ Account Section with View Account Button */}
                         <div className="flex justify-between items-center">
-                            <h2 className="text-lg font-bold">
-                                <a href={`/account/${account.accountId}`} className="text-blue-600 underline">
+                        <h2 className="text-lg font-bold">
+                                <button 
+                                    onClick={() => navigate(`/accounts/details/${account.accountId}`)} 
+                                    className="text-blue-600 underline"
+                                >
                                     {account.accountName}
-                                </a>
+                                </button>
                             </h2>
-                            <a
-                                href={`/account/${account.accountId}`}
+                            <button
+                                onClick={() => navigate(`/accounts/details/${account.accountId}`)}
                                 className="px-3 py-1 bg-blue-500 text-white rounded shadow"
                             >
                                 View Account
-                            </a>
+                            </button>
                         </div>
                         <hr className="my-2" />
 
@@ -72,9 +77,12 @@ const RelatedAccounts = ({ commissions }) => {
                                         <div>
                                             <p className="text-sm font-medium text-left">
                                                 Invoice{" "}
-                                                <a href={`/invoice/${invoice.invoiceId}`} className="text-blue-600 underline">
+                                                <button 
+                                                    onClick={() => navigate(`/invoice/${invoice.invoiceId}`)} 
+                                                    className="text-blue-600 underline"
+                                                >
                                                     #{invoice.invoiceId}
-                                                </a>
+                                                </button>
                                             </p>
                                             <p className="text-gray-600 text-xs">
                                                 <span className="font-semibold">Total:</span> ${invoice.finalTotal} |
@@ -84,12 +92,12 @@ const RelatedAccounts = ({ commissions }) => {
                                                 <span className="font-semibold">Date Paid:</span> {invoice.datePaid}
                                             </p>
                                         </div>
-                                        <a
-                                            href={`/invoice/${invoice.invoiceId}`}
+                                        <button
+                                            onClick={() => navigate(`/invoice/${invoice.invoiceId}`)}
                                             className="px-3 py-1 bg-gray-200 rounded shadow"
                                         >
                                             View Invoice
-                                        </a>
+                                        </button>
                                     </div>
                                 ))
                             ) : (

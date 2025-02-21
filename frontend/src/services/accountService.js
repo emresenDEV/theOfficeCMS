@@ -47,7 +47,30 @@ export const fetchAccountDetails = async (accountId) => {
     }
 };
 
+// ✅ Create a New Account
+export const createAccount = async (accountData) => {
+    try {
+        const response = await api.post("/accounts/", accountData);
+        console.log("✅ Account Created:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error creating account:", error.response?.data || error.message);
+        return null;
+    }
+};
 
+// ✅ Update an Existing Account
+
+export const updateAccount = async (accountId, accountData) => {
+    try {
+        const response = await api.put(`/accounts/update/${accountId}`, accountData);
+        console.log("✅ Account updated in DB:", response.data);
+        return { success: true, data: response.data };
+    } catch (error) {
+        console.error("❌ Error updating account:", error.response?.data || error.message);
+        return { success: false, message: error.response?.data || "Update failed" };
+    }
+};
 // // Fetch Accounts
 // export const fetchAccounts = async () => {
 //     try {

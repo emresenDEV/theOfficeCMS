@@ -33,3 +33,25 @@ export const fetchUserProfile = async (userId) => {
         return null;
     }
 };
+
+// ✅ Fetch Sales Representatives
+export const fetchSalesReps = async () => {
+    try {
+        const response = await api.get("/users", {
+            params: { role_id: 3 },
+        });
+        console.log("✅ Fetched Sales Representatives:", response.data);
+        return response.data.map(user => ({
+            user_id: user.user_id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            phone_number: user.phone_number,
+            extension: user.extension,
+            branch_id: user.branch_id, // If needed to match with branches
+        }));
+    } catch (error) {
+        console.error("❌ Error fetching sales representatives:", error.response?.data || error.message);
+        return [];
+    }
+};

@@ -36,6 +36,19 @@ export const fetchTasks = async (userId) => {
     }
 };
 
+// ✅ Fetch Tasks By Account
+export const fetchTasksByAccount = async (accountId) => {
+    try {
+        const response = await api.get(`/tasks/accounts/${accountId}/tasks`);
+        console.log(`✅ Fetched Tasks for Account ID ${accountId}:`, response.data);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Error fetching tasks for account ID ${accountId}:`, error.response?.data || error.message);
+        return [];
+    }
+};
+
+
 
 // ✅ Update a Task (Mark Complete / Edit)
 export const updateTask = async (taskId, updatedData) => {
@@ -75,17 +88,6 @@ export const fetchBranches = async () => {
         return [];
     }
 };
-
-// export const fetchBranches = async () => {
-//     try {
-//         const response = await api.get("/branches");
-//         console.log("✅ Fetched Branches:", response.data);
-//         return response.data;
-//     } catch (error) {
-//         console.error("❌ Error fetching branches:", error.response?.data || error.message);
-//         return [];
-//     }
-// };
 
 // ✅ Fetch All Departments 
 export const fetchDepartments = async () => {
@@ -167,57 +169,3 @@ export const fetchRoles = async () => {
         return [];
     }
 }
-
-// ✅ Fetch All Branches
-// export const fetchBranches = async () => {
-//     try {
-//         const response = await api.get("/branches");
-//         console.log("✅ Fetched Branches:", response.data);
-//         return response.data;
-//     } catch (error) {
-//         console.error("❌ Error fetching branches:", error.response?.data || error.message);
-//         return [];
-//     }
-// };
-
-
-// // Fetch Tasks
-// export const fetchTasks = async (userId) => {
-//     try {
-//         const response = await fetch(`http://127.0.0.1:5001/notes?assigned_to=${userId}`);
-        
-//         if (!response.ok) {
-//             throw new Error("Failed to fetch tasks.");
-//         }
-
-//         return await response.json();
-//     } catch (error) {
-//         console.error("Error fetching tasks:", error);
-//         return []; // Return an empty array to prevent crashes
-//     }
-// };
-
-
-
-// // Create Task
-// export const createTask = async (task) => {
-//     try {
-//         const response = await fetch("http://127.0.0.1:5001/notes", {
-//             method: "POST",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify({
-//                 user_id: task.user_id, // User who created the note
-//                 note_text: task.text, // Task description
-//                 assigned_to: task.assigned_to || task.user_id, // Default to self if not assigned
-//                 completed: task.completed || false,
-//                 note_type: "Task" // Helps differentiate from other notes
-//             }),
-//         });
-
-//         if (!response.ok) throw new Error("Failed to create task.");
-//         return await response.json();
-//     } catch (error) {
-//         console.error("Error creating task:", error);
-//         return null;
-//     }
-// };

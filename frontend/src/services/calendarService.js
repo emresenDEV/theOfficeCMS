@@ -69,21 +69,6 @@ export const deleteCalendarEvent = async (eventId) => {
 
 // FILTER FOR DESIRED USER CALLS
 
-// ✅ Fetch All Branches
-export const fetchBranches = async () => {
-    try {
-        const response = await api.get("/branches");  // ✅ Ensure correct endpoint
-        console.log("✅ Fetched Branches:", response.data);
-        return response.data.map(branch => ({
-            branch_id: branch.branch_id,  // ✅ Keep ID for referencing
-            branch_name: branch.branch_name  // ✅ Use this for UI display
-        }));
-    } catch (error) {
-        console.error("❌ Error fetching branches:", error.response?.data || error.message);
-        return [];
-    }
-};
-
 // Fetch all departments
 export const fetchDepartments = async () => {
     try {

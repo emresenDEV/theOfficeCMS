@@ -43,6 +43,29 @@ def get_tasks():
         "created_by": Users.query.get(task.user_id).username if task.user_id else "Unknown"  # ✅ Show creator's username
     } for task in tasks])
 
+# ✅ Fetch Tasks By Account ID
+@task_bp.route("/accounts/<int:account_id>/tasks", methods=["GET"])
+@cross_origin(supports_credentials=True)
+def get_tasks_by_account(account_id):
+    """Fetch all tasks associated with a specific account"""
+    tasks = Tasks.query.filter_by(account_id=account_id).all()
+
+    if not tasks:
+        return jsonify([]), 200  # Return empty list if no tasks found
+
+    return jsonify([{
+        "task_id": task.task_id,
+        "user_id": task.user_id,  # Creator of the task
+        "assigned_to": task.assigned_to,  # Who the task is assigned to
+        "task_description": task.task_description,
+        "due_date": task.due_date,
+        "is_completed": task.is_completed,
+        "account_id": task.account_id,  # If task is associated with an account
+        "account_name": Account.query.get(task.account_id).business_name if task.account_id else "No Account",
+        "created_by": Users.query.get(task.user_id).username if task.user_id else "Unknown"
+    } for task in tasks])
+
+
 
 # ✅ Create a New Task
 @task_bp.route("", methods=["POST"])

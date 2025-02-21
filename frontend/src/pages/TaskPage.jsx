@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchTasks, createTask, updateTask, deleteTask, fetchBranches, fetchDepartments, fetchEmployees, fetchUsers } from "../services/tasksService";
+import { fetchTasks, createTask, updateTask, deleteTask, fetchDepartments, fetchEmployees, fetchUsers } from "../services/tasksService";
+import { fetchBranches } from "../services/branchService";
 import { fetchAccounts } from "../services/accountService";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
