@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Invoice
+from models import Invoice, Account
 from database import db
 from datetime import datetime
 
@@ -69,8 +69,22 @@ def get_invoices_by_account(account_id):
             "payment_method": inv.payment_method if inv.payment_method else None
         } for inv in invoices
     ]), 200
-            
-            
+
+# ✅ Validate Invoice Belongs to Account
+@invoice_bp.route('/validate/<int:account_id>/<int:invoice_id>', methods=["GET"])
+def validate_invoice_for_account(account_id, invoice_id):
+    try:
+        # ✅ Query invoice by ID and check if it belongs to the account
+        invoice = Invoice.query.filter_by(account_id=account_id, invoice_id=invoice_id).first()
+
+        if invoice:
+            return jsonify({"valid": True}), 200
+        else:
+            return jsonify({"valid": False, "error": "Invoice does not belong to the account"}), 404
+
+    except Exception as e:
+        print(f"❌ Error validating invoice for account: {str(e)}")
+        return jsonify({"error": "An error occurred while validating the invoice", "details": str(e)}), 500
 
 
 # Update Invoice (SINGLE) API

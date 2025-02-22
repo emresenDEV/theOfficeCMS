@@ -58,14 +58,14 @@ const TasksSection = ({ tasks, users = [] }) => {
                 <input 
                     type="text" 
                     placeholder="Search tasks..." 
-                    className="border p-2 rounded w-1/3"
+                    className="border p-2 rounded w-1/3 flex-grow"
                     value={searchTasks}
                     onChange={(e) => setSearchTasks(e.target.value)}
                 />
                 <div>
-                    <button onClick={() => setTaskFilter("completed")} className="bg-green-500 text-white px-2 mx-1">Completed</button>
-                    <button onClick={() => setTaskFilter("incomplete")} className="bg-red-500 text-white px-2 mx-1">Incomplete</button>
-                    <button onClick={() => navigate("/create-task")} className="bg-blue-500 text-white px-4 ml-2">Create Task</button>
+                    <button onClick={() => setTaskFilter("completed")} className="bg-green-500 text-white px-3 py-2 mx-1 rounded shadow-lg">Completed</button>
+                    <button onClick={() => setTaskFilter("incomplete")} className="bg-red-500 text-white px-3 py-2 mx-1 rounded shadow-lg">Incomplete</button>
+                    <button onClick={() => navigate("/create-task")} className="bg-blue-500 text-white px-3 py-2 ml-2 rounded shadow-lg">Create Task</button>
                 </div>
             </div>
             <div className="overflow-y-scroll h-48 border">
@@ -117,8 +117,8 @@ TasksSection.propTypes = {
     PropTypes.shape({
         task_id: PropTypes.number.isRequired,
         date_created: PropTypes.string, // Date timestamp from the DB
-        created_by: PropTypes.number,   // User ID (should map to username)
-        assigned_to: PropTypes.number,  // User ID (should map to username)
+        created_by: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),  // Allow both types
+        assigned_to: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),  // User ID (should map to username)
         task_description: PropTypes.string.isRequired,
         due_date: PropTypes.string,     // Due date timestamp
         completed: PropTypes.bool.isRequired,

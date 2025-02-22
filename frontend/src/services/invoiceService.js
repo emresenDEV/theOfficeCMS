@@ -132,6 +132,18 @@ export const fetchInvoiceServices = async () => {
     }
 }
 
+//  Validate Invoice: Invoice must be related to account
+export const validateInvoiceForAccount = async (accountId, invoiceId) => {
+    try {
+        const response = await api.get(`/invoices/validate/${accountId}/${invoiceId}`);
+        console.log("✅ Invoice validation response:", response.data);
+        return response.data.valid;
+    } catch (error) {
+        console.error("❌ Error validating invoice:", error.response?.data || error.message);
+        return false;
+    }
+};
+
 // // Fetch all invoices
 // export const fetchInvoices = async (userId) => {
 //     try {
