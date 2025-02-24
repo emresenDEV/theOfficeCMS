@@ -1,20 +1,43 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 
 const InvoicesSection = ({ invoices, onCreateInvoice }) => {
     const navigate = useNavigate();
     const [searchInvoices, setSearchInvoices] = useState("");
     const [invoiceFilter, setInvoiceFilter] = useState("all");
 
+    // ✅ Format Due Date (MM/DD/YYYY)
+    const formatDueDate = (dateString) => {
+        if (!dateString) return "N/A";
+        return format(new Date(dateString), "MM/dd/yyyy");
+    };
+
+    // ✅ Format Total Amount (000,000,000.00)
+    const formatTotalAmount = (amount) => {
+        if (typeof amount !== "number") return "$0.00";
+        return new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: 2,
+        }).format(amount);
+    };
+
     // ✅ Filter invoices based on search input and selected status filter
-    const filteredInvoices = invoices.filter(inv => 
+    const filteredInvoices = invoices.filter((inv) => 
         (searchInvoices === "" || 
         inv.invoice_id.toString().includes(searchInvoices) || 
         inv.status.toLowerCase().includes(searchInvoices.toLowerCase()) ||
         inv.final_total.toString().includes(searchInvoices)) &&
         (invoiceFilter === "all" || inv.status === invoiceFilter)
     );
+
+    // ✅ Clear Filters
+    const clearFilters = () => {
+        setInvoiceFilter("all");
+        setSearchInvoices("");
+    };
 
     return (
         <div className="mt-6 border p-4 rounded-lg">
@@ -30,36 +53,68 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
                     onChange={(e) => setSearchInvoices(e.target.value)}
                 />
                 <div>
-                    <button onClick={() => setInvoiceFilter("Paid")} className="bg-green-500 text-white px-3 py-2 mx-1 rounded shadow-lg">Paid</button>
-                    <button onClick={() => setInvoiceFilter("Unpaid")} className="bg-red-500 text-white px-3 py-2 mx-1 rounded shadow-lg">Unpaid</button>
-                    <button onClick={() => setInvoiceFilter("Pending")} className="bg-yellow-500 text-white px-3 py-2 mx-1 rounded shadow-lg">Pending</button>
-                    <button onClick={onCreateInvoice} className="bg-blue-500 text-white px-3 py-2 ml-2 rounded shadow-lg">Create Invoice</button>
+                    <button 
+                        onClick={() => setInvoiceFilter("Paid")} 
+                        className="bg-green-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-green-600 transition-colors"
+                    >
+                        Paid
+                    </button>
+                    <button 
+                        onClick={() => setInvoiceFilter("Unpaid")} 
+                        className="bg-red-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-red-600 transition-colors"
+                    >
+                        Unpaid
+                    </button>
+                    <button 
+                        onClick={() => setInvoiceFilter("Pending")} 
+                        className="bg-yellow-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-yellow-600 transition-colors"
+                    >
+                        Pending
+                    </button>
+                    <button 
+                        onClick={clearFilters} 
+                        className="bg-gray-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-gray-600 transition-colors"
+                    >
+                        Clear
+                    </button>
+                    <button 
+                        onClick={onCreateInvoice} 
+                        className="bg-blue-600 text-white px-3 py-2 ml-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
+                    >
+                        New Invoice
+                    </button>
                 </div>
             </div>
 
             {/* ✅ Invoices Table */}
-            <div className="overflow-y-scroll h-48 border rounded">
-                <table className="w-full border-collapse">
-                    <thead>
-                        <tr className="bg-gray-200">
-                            <th className="p-2 border">ID</th>
-                            <th className="p-2 border">Date</th>
-                            <th className="p-2 border">Due</th>
-                            <th className="p-2 border">Total</th>
-                            <th className="p-2 border">Status</th>
-                            <th className="p-2 border">Actions</th>
+            <div className="overflow-y-auto h-48 border rounded-lg">
+                <table className="w-full">
+                    <thead className="sticky top-0 bg-white shadow-sm">
+                        <tr>
+                            <th className="font-bold p-2 border-b border-r text-left">ID</th>
+                            <th className="font-bold p-2 border-b border-r text-left">Date</th>
+                            <th className="font-bold p-2 border-b border-r text-left">Due Date</th>
+                            <th className="font-bold p-2 border-b border-r text-left">Total</th>
+                            <th className="font-bold p-2 border-b border-r text-left">Status</th>
+                            <th className="font-bold p-2 border-b text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredInvoices.slice(0, 6).map(inv => (
-                            <tr key={inv.invoice_id} className="border-b">
-                                <td className="p-2 text-center">{inv.invoice_id}</td>
-                                <td className="p-2 text-center">{inv.date_created}</td>
-                                <td className="p-2 text-center">{inv.due_date}</td>
-                                <td className="p-2 text-center">${inv.final_total?.toFixed(2) || "0.00"}</td>
-                                <td className="p-2 text-center">{inv.status}</td>
-                                <td className="p-2 text-center">
-                                    <button onClick={() => navigate(`/invoice/${inv.invoice_id}`)} className="bg-blue-500 text-white px-3 py-1 rounded">
+                        {filteredInvoices.map((inv, index) => (
+                            <tr 
+                                key={inv.invoice_id} 
+                                className={`hover:bg-gray-50 ${index % 2 === 0 ? "bg-blue-50" : "bg-white"}`}
+                            >
+                                <td className="p-2 border-b border-r text-left">{inv.invoice_id}</td>
+                                <td className="p-2 border-b border-r text-left">{inv.date_created}</td>
+                                <td className="p-2 border-b border-r text-left">{formatDueDate(inv.due_date)}</td>
+                                <td className="p-2 border-b border-r text-left">{formatTotalAmount(inv.final_total)}</td>
+                                <td className="p-2 border-b border-r text-left">{inv.status}</td>
+                                <td className="p-2 border-b text-center">
+                                    <button 
+                                        onClick={() => navigate(`/invoice/${inv.invoice_id}`)} 
+                                        className="bg-blue-600 text-white px-3 py-1 rounded shadow-lg hover:bg-blue-700 transition-colors"
+                                    >
                                         View
                                     </button>
                                 </td>

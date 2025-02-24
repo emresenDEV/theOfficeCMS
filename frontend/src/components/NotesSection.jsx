@@ -65,6 +65,25 @@ const NotesSection = ({ notes, accountId, userId, setNotes, refreshNotes }) => {
         }
     };
 
+    // ✅ Format date and time
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+        });
+    };
+
+    const formatTime = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+        });
+    };
+
     return (
         <div className="mt-6 border p-4 rounded-lg">
             <h2 className="text-xl font-semibold">Notes</h2>
@@ -100,49 +119,45 @@ const NotesSection = ({ notes, accountId, userId, setNotes, refreshNotes }) => {
                 />
                 <button 
                     onClick={handleCreateNote} 
-                    className="bg-blue-600 text-white px-3 py-2 rounded shadow-lg hover:bg-blue-600 transition-colors"
+                    className="bg-blue-600 text-white px-3 py-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
                 >
                     Save Note
                 </button>
             </div>
 
             {/* ✅ Notes Table */}
-            <div className="overflow-y-scroll h-48 border">
-                <table className="w-full border">
-                    <thead>
+            <div className="overflow-y-auto h-48 border rounded-lg">
+                <table className="w-full">
+                    <thead className="sticky top-0 bg-white shadow-sm">
                         <tr>
-                            <th>User</th>
-                            <th>Date</th>
-                            <th>Note</th>
-                            <th>Invoice ID</th>
+                            <th className="font-bold p-2 border-b border-r text-left">User</th>
+                            <th className="font-bold p-2 border-b border-r text-left">Date</th>
+                            <th className="font-bold p-2 border-b border-r text-left whitespace-nowrap">Time</th>
+                            <th className="font-bold p-2 border-b border-r text-left">Note</th>
+                            <th className="font-bold p-2 border-b text-center whitespace-nowrap">Invoice ID</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedNotes.map((note) => (
-                            <tr key={note.note_id}>
-                                <td>{note.username || "Unknown User"}</td>
-                                <td>
-                                    {note.date_created
-                                        ? new Date(note.date_created).toLocaleString("en-US", {
-                                            month: "2-digit",
-                                            day: "2-digit",
-                                            year: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: true,
-                                        })
-                                        : "Invalid Date"}
-                                </td>
-                                <td>{note.note_text || "No text provided"}</td>
-                                <td>
+                        {sortedNotes.map((note, index) => (
+                            <tr 
+                                key={note.note_id} 
+                                className={`hover:bg-gray-50 ${index % 2 === 0 ? "bg-blue-50" : "bg-white"}`}
+                            >
+                                <td className="p-2 border-b border-r text-left">{note.username || "Unknown User"}</td>
+                                <td className="p-2 border-b border-r text-left">{formatDate(note.date_created)}</td>
+                                <td className="p-2 border-b border-r text-left whitespace-nowrap">{formatTime(note.date_created)}</td>
+                                <td className="p-2 border-b border-r text-left">{note.note_text || "No text provided"}</td>
+                                <td className="p-2 border-b text-center">
                                     {note.invoice_id ? (
                                         <button
                                             onClick={() => navigate(`/invoices/${note.invoice_id}`)}
-                                            className="text-blue-500 underline"
+                                            className="bg-blue-600 text-white px-4 py-1 rounded shadow-lg hover:bg-blue-700 transition-colors w-24"
                                         >
                                             {note.invoice_id}
                                         </button>
-                                    ) : "N/A"}
+                                    ) : (
+                                        <span className="text-gray-500">N/A</span>
+                                    )}
                                 </td>
                             </tr>
                         ))}
