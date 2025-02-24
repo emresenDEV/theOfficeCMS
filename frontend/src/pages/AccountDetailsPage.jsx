@@ -6,6 +6,7 @@ import { fetchNotesByAccount } from "../services/notesService";
 import { fetchTasksByAccount, createTask } from "../services/tasksService";
 import { fetchUsers } from "../services/userService";
 import { fetchRoleById } from "../services/userRoleService";
+import { format } from "date-fns";
 import PropTypes from "prop-types";
 
 import InvoicesSection from "../components/InvoicesSection";
@@ -28,6 +29,11 @@ const AccountDetailsPage = ({ user }) => {
     //     console.log("🔄 Updated Notes from Backend:", updatedNotes);
     //     setNotes(updatedNotes);
     // };
+    const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        return format(new Date(dateString), "MM/dd/yyyy");
+    };
+
     const refreshNotes = useCallback(async () => {
         const updatedNotes = await fetchNotesByAccount(accountId);
         console.log("🔄 Updated Notes from Backend:", updatedNotes); //debugging
@@ -48,7 +54,7 @@ const AccountDetailsPage = ({ user }) => {
             if (fetchedUsers && fetchedUsers.length > 0) {
                 const normalizedUsers = fetchedUsers.map((user) => ({
                     ...user,
-                    // If username is missing, derive it from the email. Temporary fallback.
+                    // If username is missing, derive it from the email. Temporary.
                     username: user.username || (user.email ? user.email.split("@")[0] : "unknown")
                 }));
                 setUsers(normalizedUsers);
@@ -98,7 +104,7 @@ const AccountDetailsPage = ({ user }) => {
             loadData();
         }
     }, [accountId, refreshNotes]);
-// debugging useEffect to verify whenever the users prop updates
+// debugging useEffect to verify whenever the users prop updates debugging
     useEffect(() => {
         console.log("TasksSection: users prop updated:", users);
     }, [users]);
@@ -114,7 +120,9 @@ const AccountDetailsPage = ({ user }) => {
             <div className="flex justify-between items-start">
                 <div className="w-1/2">
                     <h1 className="text-3xl font-bold text-blue-700 text-left">{account.business_name}</h1>
-                    <p className="text-gray-500 text-left"><strong>Created:</strong> {account.date_created} <strong>| Updated: </strong>{account.date_updated}</p>
+                    <p className="text-gray-500 text-left">
+                        <strong>Created:</strong> {formatDate(account.date_created)} <strong>| Updated: </strong>{formatDate(account.date_updated)}
+                    </p>
                     <p className="text-gray-700 text-left"><strong>Contact:</strong> {account.contact_name}</p>
                     <p className="text-gray-700 text-left"><strong>Phone:</strong> {account.phone_number}</p>
                     <p className="text-gray-700 text-left"><strong>Email:</strong> {account.email}</p>
@@ -142,27 +150,24 @@ const AccountDetailsPage = ({ user }) => {
             </div>
 
             {/* ✅ Sections */}
-            <InvoicesSection invoices={invoices} onCreateInvoice={() => navigate("/create-invoice")} />
+            <InvoicesSection 
+                invoices={invoices} 
+                onCreateInvoice={() => navigate("/create-invoice")}
+            />
+            
             <NotesSection 
                 notes={notes}
                 accountId={account?.account_id || 0}
                 userId={user?.id || 0}
                 setNotes={setNotes}
                 refreshNotes={refreshNotes}
-                />
-            {/* <TasksSection 
-                tasks={tasks}
-                users={account?.sales_rep ? [account.sales_rep] : []} 
-                accountId={account?.account_id || 0}
-                userID={user?.id || 0}
-                setTasks={setTasks}
-                refreshTasks={refreshTasks}
-            /> */}
+            />
+            
             <TasksSection
                 tasks={tasks}
-                users={users}  // Make sure `users` are fetched and passed properly
-                userId={user?.id || 0}  // Currently logged-in user's ID
-                accountId={account?.account_id || 0}  // The current account ID
+                users={users}  
+                userId={user?.id || 0}  
+                accountId={account?.account_id || 0}  
                 setTasks={setTasks}
                 refreshTasks={refreshTasks}
             />

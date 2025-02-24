@@ -131,6 +131,31 @@ def get_notes_by_account(account_id):
     except Exception as e:
         print(f"❌ Error fetching notes: {str(e)}")
         return jsonify({"error": "An error occurred while fetching notes"}), 500
+    
+#  Get Notes by Invoice ID
+@notes_bp.route("/invoice/<int:invoice_id>", methods=["GET"])
+def get_notes_by_invoice(invoice_id):
+    try:
+        notes = Notes.query.filter_by(invoice_id=invoice_id).all()
+        if not notes:
+            return jsonify([]), 200  # Return an empty list if no notes found
+
+        notes_list = [
+            {
+                "note_id": note.note_id,
+                "account_id": note.account_id,
+                "user_id": note.user_id,
+                "invoice_id": note.invoice_id,
+                "note_text": note.note_text,
+                "date_created": note.date_created.strftime("%Y-%m-%d %H:%M:%S") if note.date_created else None,
+            }
+            for note in notes
+        ]
+        return jsonify(notes_list), 200
+    except Exception as e:
+        print(f"❌ Error fetching notes for invoice: {str(e)}")
+        return jsonify({"error": "An error occurred while fetching notes"}), 500
+
 
     # notes = Notes.query.filter_by(account_id=account_id).all()
     # if not notes:

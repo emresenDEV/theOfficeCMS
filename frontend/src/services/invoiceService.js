@@ -15,7 +15,7 @@ export const fetchInvoices = async (userId) => {
 // Fetch Invoice by ID
 export const fetchInvoiceById = async (invoiceId) => {
     try {
-        const response = await api.get(`/invoices/${invoiceId}`);
+        const response = await api.get(`/invoices/invoice/${invoiceId}`);
         return response.data;
     } catch (error) {
         console.error("Error fetching invoice:", error);
@@ -34,6 +34,8 @@ export const fetchInvoiceByAccount = async (accountId) => {
         return []; // ✅ Always return an array to prevent crashes
     }
 };
+
+
 
 
 
@@ -143,6 +145,7 @@ export const validateInvoiceForAccount = async (accountId, invoiceId) => {
         return false;
     }
 };
+
 
 // // Fetch all invoices
 // export const fetchInvoices = async (userId) => {

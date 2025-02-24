@@ -19,7 +19,7 @@ const NotesSection = ({ notes, accountId, userId, setNotes, refreshNotes }) => {
     const filteredNotes = notes.filter((note) => 
         searchNotes === "" ||
         (note.username && note.username.toLowerCase().includes(searchNotes.toLowerCase())) ||
-        (note.date_created && note.date_created.includes(searchNotes)) ||
+        (note.note_text && note.note_text.includes(searchNotes)) ||
         (note.invoice_id && note.invoice_id.toString().includes(searchNotes))
     );
 
@@ -150,7 +150,7 @@ const NotesSection = ({ notes, accountId, userId, setNotes, refreshNotes }) => {
                                 <td className="p-2 border-b text-center">
                                     {note.invoice_id ? (
                                         <button
-                                            onClick={() => navigate(`/invoices/${note.invoice_id}`)}
+                                            onClick={() => navigate(`invoices/invoice/${note.invoice_id}`)}
                                             className="bg-blue-600 text-white px-4 py-1 rounded shadow-lg hover:bg-blue-700 transition-colors w-24"
                                         >
                                             {note.invoice_id}

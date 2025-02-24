@@ -32,7 +32,7 @@ def get_invoices():
 
 
 #  GET Invoice (SINGLE) By ID API
-@invoice_bp.route("/invoices/<int:invoice_id>", methods=["GET"])
+@invoice_bp.route("/invoice/<int:invoice_id>", methods=["GET"])
 def get_invoice_by_id(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
     if not invoice:
@@ -45,7 +45,8 @@ def get_invoice_by_id(invoice_id):
         "amount": float(invoice.amount),
         "status": invoice.status,
         "due_date": invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date else None,
-        "payment_method": invoice.payment_method
+        "payment_method": invoice.payment_method,
+        "date_created": invoice.date_created.strftime("%Y-%m-%d") if invoice.date_created else None,
     }), 200
     
 # ✅ Fetch invoices by account ID
@@ -66,7 +67,8 @@ def get_invoices_by_account(account_id):
             "status": inv.status,
             "user_id": inv.user_id,
             "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else None,
-            "payment_method": inv.payment_method if inv.payment_method else None
+            "payment_method": inv.payment_method if inv.payment_method else None,
+            "date_created": inv.date_created.strftime("%Y-%m-%d") if inv.date_created else None
         } for inv in invoices
     ]), 200
 

@@ -42,16 +42,28 @@ export const fetchNotesByAccount = async (accountId) => {
 
 
 // Fetch notes for a specific invoice
+// export const fetchNotesByInvoice = async (invoiceId) => {
+//     try {
+//         const response = await api.get(`/notes?invoice_id=${invoiceId}`);
+//         if (!response.ok) throw new Error("Failed to fetch invoice notes.");
+//         return await response.json();
+//     } catch (error) {
+//         console.error("Error fetching notes for invoice:", error);
+//         return [];
+//     }
+// };
 export const fetchNotesByInvoice = async (invoiceId) => {
     try {
-        const response = await api.get(`/notes?invoice_id=${invoiceId}`);
-        if (!response.ok) throw new Error("Failed to fetch invoice notes.");
-        return await response.json();
-    } catch (error) {
+        // Adjust the endpoint to match your backend configuration.
+        const response = await api.get(`/notes/invoice/${invoiceId}`);
+        console.log("✅ Fetched Notes for Invoice:", response.data);
+        return response.data;
+        } catch (error) {
         console.error("Error fetching notes for invoice:", error);
         return [];
-    }
-};
+        }
+    };
+    
 
 // Create a New Note
 export const createNote = async (noteData) => {
