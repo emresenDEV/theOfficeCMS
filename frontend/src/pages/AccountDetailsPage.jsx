@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchAccountDetails } from "../services/accountService";
 import { fetchInvoiceByAccount } from "../services/invoiceService";
 import { fetchNotesByAccount } from "../services/notesService";
-import { fetchTasksByAccount } from "../services/tasksService";
+import { fetchTasksByAccount, createTask } from "../services/tasksService";
+import { fetchUsers } from "../services/userService";
+import { fetchRoleById } from "../services/userRoleService";
 import PropTypes from "prop-types";
 
 import InvoicesSection from "../components/InvoicesSection";
 import NotesSection from "../components/NotesSection";
 import TasksSection from "../components/TasksSection";
-// import CreateNote from "../components/CreateNote";
-// import CreateTask from "../components/CreateTask";
 
 const AccountDetailsPage = ({ user }) => {
     const { accountId } = useParams();
@@ -20,34 +20,35 @@ const AccountDetailsPage = ({ user }) => {
     const [tasks, setTasks] = useState([]);
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    const refreshNotes = async () => {
+    const [users, setUsers] = useState([]);
+    const [userRole, setUserRole] = useState("");
+    // REFRESH Components
+    // const refreshNotes = async () => {
+    //     const updatedNotes = await fetchNotesByAccount(accountId);
+    //     console.log("🔄 Updated Notes from Backend:", updatedNotes);
+    //     setNotes(updatedNotes);
+    // };
+    const refreshNotes = useCallback(async () => {
         const updatedNotes = await fetchNotesByAccount(accountId);
         console.log("🔄 Updated Notes from Backend:", updatedNotes);
         setNotes(updatedNotes);
+    }, [accountId]);
+    
+    const refreshTasks = async () => {
+        const updatedTasks = await fetchTasksByAccount(accountId);
+        setTasks(updatedTasks);
     };
     
-    // Fetch the data when the account_id changes
-    // useEffect(() => {
-    //     async function loadData() {
-    //         try {
-    //             setLoading(true);
-    //             setAccount(await fetchAccountDetails(accountId));
-    //             setInvoices(await fetchInvoiceByAccount(accountId));
-    //             setNotes(await fetchNotesByAccount(accountId));
-    //             setTasks(await fetchTasksByAccount(accountId));
-    //         } catch (error) {
-    //             console.error("❌ Error loading account details:", error);
-    //         } finally {
-    //             setLoading(false);
-    //         }
-    //     }
+    useEffect(() => {
+        async function loadUserRole() {
+            if (user.role_id) {
+                const roleData = await fetchRoleById(user.role_id);
+                setUserRole(roleData?.role_name || "Unknown Role");
+            }
+        }
+        loadUserRole();
+    }, [user.role_id]);
 
-    //     loadData();
-    //     if (accountId) {
-    //         refreshNotes();
-    //     }
-    // }, [accountId]);
     useEffect(() => {
         async function loadData() {
             try {
@@ -55,9 +56,15 @@ const AccountDetailsPage = ({ user }) => {
                 setAccount(await fetchAccountDetails(accountId));  // ✅ Fetch account details
                 setInvoices(await fetchInvoiceByAccount(accountId));  // ✅ Fetch invoices
                 await refreshNotes();  // ✅ Fetch updated notes
-                setTasks(await fetchTasksByAccount(accountId));  // ✅ Fetch tasks
+                setTasks(await fetchTasksByAccount(accountId));
+                
+                // ✅ Fetch users
+                const fetchedUsers = await fetchUsers();
+                const usersWithUsernames = fetchedUsers.filter((user) => user.username);
+                setUsers(usersWithUsernames);
             } catch (error) {
                 console.error("❌ Error loading account details:", error);
+                console.error("🔍 Full Error Object:", error?.response || error);
             } finally {
                 setLoading(false);
             }
@@ -66,14 +73,8 @@ const AccountDetailsPage = ({ user }) => {
         if (accountId) {
             loadData();
         }
-    }, [accountId]);
+    }, [accountId, refreshNotes]);
     
-
-    //  Function to refresh notes when a new note is created
-    // const refreshNotes = async () => {
-    //     const updatedNotes = await fetchNotesByAccount(accountId);
-    //     setNotes((prevNotes) => [...updatedNotes]);
-    // };
 
     if (loading) return <p className="text-gray-600 text-center">Loading account details...</p>;
     if (!account) return <p className="text-red-600 text-center">Account not found.</p>;
@@ -120,21 +121,22 @@ const AccountDetailsPage = ({ user }) => {
                 setNotes={setNotes}
                 refreshNotes={refreshNotes}
                 />
-            <TasksSection 
+            {/* <TasksSection 
                 tasks={tasks}
                 users={account?.sales_rep ? [account.sales_rep] : []} 
-                onCreateTask={() => navigate("/create-task")} /> {/* FIXME: on click, a task is created, same as notes, not navigating to create-task page. */}
-
-            {/* ✅ Create New Note and Task Forms */}
-            {/* <div className="mt-6">
-                <h2 className="text-xl font-semibold">Create a New Note</h2>
-                <CreateNote accountId={account.account_id} />
-            </div>
-
-            <div className="mt-6">
-                <h2 className="text-xl font-semibold">Create a New Task</h2>
-                <CreateTask accountId={account.account_id} />
-            </div> */}
+                accountId={account?.account_id || 0}
+                userID={user?.id || 0}
+                setTasks={setTasks}
+                refreshTasks={refreshTasks}
+            /> */}
+            <TasksSection
+                tasks={tasks}
+                users={users}  // Make sure `users` are fetched and passed properly
+                userId={user?.id || 0}  // Currently logged-in user's ID
+                accountId={account?.account_id || 0}  // The current account ID
+                setTasks={setTasks}
+                refreshTasks={refreshTasks}
+            />
         </div>
     );
 };
@@ -146,7 +148,7 @@ AccountDetailsPage.propTypes = {
         firstName: PropTypes.string,
         lastName: PropTypes.string,
         email: PropTypes.string,
-        role: PropTypes.string,
+        role_id: PropTypes.number.isRequired,
     }).isRequired,
 
     account: PropTypes.shape({
