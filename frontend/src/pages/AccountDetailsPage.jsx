@@ -30,14 +30,37 @@ const AccountDetailsPage = ({ user }) => {
     // };
     const refreshNotes = useCallback(async () => {
         const updatedNotes = await fetchNotesByAccount(accountId);
-        console.log("🔄 Updated Notes from Backend:", updatedNotes);
+        console.log("🔄 Updated Notes from Backend:", updatedNotes); //debugging
         setNotes(updatedNotes);
     }, [accountId]);
     
     const refreshTasks = async () => {
         const updatedTasks = await fetchTasksByAccount(accountId);
+        console.log(" 🔄 Refreshed tasks:", updatedTasks); //debugging
         setTasks(updatedTasks);
     };
+    // ✅ Fetch Users
+    useEffect(() => {
+        async function loadUsers() {
+            try {
+            const fetchedUsers = await fetchUsers();
+            console.log("Fetched users in AccountDetailsPage:", fetchedUsers); //debugging (what is api returning)
+            if (fetchedUsers && fetchedUsers.length > 0) {
+                const normalizedUsers = fetchedUsers.map((user) => ({
+                    ...user,
+                    // If username is missing, derive it from the email. Temporary fallback.
+                    username: user.username || (user.email ? user.email.split("@")[0] : "unknown")
+                }));
+                setUsers(normalizedUsers);
+            }
+            } catch (error) {
+                console.error("❌ Error fetching users:", error);
+            }
+        }
+        
+            loadUsers();
+        }, []);
+        
     
     useEffect(() => {
         async function loadUserRole() {
@@ -56,12 +79,13 @@ const AccountDetailsPage = ({ user }) => {
                 setAccount(await fetchAccountDetails(accountId));  // ✅ Fetch account details
                 setInvoices(await fetchInvoiceByAccount(accountId));  // ✅ Fetch invoices
                 await refreshNotes();  // ✅ Fetch updated notes
-                setTasks(await fetchTasksByAccount(accountId));
+                setTasks(await fetchTasksByAccount(accountId)); // ✅ Fetch tasks
                 
-                // ✅ Fetch users
-                const fetchedUsers = await fetchUsers();
-                const usersWithUsernames = fetchedUsers.filter((user) => user.username);
-                setUsers(usersWithUsernames);
+                // ✅ Fetch users (duplicate fetch?)
+                // const fetchedUsers = await fetchUsers();
+                // console.log("Second fetchUsers in loadData returned:", fetchedUsers); //debugging
+                // const usersWithUsernames = fetchedUsers.filter((user) => user.username);
+                // setUsers(usersWithUsernames);
             } catch (error) {
                 console.error("❌ Error loading account details:", error);
                 console.error("🔍 Full Error Object:", error?.response || error);
@@ -74,7 +98,12 @@ const AccountDetailsPage = ({ user }) => {
             loadData();
         }
     }, [accountId, refreshNotes]);
-    
+// debugging useEffect to verify whenever the users prop updates
+    useEffect(() => {
+        console.log("TasksSection: users prop updated:", users);
+    }, [users]);
+
+
 
     if (loading) return <p className="text-gray-600 text-center">Loading account details...</p>;
     if (!account) return <p className="text-red-600 text-center">Account not found.</p>;
@@ -147,6 +176,7 @@ AccountDetailsPage.propTypes = {
         id: PropTypes.number.isRequired,
         firstName: PropTypes.string,
         lastName: PropTypes.string,
+        username: PropTypes.string,
         email: PropTypes.string,
         role_id: PropTypes.number.isRequired,
     }).isRequired,
@@ -170,6 +200,7 @@ AccountDetailsPage.propTypes = {
             user_id: PropTypes.number.isRequired,
             first_name: PropTypes.string,
             last_name: PropTypes.string,
+            username: PropTypes.string,
             email: PropTypes.string,
             phone_number: PropTypes.string,
             extension: PropTypes.string,

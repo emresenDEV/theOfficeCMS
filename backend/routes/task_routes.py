@@ -40,7 +40,8 @@ def get_tasks():
         "is_completed": task.is_completed,
         "account_id": task.account_id, # If task is associated with an account
         "account_name": Account.query.get(task.account_id).business_name if task.account_id else "No Account", # Name of associated account
-        "created_by": Users.query.get(task.user_id).username if task.user_id else "Unknown"  # ✅ Show creator's username
+        "created_by": Users.query.get(task.user_id).username if task.user_id else "Unknown",  # ✅ Show creator's username
+        "date_created": task.date_created.strftime("%Y-%m-%d %H:%M:%S") if task.date_created else None,
     } for task in tasks])
 
 # ✅ Fetch Tasks By Account ID
@@ -62,7 +63,8 @@ def get_tasks_by_account(account_id):
         "is_completed": task.is_completed,
         "account_id": task.account_id,  # If task is associated with an account
         "account_name": Account.query.get(task.account_id).business_name if task.account_id else "No Account",
-        "created_by": Users.query.get(task.user_id).username if task.user_id else "Unknown"
+        "created_by": Users.query.get(task.user_id).username if task.user_id else "Unknown",
+        "date_created": task.date_created.strftime("%Y-%m-%d %H:%M:%S") if task.date_created else None,
     } for task in tasks])
 
 

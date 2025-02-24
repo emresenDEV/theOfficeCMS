@@ -94,6 +94,7 @@ def get_account_details(account_id):
                 "user_id": sales_rep.user_id,
                 "first_name": sales_rep.first_name,
                 "last_name": sales_rep.last_name,
+                "username": sales_rep.username,
                 "email": sales_rep.email,
                 "phone_number": sales_rep.phone_number,
                 "extension": sales_rep.extension,

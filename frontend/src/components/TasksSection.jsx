@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { createTask, updateTask, fetchTasksByAccount } from "../services/tasksService";
 
@@ -9,21 +9,25 @@ const [searchTasks, setSearchTasks] = useState("");
 const [taskFilter, setTaskFilter] = useState("all");
 const [newTaskDescription, setNewTaskDescription] = useState("");
 const [assignedTo, setAssignedTo] = useState(null);
+const [assignedToSearch, setAssignedToSearch] = useState(""); // For user search input
+const [filteredUsers, setFilteredUsers] = useState([]); // Filtered list based on input
+
 const [dueDate, setDueDate] = useState("");
-const navigate = useNavigate();
+// const navigate = useNavigate();
 
 
 // ✅ Helper: Get Username from `created_by`
-const getCreatedByUsername = (createdById) => {
+const getCreatedByUsername = (creator) => {
+    if (typeof creator == "string") return creator;
     if (!users || users.length === 0) return "Unknown Creator";
-    const user = users.find((u) => u.user_id === createdById);
+    const user = users.find((u) => Number(u.user_id) === Number(creator));
     return user ? user.username : "Unknown Creator";
 };
 
 // ✅ Helper: Get Username from `assigned_to`
 const getAssignedToUsername = (assignedToId) => {
-    if (!users || users.length === 0) return "Unassigned";
-    const user = users.find((u) => u.user_id === assignedToId);
+    if (!users || users.length === 0 || !assignedToId) return "Unassigned";
+    const user = users.find((u) => Number(u.user_id) === Number(assignedToId));
     return user ? user.username : "Unassigned";
 };
 
@@ -52,19 +56,20 @@ const handleCreateTask = async () => {
     if (!newTaskDescription.trim()) return alert("❌ Task description cannot be empty.");
 
     const taskData = {
-    account_id: accountId,
-    user_id: userId,
-    assigned_to: assignedTo || null,
-    task_description: newTaskDescription.trim(),
-    due_date: dueDate || null,
+        account_id: accountId,
+        user_id: userId,
+        assigned_to: assignedTo || null,
+        task_description: newTaskDescription.trim(),
+        due_date: dueDate || null,
     };
 
     try {
     const response = await createTask(taskData);
     if (response && response.success) {
-        await refreshTasks();
-        setNewTaskDescription("");
+        // await refreshTasks(); //option 1
+        setNewTaskDescription(""); //option 2 (this and next 3 lines)
         setAssignedTo(null);
+        setAssignedToSearch("");
         setDueDate("");
     }
     } catch (error) {
@@ -72,6 +77,41 @@ const handleCreateTask = async () => {
     alert("Failed to create task. Please try again.");
     }
 };
+
+// ✅ Handle searching through users
+const handleAssigneeSearch = (input) => {
+    setAssignedToSearch(input);
+    console.log("Searching for:", input, "Users prop:", users); //debugging
+
+    if (input.trim() === "") {
+        setFilteredUsers([]);
+        return;
+    }
+
+    const searchTerm = input.toLowerCase();
+    const results = users.filter((user) => {
+        const usernameLower = (user.username || "").toLowerCase();
+        const firstNameLower = (user.first_name || "").toLowerCase();
+        const lastNameLower = (user.last_name || "").toLowerCase();
+        return (
+            usernameLower.toLowerCase().includes(searchTerm) ||
+            firstNameLower.toLowerCase().includes(searchTerm) ||
+            lastNameLower.toLowerCase().includes(searchTerm)
+            );
+    });
+    console.log("Found results:", results); // Debugging log
+    setFilteredUsers(results);
+    
+};
+
+// ✅ Handle Assignee Select
+const handleAssigneeSelect = (user) => {
+    setAssignedTo(user.user_id); // ✅ Save selected user's ID for backend
+    setAssignedToSearch(`${user.first_name} ${user.last_name} (${user.username})`);
+    setFilteredUsers([]); // Clear the dropdown
+    };
+    
+
 
 // ✅ Toggle Task Completion Status
 const toggleTaskStatus = async (taskId, currentStatus) => {
@@ -82,6 +122,7 @@ const toggleTaskStatus = async (taskId, currentStatus) => {
     console.error("❌ Error updating task status:", error);
     }
 };
+
 
 return (
     <div className="mt-6 border p-4 rounded-lg">
@@ -115,24 +156,40 @@ return (
         value={newTaskDescription}
         onChange={(e) => setNewTaskDescription(e.target.value)}
         />
+        {/* Wrap assigned-to input in a relative container */}
+        <div className="relative w-full">
         <input
-        type="number"
-        placeholder="Assigned To (User ID)"
-        className="border p-2 rounded w-1/4"
-        value={assignedTo || ""}
-        onChange={(e) => setAssignedTo(parseInt(e.target.value))}
+        type="text"
+        placeholder="Assigned To (search by name/username)"
+        className="border p-2 rounded w-full"
+        value={assignedToSearch}
+        onChange={(e) => handleAssigneeSearch(e.target.value)}
         />
+        {filteredUsers.length > 0 && (
+            <div className="absolute bg-white border w-full mt-1 rounded-lg shadow-lg z-50 max-h-40 overflow-y-scroll">
+                {filteredUsers.map((user) => (
+                <div
+                    key={user.user_id}
+                    className="p-2 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleAssigneeSelect(user)}
+                >
+                    {user.first_name} {user.last_name} ({user.username})
+                </div>
+                ))}
+            </div>
+        )}
+        </div>
         <input
-        type="date"
-        className="border p-2 rounded w-1/4"
-        value={dueDate}
-        onChange={(e) => setDueDate(e.target.value)}
+            type="date"
+            className="border p-2 rounded w-1/4"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
         />
         <button
-        onClick={handleCreateTask}
-        className="bg-blue-600 text-white px-3 py-2 rounded shadow-lg hover:bg-blue-600 transition-colors"
+            onClick={handleCreateTask}
+            className="bg-blue-600 text-white px-3 py-2 rounded shadow-lg hover:bg-blue-600 transition-colors"
         >
-        Create Task
+            Create Task
         </button>
     </div>
 
@@ -154,7 +211,7 @@ return (
             {filteredTasks.map((task) => (
                 <tr key={task.task_id} className="text-center">
                 <td className="border p-2">{formatDate(task.date_created)}</td>
-                <td className="border p-2">{getCreatedByUsername(task.created_by)}</td>
+                <td className="border p-2">{getCreatedByUsername(task.created_by || task.user_id)}</td>
                 <td className="border p-2">{getAssignedToUsername(task.assigned_to)}</td>
                 <td className="border p-2">{task.task_description}</td>
                 <td className="border p-2">{formatDate(task.due_date)}</td>
@@ -194,7 +251,9 @@ tasks: PropTypes.arrayOf(
 users: PropTypes.arrayOf(
     PropTypes.shape({
     user_id: PropTypes.number.isRequired,
-    username: PropTypes.string,
+    username: PropTypes.string.isRequired,
+    first_name: PropTypes.string.isRequired,
+    last_name: PropTypes.string.isRequired,
     })
 ).isRequired,
 userId: PropTypes.number.isRequired,

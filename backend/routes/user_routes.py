@@ -27,6 +27,7 @@ def get_users():
             "user_id": user.user_id,
             "first_name": user.first_name,
             "last_name": user.last_name,
+            "username": user.username,
             "role_id": user.role_id,
             "department_id": user.department_id,
             "reports_to": user.reports_to,
