@@ -39,7 +39,7 @@ def add_cors_headers(response):
     allowed_origin = "http://localhost:5174"  # ✅ Only allowing 5174
 
     if origin == allowed_origin:
-        response.headers["Access-Control-Allow-Origin"] = origin  # ✅ Set the allowed origin
+        response.headers["Access-Control-Allow-Origin"] = allowed_origin  # ✅ Set the allowed origin
     
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"

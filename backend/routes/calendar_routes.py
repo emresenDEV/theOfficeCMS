@@ -25,67 +25,25 @@ def get_calendar_events():
     if not user_id:
         return jsonify({"message": "User ID is required"}), 400
 
-    events = CalendarEvent.query.filter_by(user_id=user_id).all()  # ✅ Fetch events for the selected user
+    events = CalendarEvent.query.filter_by(user_id=user_id).all()  
 
     if not events:
-        print(f"❌ No events found for user_id: {user_id}")
+        return jsonify([])
 
     return jsonify([
         {
             "event_id": event.event_id,
-            "event_title": event.event_title,
-            "location": event.location,
+            "event_title": event.event_title or "Untitled Event",
+            "location": event.location or "No Location",
             "start_time": event.start_time.strftime('%H:%M'),
             "end_time": event.end_time.strftime('%H:%M'),
             "start_date": event.start_date.strftime('%Y-%m-%d'),
             "end_date": event.end_date.strftime('%Y-%m-%d'),
-            "notes": event.notes,
+            "notes": event.notes or "",
             "user_id": event.user_id 
         }
         for event in events
     ])
-
-
-
-# ✅ Fetch Calendar Events for Logged-in User
-# @calendar_bp.route("/calendar/events", methods=["GET"])
-# def get_calendar_events():
-#     user_id = request.args.get("user_id")
-#     if not user_id:
-#         return jsonify({"error": "User ID is required"}), 400
-
-#     events = CalendarEvent.query.filter_by(user_id=user_id).all()
-#     return jsonify([
-#         {
-#             "event_id": event.event_id,
-#             "event_title": event.event_title,
-#             "location": event.location,
-#             "start_time": event.start_time.strftime('%H:%M'),
-#             "end_time": event.end_time.strftime('%H:%M'),
-#             "start_date": event.start_date.strftime('%Y-%m-%d'),
-#             "end_date": event.end_date.strftime('%Y-%m-%d'),
-#             "notes": event.notes,
-#             "account_id": event.account_id,
-#             "contact_name": event.contact_name,
-#             "phone_number": event.phone_number
-#         } for event in events
-#     ])
-    
-# @calendar_bp.route("/events", methods=["GET"])
-# def get_calendar_events():
-#     """✅ Fetch meetings assigned to a user"""
-#     user_id = request.args.get("user_id", type=int)
-
-#     if not user_id:
-#         return jsonify({"message": "User ID required"}), 400
-
-#     meetings = CalendarEvent.query.filter(CalendarEvent.user_id == user_id).all()
-
-#     if not meetings:
-#         return jsonify([])  # ✅ Explicitly return empty array
-
-#     return jsonify([meeting.to_dict() for meeting in meetings])
-
 
 # ✅ Create a New Calendar Event
 @calendar_bp.route("/events", methods=["POST"])
@@ -144,7 +102,7 @@ def update_calendar_event(event_id):
 
 
 # ✅ Delete a Calendar Event
-@calendar_bp.route("/events/<int:event_id>", methods=["DELETE"])
+@calendar_bp.route("/calendar/events/${eventId}", methods=["DELETE"])
 def delete_calendar_event(event_id):
     event = CalendarEvent.query.get(event_id)
     if not event:

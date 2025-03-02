@@ -17,14 +17,15 @@ class Account(db.Model):
     state = db.Column(db.String(2))
     zip_code = db.Column(db.String(10), db.ForeignKey('tax_rates.zip_code'))
     industry_id = db.Column(db.Integer, db.ForeignKey('industries.industry_id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     notes = db.Column(db.Text)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
     
-    # Relationship to invoices
+    # Relationships
     invoices = db.relationship('Invoice', back_populates='account')
+    sales_rep = db.relationship('Users', back_populates='accounts', foreign_keys=[sales_rep_id])
     
     # ✅ Convert object to dictionary for JSON responses
     def to_dict(self):
@@ -39,7 +40,7 @@ class Account(db.Model):
             "state": self.state,
             "zip_code": self.zip_code,
             "industry_id": self.industry_id,
-            "user_id": self.user_id,
+            "sale_rep_id": self.sales_rep_id,
             "branch_id": self.branch_id,
             "notes": self.notes,
             "date_created": self.date_created.strftime("%Y-%m-%d %H:%M:%S") if self.date_created else None,
@@ -75,14 +76,14 @@ class CalendarEvent(db.Model):
 class Commissions(db.Model):
     __tablename__ = 'commissions'
     commission_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=False)
     commission_rate = db.Column(db.Numeric, nullable=False) #RATE SHOULD BE BASED ON USER ID set commission rate. 
     commission_amount = db.Column(db.Numeric, nullable=False)
     date_paid = db.Column(db.DateTime)
     
     # Relationships
-    user = db.relationship('Users', back_populates='commissions', foreign_keys=[user_id])
+    sales_rep = db.relationship('Users', back_populates='commissions', foreign_keys=[sales_rep_id])
     invoice = db.relationship('Invoice', back_populates='commissions', foreign_keys=[invoice_id])
 # Commissions table stores all of the commissions for each invoice. Commissions have an ID, a user_id they are linked to, and an invoice_id they are linked to. The invoice_id links to commission to a specific account (which is connected to the invoice via na account_id). The rate is determined by the user_id and the rate associated with said user. The commission amount is calculated by multiplying the com rate by the amount of the invoice (not total_due, because we dont earn commission on taxes). The date_paid is the date the commission was paid out. This table simply stores commission data. 
 
@@ -102,8 +103,8 @@ class Invoice(db.Model):
     __tablename__ = 'invoices'
     invoice_id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable = False)
-    service = db.Column(db.String(100), db.ForeignKey('services.service_name'))
-    amount = db.Column(db.Numeric)
+    sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable = False)
+    
     tax_rate = db.Column(db.Numeric, db.ForeignKey('tax_rates.rate'))
     tax_amount = db.Column(db.Numeric)
     discount_percent = db.Column(db.Numeric, db.ForeignKey('services.discount_percent')) 
@@ -115,26 +116,33 @@ class Invoice(db.Model):
     last_four_payment_method = db.Column(db.Numeric)
     total_paid = db.Column(db.Numeric)
     date_paid = db.Column(db.DateTime)
-    notes = db.Column(db.Text)
     date_created = db.Column(db.DateTime)
     date_updated = db.Column(db.DateTime)
-    payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_methods.method_id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable = False)
-    commission_amount = db.Column(db.Numeric, db.ForeignKey('commissions.commission_amount'))
     due_date = db.Column(db.Date)
+    
+    amount = db.Column(db.Numeric)
+    payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_methods.method_id'))
+    commission_amount = db.Column(db.Numeric, db.ForeignKey('commissions.commission_amount'))
     
     # Relationships
     account = db.relationship('Account', back_populates='invoices', foreign_keys=[account_id])
     commissions = db.relationship('Commissions', back_populates='invoice', foreign_keys=[Commissions.invoice_id])
+    sales_rep = db.relationship('Users', back_populates='invoices', foreign_keys=[sales_rep_id])
+    invoice_services = db.relationship('InvoiceServices', back_populates='invoice', cascade="all, delete-orphan")
+    services = db.relationship('InvoiceServices', back_populates='invoice', cascade="all, delete-orphan")
 
 class InvoiceServices(db.Model):
     __tablename__ = 'invoice_services'
     invoice_service_id = db.Column(db.Integer, primary_key=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
     service_id = db.Column(db.Integer, db.ForeignKey('services.service_id'))
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Numeric, db.ForeignKey('services.price')) 
-    total_price = db.Column(db.Numeric)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    price = db.Column(db.Numeric, nullable=False)  # Price per unit
+    total_price = db.Column(db.Numeric, nullable=False)  # Computed as quantity * price
+    
+    # Relationships
+    invoice = db.relationship('Invoice', back_populates='services', foreign_keys=[invoice_id])
+    service = db.relationship('Service', back_populates='invoice_services', foreign_keys=[service_id])
 
 class Notes(db.Model): 
     __tablename__ = 'notes'
@@ -157,6 +165,9 @@ class Service(db.Model):
     price = db.Column(db.Numeric)
     discount = db.Column(db.Numeric)
     discount_percent = db.Column(db.Numeric)
+    
+    # Relationships
+    invoice_services = db.relationship('InvoiceServices', back_populates='service', cascade="all, delete-orphan")
 
 class TaxRates(db.Model):
     __tablename__ = 'tax_rates'
@@ -178,10 +189,24 @@ class Tasks(db.Model):
 class UserRoles(db.Model):
     __tablename__ = 'user_roles'
     role_id = db.Column(db.Integer, primary_key=True)
-    role_name = db.Column(db.String(50))
+    role_name = db.Column(db.String(50), nullable=False)
     reports_to = db.Column(db.Integer, db.ForeignKey('user_roles.role_id'))
     description = db.Column(db.Text)
     is_lead = db.Column(db.Boolean)
+
+    # Relationships
+    users = db.relationship(
+        "Users",
+        back_populates="role",
+        primaryjoin="UserRoles.role_id == Users.role_id",
+        foreign_keys="[Users.role_id]"  # ✅ Explicitly define foreign key
+    )
+    
+    managers = db.relationship(
+        "UserRoles",
+        backref=db.backref("subordinates", remote_side=[role_id]),
+        foreign_keys=[reports_to]  # ✅ Explicitly define foreign key for hierarchy
+    )
 
 class Users(db.Model):
     __tablename__ = 'users'
@@ -190,7 +215,7 @@ class Users(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
-    role_id = db.Column(db.Integer, db.ForeignKey('user_roles.role_id'))
+    role_id = db.Column(db.Integer, db.ForeignKey('user_roles.role_id'), nullable=False)
     reports_to = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.department_id'), nullable=True)
     salary = db.Column(db.Numeric)
@@ -205,15 +230,25 @@ class Users(db.Model):
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
     
-    # Relationship to Departments
+    # Relationships
+    accounts = db.relationship('Account', back_populates='sales_rep')
+    invoices = db.relationship("Invoice", back_populates="sales_rep")
+    commissions = db.relationship("Commissions", back_populates="sales_rep")
     department = db.relationship("Departments", back_populates="users")
+    role = db.relationship(
+        "UserRoles",
+        back_populates="users",
+        foreign_keys=[role_id]  # ✅ Specify correct FK explicitly
+    )
+    manager = db.relationship(
+        "Users",
+        remote_side=[user_id],
+        backref="subordinates"
+    )
     
     # Password Hashing
     def set_password(self, password):
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-    
-    # Relationship to Commissions
-    commissions = db.relationship("Commissions", back_populates="user")
 

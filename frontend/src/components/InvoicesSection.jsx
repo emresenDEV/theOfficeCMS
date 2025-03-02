@@ -1,6 +1,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
+import { updateInvoiceStatus } from "../services/invoiceService";
 import { format } from "date-fns";
 
 const InvoicesSection = ({ invoices, onCreateInvoice }) => {
@@ -14,7 +15,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
         return format(new Date(dateString), "MM/dd/yyyy");
     };
 
-    // ✅ Format Total Amount (000,000,000.00)
+    // ✅ Format Total Amount ($00,000.00)
     const formatTotalAmount = (amount) => {
         if (typeof amount !== "number") return "$0.00";
         return new Intl.NumberFormat("en-US", {
@@ -24,16 +25,49 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
         }).format(amount);
     };
 
-    // ✅ Filter invoices based on search input and selected status filter
-    const filteredInvoices = invoices.filter((inv) => 
-        (searchInvoices === "" || 
-        inv.invoice_id.toString().includes(searchInvoices) || 
-        inv.status.toLowerCase().includes(searchInvoices.toLowerCase()) ||
-        inv.final_total.toString().includes(searchInvoices)) &&
-        (invoiceFilter === "all" || inv.status === invoiceFilter)
-    );
+    // ✅ Handle Status Updates (Paid / Past Due)
+    const handleStatusUpdate = async (newStatus) => {
+        console.log(`✅ Updating all invoices to status: ${newStatus}`);
 
-    // ✅ Clear Filters
+        try {
+            const updatedInvoices = invoices
+                .filter(inv => (newStatus === "Past Due" ? new Date(inv.due_date) < new Date() && inv.status !== "Paid" : inv.status !== newStatus))
+                .map(inv => inv.invoice_id);
+
+            if (updatedInvoices.length === 0) {
+                console.warn("⚠️ No invoices to update.");
+                return;
+            }
+
+            // Send update requests for each invoice
+            await Promise.all(updatedInvoices.map(invoiceId => updateInvoiceStatus(invoiceId, newStatus)));
+
+            console.log(`✅ Successfully updated invoices to ${newStatus}`);
+            setInvoiceFilter(newStatus); // ✅ Update UI to show filtered invoices
+        } catch (error) {
+            console.error(`❌ Error updating invoices to ${newStatus}:`, error);
+        }
+    };
+
+    // ✅ Filter invoices based on search input and selected status filter
+    const filteredInvoices = invoices.filter((inv) => {
+        const invoiceDueDate = new Date(inv.due_date);
+        const today = new Date();
+        const isPastDue = invoiceDueDate < today && inv.status !== "Paid";
+
+        return (
+            (searchInvoices === "" ||
+                inv.invoice_id.toString().includes(searchInvoices) ||
+                inv.status.toLowerCase().includes(searchInvoices.toLowerCase()) ||
+                inv.final_total.toString().includes(searchInvoices)) &&
+            (invoiceFilter === "all" ||
+                (invoiceFilter === "Paid" && inv.status === "Paid") ||
+                (invoiceFilter === "Pending" && inv.status === "Pending") ||
+                (invoiceFilter === "Past Due" && isPastDue)) // ✅ Past Due condition
+        );
+    });
+    
+    // Clear Filters
     const clearFilters = () => {
         setInvoiceFilter("all");
         setSearchInvoices("");
@@ -54,16 +88,20 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
                 />
                 <div>
                     <button 
-                        onClick={() => setInvoiceFilter("Paid")} 
+                        onClick={() => {
+                            handleStatusUpdate("Paid")}
+                        }
                         className="bg-green-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-green-600 transition-colors"
                     >
                         Paid
                     </button>
                     <button 
-                        onClick={() => setInvoiceFilter("Unpaid")} 
+                        onClick={() => {
+                            handleStatusUpdate("Past Due")}                            
+                        }
                         className="bg-red-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-red-600 transition-colors"
                     >
-                        Unpaid
+                        Past Due
                     </button>
                     <button 
                         onClick={() => setInvoiceFilter("Pending")} 
@@ -81,9 +119,10 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
                         onClick={onCreateInvoice} 
                         className="bg-blue-600 text-white px-3 py-2 ml-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
                     >
-                        New Invoice
+                        Create
                     </button>
                 </div>
+
             </div>
 
             {/* ✅ Invoices Table */}
@@ -96,10 +135,10 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
                             <th className="font-bold p-2 border-b border-r text-left">Due Date</th>
                             <th className="font-bold p-2 border-b border-r text-left">Total</th>
                             <th className="font-bold p-2 border-b border-r text-left">Status</th>
-                            <th className="font-bold p-2 border-b text-center">Actions</th>
+                            <th className="font-bold p-2 border-b text-center">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    {/* <tbody>
                         {filteredInvoices.map((inv, index) => (
                             <tr 
                                 key={inv.invoice_id} 
@@ -120,6 +159,34 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
                                 </td>
                             </tr>
                         ))}
+                    </tbody> */}
+<tbody>
+                        {filteredInvoices.length > 0 ? (
+                            filteredInvoices.map((inv, index) => (
+                                <tr
+                                    key={inv.invoice_id}
+                                    className={`hover:bg-gray-50 ${index % 2 === 0 ? "bg-blue-50" : "bg-white"}`}
+                                >
+                                    <td className="p-2 border-b border-r text-left">{inv.invoice_id}</td>
+                                    <td className="p-2 border-b border-r text-left">{formatDueDate(inv.date_created)}</td>
+                                    <td className="p-2 border-b border-r text-left">{formatDueDate(inv.due_date)}</td>
+                                    <td className="p-2 border-b border-r text-left">{formatTotalAmount(inv.final_total)}</td>
+                                    <td className="p-2 border-b border-r text-left">{inv.status}</td>
+                                    <td className="p-2 border-b text-center">
+                                        <button
+                                            onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
+                                            className="bg-blue-600 text-white px-3 py-1 rounded shadow-lg hover:bg-blue-700 transition-colors"
+                                        >
+                                            View
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="6" className="p-4 text-center text-gray-500">No invoices available</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>

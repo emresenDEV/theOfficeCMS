@@ -6,6 +6,7 @@ import PropTypes from "prop-types";
  */
 const ProtectedRoute = ({ user, children }) => {
     console.log("🔍 Checking Protected Route - User:", user);
+    
     if (!user || !user.id) {
     // if (!user) {
         console.warn("⚠️ No user found, redirecting to login...");
@@ -16,7 +17,13 @@ const ProtectedRoute = ({ user, children }) => {
 
 // Define Prop Types
 ProtectedRoute.propTypes = {
-    user: PropTypes.object,
+    user: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        first_name: PropTypes.string,
+        last_name: PropTypes.string,
+        email: PropTypes.string,
+        username: PropTypes.string,
+    }).isRequired,
     children: PropTypes.node.isRequired,
 };
 

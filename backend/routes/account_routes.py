@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
-from models import Account, Industry, Users, Branches
+from models import Account, Industry, Users, Branches, Tasks, Invoice
+from sqlalchemy import func
 from database import db
 from flask_cors import cross_origin
 
@@ -21,11 +22,11 @@ def handle_options_update_account(account_id):
 @account_bp.route("/assigned", methods=["GET"])
 @cross_origin()
 def get_assigned_accounts():
-    user_id = request.args.get("user_id", type=int)
-    if not user_id:
+    sales_rep_id = request.args.get("sales_rep_id", type=int)
+    if not sales_rep_id:
         return jsonify({"error": "User ID is required"}), 400
 
-    accounts = Account.query.filter_by(user_id=user_id).all()
+    accounts = Account.query.filter_by(sales_rep_id=sales_rep_id).all()
     return jsonify([account.to_dict() for account in accounts]), 200
 
 
@@ -45,7 +46,7 @@ def get_accounts():
             "state": acc.state,
             "zip_code": acc.zip_code,
             "industry_id": acc.industry_id,
-            "user_id": acc.user_id,
+            "sales_rep_id": acc.sales_rep_id,
             "notes": acc.notes,
             "date_created": acc.date_created,
             "date_updated": acc.date_updated,
@@ -70,25 +71,22 @@ def get_account_by_id(account_id):
         "phone_number": account.phone_number,
     })
 
-# ✅ Get Account Details API
+# ✅ Get Account Details API (with Sales Rep and Branch Info)
 @account_bp.route("/details/<int:account_id>", methods=["GET"])
 def get_account_details(account_id):
-    account = Account.query.get(account_id)
-    
-    if not account:
-        return jsonify({"error": "Account not found"}), 404
+    account = Account.query.get_or_404(account_id)
 
-    # ✅ Fetch Industry Name
+    # Fetch Industry Name
     industry_name = None
     if account.industry_id:
         industry = Industry.query.get(account.industry_id)
         industry_name = industry.industry_name if industry else None
-    print(f"🔍 Industry for Account {account_id}: {industry_name}")
 
-    # ✅ Fetch Assigned Sales Representative (User assigned to this account)
+    # Fetch Sales Representative
     assigned_sales_rep = None
-    if account.user_id:
-        sales_rep = Users.query.get(account.user_id)  # This gets the user assigned to the account
+    branch_info = None
+    if account.sales_rep_id:
+        sales_rep = Users.query.get(account.sales_rep_id)
         if sales_rep:
             assigned_sales_rep = {
                 "user_id": sales_rep.user_id,
@@ -98,42 +96,77 @@ def get_account_details(account_id):
                 "email": sales_rep.email,
                 "phone_number": sales_rep.phone_number,
                 "extension": sales_rep.extension,
-                "branch_id": sales_rep.branch_id  # ✅ This allows us to fetch branch details below
+                "branch_id": sales_rep.branch_id
             }
-    print(f"🔍 Sales Person for Account {account_id}: {assigned_sales_rep}")
-
-    # ✅ Fetch Branch Details
-    branch_info = None
-    if assigned_sales_rep and assigned_sales_rep["branch_id"]:
-        branch = Branches.query.get(assigned_sales_rep["branch_id"])
-        if branch:
-            branch_info = {
-                "branch_name": branch.branch_name,
-                "address": branch.address,
-                "city": branch.city,
-                "state": branch.state,
-                "zip_code": branch.zip_code,
-                "phone_number": branch.phone_number
-            }
-    print(f"🔍 Branch for Account {account_id}: {branch_info}")
+            # Fetch Branch Details
+            if sales_rep.branch_id:
+                branch = Branches.query.get(sales_rep.branch_id)
+                if branch:
+                    branch_info = {
+                        "branch_name": branch.branch_name,
+                        "address": branch.address,
+                        "city": branch.city,
+                        "state": branch.state,
+                        "zip_code": branch.zip_code,
+                        "phone_number": branch.phone_number,
+                    }
 
     return jsonify({
         "account_id": account.account_id,
         "business_name": account.business_name,
         "contact_name": account.contact_name,
-        "email": account.email,
         "phone_number": account.phone_number,
+        "email": account.email,
         "address": account.address,
         "city": account.city,
         "state": account.state,
         "zip_code": account.zip_code,
-        "industry": industry_name if industry_name else "N/A",  
-        "sales_rep": assigned_sales_rep if assigned_sales_rep else None,  # ✅ Assigned rep info
-        "branch": branch_info if branch_info else None,  # ✅ Branch details of the assigned rep
-        "notes": account.notes if account.notes else "No notes available",
+        "industry": industry_name if industry_name else "N/A",
+        "sales_rep": assigned_sales_rep if assigned_sales_rep else None,
+        "branch": branch_info if branch_info else None,
         "date_created": account.date_created.strftime("%Y-%m-%d"),
         "date_updated": account.date_updated.strftime("%Y-%m-%d"),
-    })
+    }), 200
+
+# ✅ Fetch account revenue, last invoice date, and task count
+@account_bp.route("/account_metrics", methods=["GET"])
+def get_account_metrics():
+    sales_rep_id = request.args.get("sales_rep_id", type=int)
+    if not sales_rep_id:
+        return jsonify({"error": "Sales Rep ID is required"}), 400
+
+    accounts = (
+        db.session.query(
+            Account.account_id,
+            Account.business_name,
+            Account.contact_name,
+            Industry.industry_name,
+            func.coalesce(func.count(Tasks.task_id).filter(Tasks.is_completed == False), 0).label("task_count"),
+            func.coalesce(func.sum(Invoice.final_total), 0).label("total_revenue"),
+            func.max(Invoice.date_created).label("last_invoice_date"),
+        )
+        .join(Industry, Industry.industry_id == Account.industry_id, isouter=True)
+        .join(Invoice, Invoice.account_id == Account.account_id, isouter=True)
+        .join(Tasks, Tasks.account_id == Account.account_id, isouter=True)
+        .filter(Account.sales_rep_id == sales_rep_id)
+        .group_by(Account.account_id, Industry.industry_name)
+        .all()
+    )
+
+    result = [
+        {
+            "account_id": acc.account_id,
+            "business_name": acc.business_name,
+            "contact_name": acc.contact_name,
+            "industry_name": acc.industry_name or "Unknown Industry",
+            "task_count": acc.task_count,
+            "total_revenue": float(acc.total_revenue or 0),
+            "last_invoice_date": acc.last_invoice_date.strftime("%Y-%m-%d") if acc.last_invoice_date else None,
+        }
+        for acc in accounts
+    ]
+
+    return jsonify(result), 200
 
 # ✅ Update Account Details
 @account_bp.route("/update/<int:account_id>", methods=["PUT"])
@@ -162,7 +195,7 @@ def update_account(account_id):
         account.state = data.get("state", account.state)
         account.zip_code = data.get("zip_code", account.zip_code)
         account.industry_id = data.get("industry_id", account.industry_id) or None
-        account.user_id = data.get("user_id", account.user_id) or None
+        account.sales_rep_id = data.get("sales_rep_id", account.sales_rep_id) or None
         account.branch_id = data.get("branch_id", account.branch_id) or None
         account.notes = data.get("notes", account.notes) or None
 
@@ -190,7 +223,7 @@ def create_account():
         
         # ✅ Convert empty strings to None for integer fields
         industry_id = int(data.get("industry_id")) if data.get("industry_id") else None
-        user_id = int(data.get("user_id")) if data.get("user_id") else None
+        user_id = int(data.get("user_id")) if data.get("user_id") else None #sales_rep_id? 
         branch_id = int(data.get("branch_id")) if data.get("branch_id") else None
 
         # ✅ Create a new account instance
@@ -204,7 +237,7 @@ def create_account():
             state=data.get("state"),
             zip_code=data.get("zip_code"),
             industry_id=data.get("industry_id") or None,
-            user_id=data.get("user_id") or None,
+            sales_rep_id=data.get("sales_rep_id") or None,
             branch_id=data.get("branch_id") or None,
             notes=data.get("notes"),
             date_created=db.func.current_timestamp(),

@@ -7,9 +7,17 @@ export const fetchUserSession = async () => {
         const response = await api.get("/auth/session", { withCredentials: true });
         console.log("✅ Session Response:", response.data);
 
-        if (!response.data.user) return null; // ✅ Return null if user is not logged in
-        
-        return response.data.user;
+        if (!response.data || !response.data.user_id) {
+            console.warn("⚠️ No user found in session.");
+            return null;
+        }
+        return {
+            id: response.data.user_id,
+            username: response.data.username,
+            firstName: response.data.first_name,
+            lastName: response.data.last_name,
+            role: response.data.role_name,
+        };
     } catch (error) {
         console.error("❌ Error fetching user session:", error.response?.data || error.message);
         return null;

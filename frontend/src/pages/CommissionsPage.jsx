@@ -253,7 +253,7 @@ CommissionsPage.propTypes = {
     commissions: PropTypes.arrayOf(
         PropTypes.shape({
             commission_id: PropTypes.number.isRequired,
-            user_id: PropTypes.number.isRequired,
+            sales_rep_id: PropTypes.number.isRequired,
             invoice_id: PropTypes.number, // 🔹 Can be `null` if no invoice
             commission_amount: PropTypes.number.isRequired,
             date_paid: PropTypes.string.isRequired, // 🔹 Ensure this is always a string (from API)

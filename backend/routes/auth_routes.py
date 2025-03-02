@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify, session
-from models import Users, Departments
+from models import Users, Departments, UserRoles
 from database import db
+from flask_cors import cross_origin
 from werkzeug.security import check_password_hash
 
 auth_bp = Blueprint("auth", __name__)  # ✅ Define Blueprint
 
 # ✅ LOGIN Endpoint
 @auth_bp.route("/login", methods=["POST"])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True) 
 def login():
     """✅ Authenticate user and start session"""
     data = request.json
@@ -35,33 +37,33 @@ def login():
 # ✅ SESSION Endpoint
 # @auth_bp.route("/auth/session", methods=["GET"])
 @auth_bp.route("/session", methods=["GET"])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True) 
 def get_session():
-    """✅ Check if user session exists and return full user data"""
     user_id = session.get("user_id")
     
     if not user_id:
-        return jsonify({"user": None}), 200  # ✅ Instead of 401, return user: None
-
-    user = Users.query.get(user_id)
-    if not user:
-        return jsonify({"message": "User not found"}), 404  # Not Found
+        return jsonify({"error": "Not logged in"}), 401
     
-    department_name = None
-    if user.department_id:
-        department = db.session.query(Departments).filter_by(department_id=user.department_id).first()
-        department_name = department.name if department else "Unknown"
+    # ✅ Join with Departments (Optional) and UserRoles (Required)
+    user = (
+        db.session.query(Users, Departments.department_name, UserRoles.role_name)
+        .outerjoin(Departments, Users.department_id == Departments.department_id)
+        .outerjoin(UserRoles, Users.role_id == UserRoles.role_id)  # ✅ Join with user_roles
+        .filter(Users.user_id == user_id)
+        .first()
+    )
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    user_obj, department_name, role_name = user  # Unpacking tuple
 
     return jsonify({
-        "user": {
-            "id": user.user_id,
-            "username": user.username,
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "role": user.role_id,
-            "department_id": user.department_id,
-            "department_name": department_name,
-        }
+        "user_id": user_obj.user_id,
+        "first_name": user_obj.first_name,
+        "last_name": user_obj.last_name,
+        "department_name": department_name or "Department Unknown",  # ✅ Handle null departments
+        "role": role_name or "Unknown Role",  # ✅ Handle null roles
     }), 200
 
 
@@ -89,6 +91,7 @@ def get_session():
 
 # ✅ LOGOUT Endpoint
 @auth_bp.route("/logout", methods=["POST"])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True) 
 def logout():
     """Logout user and clear session"""
     session.pop("user_id", None)

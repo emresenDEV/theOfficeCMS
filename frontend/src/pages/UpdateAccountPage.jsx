@@ -331,14 +331,6 @@ const UpdateAccountPage = () => {
                     ))}
                 </select>
 
-                {/* ✅ Notes */}
-                <label className="block mb-2">Initial Notes</label>
-                <textarea
-                    name="notes"
-                    value={accountData.notes}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded mb-4"
-                />
                  {/* ✅ Submit Button */}
                 <button 
                     type="submit" 
@@ -374,7 +366,6 @@ UpdateAccountPage.propTypes = {
         industry_id: PropTypes.number,
         user_id: PropTypes.number,
         branch_id: PropTypes.number,
-        notes: PropTypes.string,
         date_created: PropTypes.string,
         date_updated: PropTypes.string,
     }).isRequired,

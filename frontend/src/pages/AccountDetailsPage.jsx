@@ -83,7 +83,11 @@ const AccountDetailsPage = ({ user }) => {
             try {
                 setLoading(true);
                 setAccount(await fetchAccountDetails(accountId));  // ✅ Fetch account details
-                setInvoices(await fetchInvoiceByAccount(accountId));  // ✅ Fetch invoices
+
+                const fetchedInvoices = await fetchInvoiceByAccount(accountId);
+                console.log("Invoices fetched for account:", fetchedInvoices); //debugging
+                setInvoices(fetchedInvoices);  // ✅ Fetch invoices
+                // setInvoices(await fetchInvoiceByAccount(accountId));  // ✅ Fetch invoices
                 await refreshNotes();  // ✅ Fetch updated notes
                 setTasks(await fetchTasksByAccount(accountId)); // ✅ Fetch tasks
                 
@@ -129,7 +133,6 @@ const AccountDetailsPage = ({ user }) => {
                     <p className="text-gray-700 text-left"><strong>Address:</strong> {account.address}</p>
                     <p className="text-gray-700 text-left">{account.city}, {account.state} {account.zip_code}</p>
                     <p className="text-gray-700 text-left"><strong>Industry:</strong> {account.industry || "N/A"}</p>
-                    <p className="text-gray-700 text-left"><strong>Notes:</strong> {account.notes || "N/A"}</p>
                 </div>
                 <div className="w-1/2 text-right">
                     <p className="text-lg font-semibold">Account Number: {account.account_id}</p>
@@ -145,22 +148,23 @@ const AccountDetailsPage = ({ user }) => {
                     <p>{account.branch?.address}</p>
                     <p>{account.branch?.city}, {account.branch?.state} {account.branch?.zip_code}</p>
                     <p><strong>Phone Number: </strong>{account.branch?.phone_number} <strong>| Ext: </strong>{account.sales_rep?.extension || "N/A"}</p>
-                    <p><strong>Email: </strong>{account.sales_rep?.email}</p>
+                    <p><strong>Email: </strong>{account.sales_rep?.email || "N/A"}</p>
                 </div>
             </div>
 
             {/* ✅ Sections */}
             <InvoicesSection 
-                invoices={invoices} 
+                invoices={invoices || []} 
                 onCreateInvoice={() => navigate("/create-invoice")}
             />
-            
+
             <NotesSection 
                 notes={notes}
                 accountId={account?.account_id || 0}
                 userId={user?.id || 0}
                 setNotes={setNotes}
                 refreshNotes={refreshNotes}
+                invoiceId={invoices.length > 0 ? invoices[0].invoice_id : null}
             />
             
             <TasksSection
@@ -241,6 +245,7 @@ AccountDetailsPage.propTypes = {
             username: PropTypes.string,
             date_created: PropTypes.string.isRequired,
             note_text: PropTypes.string.isRequired,
+            invoice_id: PropTypes.number,
         })
     ),
 
