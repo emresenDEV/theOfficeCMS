@@ -17,12 +17,29 @@ export const fetchUserSession = async () => {
             firstName: response.data.first_name,
             lastName: response.data.last_name,
             role: response.data.role_name,
+            branch_id: response.data.branch_id,
         };
     } catch (error) {
         console.error("❌ Error fetching user session:", error.response?.data || error.message);
         return null;
     }
 };
+
+// export const fetchUserSession = async () => {
+//     try {
+//         const response = await api.get("/auth/session", {
+//             credentials: "include",  // ✅ Ensures cookies are included
+//             headers: { "Cache-Control": "no-cache" }  // ✅ Prevents caching issues
+//         });
+
+//         console.log("✅ Session Response:", response.data);
+//         return response.data;
+//     } catch (error) {
+//         console.error("❌ Error fetching user session:", error.response?.data || error.message);
+//         return null;
+//     }
+// };
+
 
 
 

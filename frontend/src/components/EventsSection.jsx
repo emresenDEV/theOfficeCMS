@@ -33,36 +33,35 @@ export const EventsSection = ({ user }) => {
 
     return (
         <div className="bg-white shadow-lg rounded-lg p-4 w-full h-80 overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-700 mb-3">📅 Today&apos;s Events</h3>
-
-            {events.length > 0 ? (
-                events.map(event => (
-                    <div 
-                        key={event.event_id} 
-                        className="flex justify-between items-center bg-gray-50 p-3 rounded-md shadow-sm mb-2 hover:bg-gray-100 transition cursor-pointer"
-                        onClick={() => navigate(`/calendar/edit/${event.event_id}`)}
-                    >
-                        <p className="font-semibold text-gray-900">
-                            {event.event_title || "Untitled Event"}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                            {event.start_time ? formatTime(event.start_time) : "No Time"} - 
-                            {event.end_time ? formatTime(event.end_time) : "No Time"}
-                        </p>
-                    </div>
-                ))
-            ) : (
-                <div className="text-center text-gray-500">
-                    <p>You have nothing planned today.</p>
-                    <button 
-                        onClick={() => navigate("/calendar/create")} 
-                        className="mt-3 bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
-                    >
-                        Create Event
-                    </button>
-                </div>
-            )}
-        </div>
+        <h3 className="text-lg font-bold text-gray-700 mb-3">📅 Today&apos;s Events</h3>
+    
+        {events.slice(0, 3).map(event => (
+            <div
+                key={event.event_id}
+                className="flex justify-between items-center bg-gray-50 p-3 rounded-md shadow-sm mb-2 hover:bg-gray-100 transition-colors cursor-pointer"
+                onClick={() => navigate(`/calendar/edit/${event.event_id}`)}
+            >
+                <p className="font-semibold text-gray-900">
+                    {event.event_title || "Untitled Event"}
+                </p>
+                <p className="text-sm text-gray-600">
+                    {event.start_time ? formatTime(event.start_time) : "No Time"} - 
+                    {event.end_time ? formatTime(event.end_time) : "No Time"}
+                </p>
+            </div>
+        ))}
+        {events.length === 0 && (
+            <div className="text-center text-gray-500 py-6">
+                <p>You have nothing planned today.</p>
+                <button
+                    onClick={() => navigate("/calendar/create")}
+                    className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                    Create Event
+                </button>
+            </div>
+        )}
+    </div>
     );
 };
 

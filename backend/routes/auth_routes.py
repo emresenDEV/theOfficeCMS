@@ -15,8 +15,14 @@ def login():
     user = Users.query.filter_by(username=data["username"]).first()
 
     if user and check_password_hash(user.password_hash, data["password"]):
+        session.clear()  # ✅ Clear old session to prevent conflicts
         session["user_id"] = user.user_id
-        session.permanent = True  # ✅ Make session persistent
+        session["username"] = user.username
+        session["email"] = user.email
+        session.permanent = True  
+        session.modified = True  # ✅ Ensure session is written to storage
+
+        print("🟢 DEBUG: Session after login ->", dict(session))  # ✅ Check session data in logs
 
         return jsonify({
             "message": "Login successful",
@@ -34,16 +40,18 @@ def login():
 
 
 
+
 # ✅ SESSION Endpoint
-# @auth_bp.route("/auth/session", methods=["GET"])
-@auth_bp.route("/session", methods=["GET"])
+# @auth_bp.route("/session", methods=["GET"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True) 
 def get_session():
+    """✅ Fetch logged-in user session"""
     user_id = session.get("user_id")
     
     if not user_id:
+        print("❌ DEBUG: No active session found.")  # ✅ Log debug info
         return jsonify({"error": "Not logged in"}), 401
-    
+
     # ✅ Join with Departments (Optional) and UserRoles (Required)
     user = (
         db.session.query(Users, Departments.department_name, UserRoles.role_name)
@@ -54,6 +62,7 @@ def get_session():
     )
 
     if not user:
+        print("❌ DEBUG: User not found in database.")  # ✅ Debug missing users
         return jsonify({"error": "User not found"}), 404
 
     user_obj, department_name, role_name = user  # Unpacking tuple
@@ -62,10 +71,16 @@ def get_session():
         "user_id": user_obj.user_id,
         "first_name": user_obj.first_name,
         "last_name": user_obj.last_name,
-        "department_name": department_name or "Department Unknown",  # ✅ Handle null departments
-        "role": role_name or "Unknown Role",  # ✅ Handle null roles
+        "department_name": department_name or "Department Unknown",
+        "role": role_name or "Unknown Role",
     }), 200
 
+    
+# Debugger 
+@auth_bp.route("/debug-session", methods=["GET"])
+def debug_session():
+    print("🟢 DEBUG: Session data ->", dict(session))  # ✅ Log session data
+    return jsonify({"session": dict(session)}), 200
 
 
 # ✅ CHECK SESSION STATUS

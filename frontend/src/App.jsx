@@ -33,18 +33,46 @@ function App() {
   const [loading, setLoading] = useState(true);
 
 
+  // useEffect(() => {
+  //   async function checkSession() {
+  //       try {
+  //           const sessionUser = await fetchUserSession();
+  //           if (sessionUser) {
+  //               setUser({
+  //                   id: sessionUser.id || sessionUser.user_id,
+  //                   username: sessionUser.username,
+  //                   firstName: sessionUser.first_name || "",
+  //                   lastName: sessionUser.last_name || "",
+  //                   role: sessionUser.role_name || "",
+  //               });
+  //           }
+  //       } catch (error) {
+  //           console.error("Session Check Failed:", error);
+  //       } finally {
+  //           setLoading(false);
+  //       }
+  //   }
+  //   checkSession();
+  // }, []);
+
   useEffect(() => {
     async function checkSession() {
         try {
-            const sessionUser = await fetchUserSession();
-            if (sessionUser) {
-                setUser({
-                    id: sessionUser.id || sessionUser.user_id,
-                    username: sessionUser.username,
-                    firstName: sessionUser.first_name || "",
-                    lastName: sessionUser.last_name || "",
-                    role: sessionUser.role_name || "",
-                });
+            const storedUser = localStorage.getItem("user"); // 🔹 Check local storage
+            if (storedUser) {
+                setUser(JSON.parse(storedUser)); // ✅ Restore session from local storage
+            } else {
+                const sessionUser = await fetchUserSession();
+                if (sessionUser) {
+                    setUser({
+                        id: sessionUser.id || sessionUser.user_id,
+                        username: sessionUser.username,
+                        firstName: sessionUser.first_name || "",
+                        lastName: sessionUser.last_name || "",
+                        role: sessionUser.role_name || "",
+                    });
+                    localStorage.setItem("user", JSON.stringify(sessionUser)); // ✅ Store session in localStorage
+                }
             }
         } catch (error) {
             console.error("Session Check Failed:", error);
@@ -53,8 +81,7 @@ function App() {
         }
     }
     checkSession();
-  }, []);
-
+}, []);
 
 
   // Logout function

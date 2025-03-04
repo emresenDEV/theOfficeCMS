@@ -27,9 +27,10 @@ export const fetchUserRoles = async () => {
 export const fetchUserProfile = async (userId) => {
     try {
         const response = await api.get(`/users/${userId}`);
+        console.log("✅ User Profile Fetched:", response.data);
         return response.data;
     } catch (error) {
-        console.error("Error fetching user profile:", error);
+        console.error("❌ Error fetching user profile:", error);
         return null;
     }
 };

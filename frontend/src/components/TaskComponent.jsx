@@ -101,7 +101,6 @@ const TasksComponent = ({ tasks = [], user = {}, users = [], refreshTasks = () =
     // ✅ Task Completion with Undo Option
     const handleTaskCompletion = (task) => {
         if (completingTask[task.task_id]) {
-            // ✅ If clicked again during countdown, cancel completion
             setCompletingTask(prev => ({ ...prev, [task.task_id]: undefined }));
             return;
         }
@@ -133,33 +132,34 @@ const TasksComponent = ({ tasks = [], user = {}, users = [], refreshTasks = () =
 
     return (
         <div className="bg-white shadow-lg p-6 rounded-lg">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">📋 My Tasks</h3>
-
-            {/* ✅ Create Task Section */}
-            <div className="grid grid-cols-6 gap-2 items-center mb-4">
+        <h3 className="text-2xl font-bold text-gray-800 mb-4">📋 My Tasks</h3>
+    
+        {/* Create Task Section */}
+        <div className="sticky top-0 bg-white pb-4 z-10">
+            <div className="grid grid-cols-6 gap-4 items-center mb-4">
                 <input
                     type="text"
                     placeholder="New task..."
-                    className="border p-2 rounded col-span-2"
+                    className="border p-2 rounded-lg col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={newTaskDescription}
                     onChange={(e) => setNewTaskDescription(e.target.value)}
                 />
                 <input
                     type="date"
-                    className="border p-2 rounded"
+                    className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                 />
-                <div className="relative">
+                <div className="relative col-span-2">
                     <input
                         type="text"
                         placeholder="Assign to Account"
-                        className="border p-2 rounded w-full"
+                        className="border p-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={searchAccount}
                         onChange={(e) => handleAccountSearch(e.target.value)}
                     />
                     {filteredAccounts.length > 0 && (
-                        <div className="absolute bg-white border w-full mt-1 rounded-lg shadow-lg max-h-40 overflow-y-scroll">
+                        <div className="absolute bg-white border w-full mt-1 rounded-lg shadow-lg max-h-40 overflow-y-scroll z-10">
                             {filteredAccounts.map((acc) => (
                                 <div
                                     key={acc.account_id}
@@ -178,56 +178,64 @@ const TasksComponent = ({ tasks = [], user = {}, users = [], refreshTasks = () =
                 </div>
                 <button
                     onClick={handleCreateTask}
-                    className="bg-blue-600 text-white px-3 py-2 rounded shadow-lg hover:bg-blue-700"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-colors"
                 >
                     Create
                 </button>
             </div>
-
-            {/* ✅ Tasks Table */}
-            <div className="overflow-y-auto max-h-64 border rounded-lg">
-                {visibleTasks.length > 0 ? (
-                    <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 bg-gray-100 shadow-sm">
-                            <tr>
-                                <th className="p-3 border-b">Task</th>
-                                <th className="p-3 border-b">Due Date</th>
-                                <th className="p-3 border-b">Assigned By</th>
-                                <th className="p-3 border-b">Account</th>
-                                <th className="p-3 border-b text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {visibleTasks.map(task => (
-                                <tr key={task.task_id} className="border-b hover:bg-gray-50">
-                                    <td className="p-3">{task.task_description}</td>
-                                    <td className="p-3">{format(new Date(task.due_date), "MM/dd/yyyy")}</td>
-                                    <td className="p-3">{task.assigned_by || "N/A"}</td>
-                                    <td className="p-3">
-                                        {task.account_id ? (
-                                            <button onClick={() => navigate(`/accounts/details/${task.account_id}`)} className="bg-blue-500 text-white px-2 py-1 rounded">
-                                                View
-                                            </button>
-                                        ) : "-"}
-                                    </td>
-                                    <td className="p-3 text-center">
-                                        {completingTask[task.task_id] ? (
-                                            <button onClick={() => handleTaskCompletion(task)} className="bg-red-500 text-white px-2 py-1 rounded">
-                                                Undo ({completingTask[task.task_id]}s)
-                                            </button>
-                                        ) : (
-                                            <button onClick={() => handleTaskCompletion(task)} className="bg-green-500 text-white px-2 py-1 rounded">
-                                                Complete
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : <p className="text-gray-500 text-center mt-2">No tasks for today or this week.</p>}
-            </div>
         </div>
+    
+        {/* Tasks Table */}
+        <div className="overflow-y-auto max-h-[400px]">
+            <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 bg-gray-100 shadow-sm">
+                    <tr>
+                        <th className="p-3 border-b text-gray-700">Task</th>
+                        <th className="p-3 border-b text-gray-700">Due Date</th>
+                        <th className="p-3 border-b text-gray-700">Assigned By</th>
+                        <th className="p-3 border-b text-gray-700">Account</th>
+                        <th className="p-3 border-b text-gray-700 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {visibleTasks.slice(0, 6).map(task => (
+                        <tr key={task.task_id} className="border-b hover:bg-gray-50 transition-colors">
+                            <td className="p-3 text-gray-800">{task.task_description}</td>
+                            <td className="p-3 text-gray-700">{format(new Date(task.due_date), "MM/dd/yyyy")}</td>
+                            <td className="p-3 text-gray-700">{task.assigned_by || "N/A"}</td>
+                            <td className="p-3">
+                                {task.account_id ? (
+                                    <button
+                                        onClick={() => navigate(`/accounts/details/${task.account_id}`)}
+                                        className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors"
+                                    >
+                                        View
+                                    </button>
+                                ) : "-"}
+                            </td>
+                            <td className="p-3 text-center">
+                                {completingTask[task.task_id] ? (
+                                    <button
+                                        onClick={() => handleTaskCompletion(task)}
+                                        className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition-colors"
+                                    >
+                                        Undo ({completingTask[task.task_id]}s)
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => handleTaskCompletion(task)}
+                                        className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors"
+                                    >
+                                        Complete
+                                    </button>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    </div>
     );
 };
 

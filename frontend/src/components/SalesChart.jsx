@@ -9,87 +9,133 @@ import {
     Tooltip,
     Legend
 } from "chart.js";
-import { fetchCompanySales, fetchUserSales } from "../services/salesService";
+import { fetchCompanySales, fetchUserSales, fetchBranchSales, fetchBranchUsersSales } from "../services/salesService";
 import PropTypes from "prop-types";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-const SalesChart = ({ user }) => {
+const MONTH_LABELS = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+const SalesChart = ({ userProfile }) => {
+    const [activeTab, setActiveTab] = useState("company");
+    const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
     const [companySales, setCompanySales] = useState([]);
     const [userSales, setUserSales] = useState([]);
+    const [branchSales, setBranchSales] = useState({});
+    const [branchUsersSales, setBranchUsersSales] = useState({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user || !user.id) return; 
-
+        if (!userProfile?.branch_id) {
+            console.warn("⚠️ SalesChart: Waiting for `branch_id` before fetching data...");
+            return;
+        }
+    
         async function fetchSalesData() {
             setLoading(true);
             try {
-                const [companyData, userData] = await Promise.all([
-                    fetchCompanySales().catch(() => Array(12).fill(0)),
-                    fetchUserSales(user.id).catch(() => Array(12).fill(0))
+                const [companyData, userData, branchData, branchUsersData] = await Promise.all([
+                    fetchCompanySales(selectedYear),
+                    fetchUserSales(userProfile.user_id, selectedYear),
+                    fetchBranchSales(selectedYear),
+                    fetchBranchUsersSales(userProfile.branch_id, selectedYear)
                 ]);
-
-                setCompanySales(companyData);
-                setUserSales(userData);
+    
+                console.log("✅ API Responses:", { companyData, userData, branchData, branchUsersData });
+    
+                setCompanySales(companyData || Array(12).fill(0));
+                setUserSales(userData || Array(12).fill(0));
+                setBranchSales(branchData || {});
+                setBranchUsersSales(branchUsersData || {});
             } catch (error) {
-                console.error("Error fetching sales data:", error);
+                console.error("❌ Error fetching sales data:", error);
             } finally {
                 setLoading(false);
             }
         }
-
+    
         fetchSalesData();
-    }, [user]);
+    }, [userProfile, selectedYear]);
+    
+
+    const renderChartData = () => {
+        if (activeTab === "company") {
+            return [
+                { label: "Company-Wide Sales", data: companySales, borderColor: "blue" },
+                { label: `${userProfile.first_name}'s Sales`, data: userSales, borderColor: "red" }
+            ];
+        } else if (activeTab === "branch") {
+            return userProfile.branch_id
+                ? [{ label: `${userProfile.branch_name} Sales`, data: branchSales[userProfile.branch_id] || Array(12).fill(0), borderColor: "green" }]
+                : [];
+        } else {
+            return Object.keys(branchUsersSales).map(name => ({
+                label: `${name}'s Sales`,
+                data: branchUsersSales[name] || Array(12).fill(0),
+                borderColor: name === userProfile.first_name ? "red" : "gray"
+            }));
+        }
+    };
+
+    if (!userProfile || !userProfile.branch_id) {
+        return <p className="text-center text-gray-600">Waiting for user profile data...</p>;
+    }
 
     if (loading) return <p className="text-center text-gray-600">Loading Sales Data...</p>;
 
-    const data = {
-        labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-        datasets: [
-            {
-                label: "Company Sales",
-                data: companySales,
-                fill: false,
-                borderColor: "rgba(75,192,192,1)",
-                backgroundColor: "rgba(75,192,192,0.2)",
-                tension: 0.1,
-            },
-            {
-                label: `${user.first_name}'s Sales`,
-                data: userSales,
-                fill: false,
-                borderColor: "rgba(255,99,132,1)",
-                backgroundColor: "rgba(255,99,132,0.2)",
-                tension: 0.1,
-            }
-        ],
-    };
-
-    const options = {
-        responsive: true,
-        plugins: {
-            legend: {
-                display: true,
-            },
-            tooltip: {
-                enabled: true,
-            },
-        },
-    };
-
     return (
-        <div style={{ maxWidth: "700px", margin: "auto" }}>
-            <h3 className="text-xl font-bold text-center mb-4">Sales Overview</h3>
-            <Line data={data} options={options} />
+        <div className="bg-white shadow-md p-6 rounded-lg">
+            <div className="mb-4">
+                <label htmlFor="yearSelect" className="mr-2">Select Year:</label>
+                <select
+                    id="yearSelect"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="border p-2 rounded-md"
+                >
+                    {[...Array(5)].map((_, i) => {
+                        const year = CURRENT_YEAR - i;
+                        return <option key={year} value={year}>{year}</option>;
+                    })}
+                </select>
+            </div>
+
+            <div className="flex space-x-4 mb-4">
+                <button className={`px-4 py-2 rounded-md ${activeTab === "company" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setActiveTab("company")}>
+                    Company-Wide Sales
+                </button>
+
+                <button className={`px-4 py-2 rounded-md ${activeTab === "branch" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setActiveTab("branch")}>
+                    Branch-Specific Sales
+                </button>
+
+                <button className={`px-4 py-2 rounded-md ${activeTab === "branchUsers" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setActiveTab("branchUsers")}>
+                    {userProfile.branch_name ? `${userProfile.branch_name} Sales` : "Your Branch Sales"}
+                </button>
+            </div>
+
+            <Line data={{ labels: MONTH_LABELS, datasets: renderChartData() }} options={{ responsive: true, plugins: { legend: { display: true }, tooltip: { enabled: true } } }} />
         </div>
     );
 };
 
 SalesChart.propTypes = {
-    user: PropTypes.shape({
-        id: PropTypes.number.isRequired,
-        first_name: PropTypes.string.isRequired
+    userProfile: PropTypes.shape({
+        user_id: PropTypes.number.isRequired,
+        first_name: PropTypes.string.isRequired,
+        last_name: PropTypes.string.isRequired,
+        email: PropTypes.string.isRequired,
+        branch_id: PropTypes.number.isRequired,
+        branch_name: PropTypes.string.isRequired,
+        role_id: PropTypes.number.isRequired,
+        role_name: PropTypes.string.isRequired,
+        department_id: PropTypes.number.isRequired,
+        department_name: PropTypes.string.isRequired,
     }).isRequired,
 };
 
