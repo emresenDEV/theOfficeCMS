@@ -1,21 +1,46 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { fetchAssignedAccounts, fetchAccountMetrics } from "../services/accountService";
+import { fetchAssignedAccounts, fetchAccountMetrics } from "../services/accountService"; 
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns"; // ✅ Import date-fns for formatting
+import { format } from "date-fns"; 
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 
 export const AccountsTable = ({ user }) => {
     const [accounts, setAccounts] = useState([]);
+    const [accountMetrics, setAccountMetrics] = useState([]); 
     const [searchQuery, setSearchQuery] = useState("");
     const [sortColumn, setSortColumn] = useState("business_name");
     const [sortOrder, setSortOrder] = useState("asc");
     const [filterIndustry, setFilterIndustry] = useState("all");
+    const [isCollapsed, setIsCollapsed] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!user || !user.id) return;
-        fetchAccountMetrics(user.id).then(setAccounts);
+        if (!user || !user.user_id) return;
+
+        console.log("🔍 Fetching accounts for sales_rep_id:", user.user_id);  
+
+        fetchAssignedAccounts(user.user_id)
+            .then((data) => {
+                console.log("✅ API Response from `/assigned`:", data); 
+                setAccounts(data);
+            })
+            .catch((error) => console.error("❌ Error fetching assigned accounts:", error));
+
+        fetchAccountMetrics(user.user_id) 
+            .then((metrics) => {
+                console.log("📊 Account Metrics:", metrics);
+                setAccountMetrics(metrics);
+            })
+            .catch((error) => console.error("❌ Error fetching account metrics:", error));
+
     }, [user]);
+
+    // ✅ Merging account data with metrics
+    const mergedAccounts = accounts.map(acc => {
+        const metrics = accountMetrics.find(m => m.account_id === acc.account_id) || {};
+        return { ...acc, ...metrics };
+    });
 
     // ✅ Sorting Logic
     const toggleSortOrder = (column) => {
@@ -23,13 +48,12 @@ export const AccountsTable = ({ user }) => {
         setSortColumn(column);
     };
 
-    const sortedAccounts = [...accounts].sort((a, b) => {
+    const sortedAccounts = [...mergedAccounts].sort((a, b) => {
         let valueA = a[sortColumn];
         let valueB = b[sortColumn];
 
-        // Handle NULL values
-        if (valueA === null) valueA = sortColumn === "last_invoice_date" ? "0000-00-00" : 0;
-        if (valueB === null) valueB = sortColumn === "last_invoice_date" ? "0000-00-00" : 0;
+        if (valueA === null || valueA === undefined) valueA = sortColumn === "last_invoice_date" ? "0000-00-00" : 0;
+        if (valueB === null || valueB === undefined) valueB = sortColumn === "last_invoice_date" ? "0000-00-00" : 0;
 
         if (sortColumn === "business_name" || sortColumn === "industry_name" || sortColumn === "contact_name") {
             return sortOrder === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
@@ -54,113 +78,101 @@ export const AccountsTable = ({ user }) => {
     });
 
     return (
-        <div className="bg-white shadow-lg rounded-lg p-4 w-full overflow-x-auto">
-    {/* Search & Filters */}
-    <div className="grid grid-cols-3 gap-4 mb-4">
-        <input
-            type="text"
-            placeholder="Search..."
-            className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <select
-            className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={filterIndustry}
-            onChange={(e) => setFilterIndustry(e.target.value)}
-        >
-            <option value="all">All Industries</option>
-            {[...new Set(accounts.map(acc => acc.industry_name))].map(industry => (
-                <option key={industry} value={industry}>{industry}</option>
-            ))}
-        </select>
-        <button
-            className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-            onClick={() => {
-                setSearchQuery("");
-                setFilterIndustry("all");
-                setSortColumn("business_name");
-                setSortOrder("asc");
-            }}
-        >
-            Clear Filters
-        </button>
-    </div>
+        <div className={`bg-white shadow-lg rounded-lg transition-all duration-300 ${isCollapsed ? "h-14 overflow-hidden" : "h-auto"}`}>
+            {/* Toggle Button */}
+            <div className="flex justify-between items-center px-4 py-3 cursor-pointer" onClick={() => setIsCollapsed(prev => !prev)}>
+                <h3 className="text-lg font-bold text-gray-700">🏢 My Accounts</h3>
+                <button>
+                    {isCollapsed ? <ChevronDownIcon className="w-6 h-6 text-gray-500" /> : <ChevronUpIcon className="w-6 h-6 text-gray-500" />}
+                </button>
+            </div>
 
-    {/* Table */}
-    <div className="overflow-y-auto max-h-[400px]">
-        <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 bg-gray-100 shadow-sm">
-                <tr>
-                    <th
-                        className="p-3 border-b cursor-pointer hover:bg-gray-200"
-                        onClick={() => toggleSortOrder("business_name")}
-                    >
-                        Business Name {sortColumn === "business_name" && (sortOrder === "asc" ? "↑" : "↓")}
-                    </th>
-                    <th
-                        className="p-3 border-b cursor-pointer hover:bg-gray-200"
-                        onClick={() => toggleSortOrder("contact_name")}
-                    >
-                        Contact {sortColumn === "contact_name" && (sortOrder === "asc" ? "↑" : "↓")}
-                    </th>
-                    <th
-                        className="p-3 border-b cursor-pointer hover:bg-gray-200"
-                        onClick={() => toggleSortOrder("industry_name")}
-                    >
-                        Industry {sortColumn === "industry_name" && (sortOrder === "asc" ? "↑" : "↓")}
-                    </th>
-                    <th
-                        className="p-3 border-b cursor-pointer hover:bg-gray-200"
-                        onClick={() => toggleSortOrder("task_count")}
-                    >
-                        Tasks {sortColumn === "task_count" && (sortOrder === "asc" ? "↑" : "↓")}
-                    </th>
-                    <th
-                        className="p-3 border-b cursor-pointer hover:bg-gray-200"
-                        onClick={() => toggleSortOrder("total_revenue")}
-                    >
-                        Revenue {sortColumn === "total_revenue" && (sortOrder === "asc" ? "↑" : "↓")}
-                    </th>
-                    <th
-                        className="p-3 border-b cursor-pointer hover:bg-gray-200"
-                        onClick={() => toggleSortOrder("last_invoice_date")}
-                    >
-                        Last Invoice {sortColumn === "last_invoice_date" && (sortOrder === "asc" ? "↑" : "↓")}
-                    </th>
-                    <th className="p-3 border-b">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {filteredAccounts.slice(0, 6).map(acc => (
-                    <tr key={acc.account_id} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="p-3 text-gray-800">{acc.business_name}</td>
-                        <td className="p-3 text-gray-700">{acc.contact_name}</td>
-                        <td className="p-3 text-gray-700">{acc.industry_name}</td>
-                        <td className="p-3 text-gray-700">{acc.task_count}</td>
-                        <td className="p-3 text-gray-700">${acc.total_revenue.toFixed(2)}</td>
-                        <td className="p-3 text-gray-700">{acc.last_invoice_date ? format(new Date(acc.last_invoice_date), "MM/dd/yyyy") : "N/A"}</td>
-                        <td className="p-3">
-                            <button
-                                className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
-                                onClick={() => navigate(`/accounts/details/${acc.account_id}`)}
-                            >
-                                View
-                            </button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    </div>
-</div>
+            {!isCollapsed && (
+                <div className="p-4">
+                    {/* Search & Filters */}
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        <select
+                            className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={filterIndustry}
+                            onChange={(e) => setFilterIndustry(e.target.value)}
+                        >
+                            <option value="all">All Industries</option>
+                            {[...new Set(accounts.map(acc => acc.industry_name))].map(industry => (
+                                <option key={industry} value={industry}>{industry}</option>
+                            ))}
+                        </select>
+                        <button
+                            className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                            onClick={() => {
+                                setSearchQuery("");
+                                setFilterIndustry("all");
+                                setSortColumn("business_name");
+                                setSortOrder("asc");
+                            }}
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
+
+                    {/* Table */}
+                    <div className="overflow-y-auto max-h-[600px]"> {/* ✅ Scrollable Table */}
+                        <table className="w-full text-left border-collapse">
+                            <thead className="sticky top-0 bg-gray-100 shadow-md z-10">
+                                <tr>
+                                    {["business_name", "contact_name", "industry_name", "task_count", "total_revenue", "last_invoice_date"].map((col) => (
+                                        <th 
+                                            key={col} 
+                                            className="p-3 border-b cursor-pointer hover:bg-gray-200"
+                                            onClick={() => toggleSortOrder(col)}
+                                        >
+                                            {col.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} 
+                                            {sortColumn === col ? (sortOrder === "asc" ? " ↑" : " ↓") : ""}
+                                        </th>
+                                    ))}
+                                    <th className="p-3 border-b">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredAccounts.slice(0, 6).map(acc => (
+                                    <tr key={acc.account_id} className="border-b hover:bg-gray-50 transition-colors">
+                                        <td className="p-3 text-gray-800">{acc.business_name}</td>
+                                        <td className="p-3 text-gray-700">{acc.contact_name}</td>
+                                        <td className="p-3 text-gray-700">{acc.industry_name}</td>
+                                        <td className="p-3 text-gray-700">{acc.task_count || 0}</td>
+                                        <td className="p-3 text-gray-700">${acc.total_revenue ? acc.total_revenue.toFixed(2) : "0.00"}</td>
+                                        <td className="p-3 text-gray-700">
+                                            {acc.last_invoice_date ? format(new Date(acc.last_invoice_date), "MM/dd/yyyy") : "N/A"}
+                                        </td>
+                                        <td className="p-3">
+                                            <button
+                                                className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+                                                onClick={() => navigate(`/accounts/details/${acc.account_id}`)}
+                                            >
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 
-
+// ✅ Fixed `PropTypes` and ensured correct user field names
 AccountsTable.propTypes = {
     user: PropTypes.shape({
-        id: PropTypes.number.isRequired
+        user_id: PropTypes.number.isRequired,
     }).isRequired,
     accounts: PropTypes.arrayOf(
         PropTypes.shape({

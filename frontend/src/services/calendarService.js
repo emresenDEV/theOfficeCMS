@@ -59,13 +59,14 @@ export const updateCalendarEvent = async (eventId, updatedData) => {
 // ✅ Delete a Calendar Event
 export const deleteCalendarEvent = async (eventId) => {
     try {
-        await api.delete(`/events/${eventId}`);
+        await api.delete(`/calendar/events/${eventId}`); 
         return { success: true };
     } catch (error) {
         console.error("Error deleting event:", error.response?.data || error.message);
         return { success: false };
     }
 };
+
 
 // FILTER FOR DESIRED USER CALLS
 

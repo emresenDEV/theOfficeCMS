@@ -128,8 +128,8 @@ class Invoice(db.Model):
     account = db.relationship('Account', back_populates='invoices', foreign_keys=[account_id])
     commissions = db.relationship('Commissions', back_populates='invoice', foreign_keys=[Commissions.invoice_id])
     sales_rep = db.relationship('Users', back_populates='invoices', foreign_keys=[sales_rep_id])
-    invoice_services = db.relationship('InvoiceServices', back_populates='invoice', cascade="all, delete-orphan")
-    services = db.relationship('InvoiceServices', back_populates='invoice', cascade="all, delete-orphan")
+    invoice_services = db.relationship('InvoiceServices', back_populates='invoice', cascade="all, delete-orphan", overlaps="services")
+    services = db.relationship('Service', secondary='invoice_services', back_populates='invoices', overlaps="invoice_services")
 
 class InvoiceServices(db.Model):
     __tablename__ = 'invoice_services'
@@ -141,7 +141,7 @@ class InvoiceServices(db.Model):
     total_price = db.Column(db.Numeric, nullable=False)  # Computed as quantity * price
     
     # Relationships
-    invoice = db.relationship('Invoice', back_populates='services', foreign_keys=[invoice_id])
+    invoice = db.relationship('Invoice', back_populates='invoice_services', foreign_keys=[invoice_id], overlaps="services")
     service = db.relationship('Service', back_populates='invoice_services', foreign_keys=[service_id])
 
 class Notes(db.Model): 
@@ -168,6 +168,7 @@ class Service(db.Model):
     
     # Relationships
     invoice_services = db.relationship('InvoiceServices', back_populates='service', cascade="all, delete-orphan")
+    invoices = db.relationship('Invoice', secondary='invoice_services', back_populates='services', overlaps="invoice_services")
 
 class TaxRates(db.Model):
     __tablename__ = 'tax_rates'

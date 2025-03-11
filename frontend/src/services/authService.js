@@ -25,45 +25,6 @@ export const fetchUserSession = async () => {
     }
 };
 
-// export const fetchUserSession = async () => {
-//     try {
-//         const response = await api.get("/auth/session", {
-//             credentials: "include",  // ✅ Ensures cookies are included
-//             headers: { "Cache-Control": "no-cache" }  // ✅ Prevents caching issues
-//         });
-
-//         console.log("✅ Session Response:", response.data);
-//         return response.data;
-//     } catch (error) {
-//         console.error("❌ Error fetching user session:", error.response?.data || error.message);
-//         return null;
-//     }
-// };
-
-
-
-
-// export const fetchUserSession = async () => {
-//     try {
-//         const response = await fetch("http://127.0.0.1:5001/auth/session", {
-//             credentials: "include",  // ✅ Ensures cookies are sent
-//             method: "GET"
-//         });
-
-//         if (!response.ok) {
-//             console.error("❌ Session fetch failed:", response.status);
-//             return null;
-//         }
-
-//         const data = await response.json();
-//         console.log("✅ Session Response:", data);
-//         return data; // ✅ Returns full user data object
-//     } catch (error) {
-//         console.error("❌ Error fetching user session:", error);
-//         return null;
-//     }
-// };
-
 // ✅ Login User with proper session management
 export const loginUser = async (username, password) => {
     try {

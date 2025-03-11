@@ -9,7 +9,7 @@ import EventsSection from "../components/EventsSection";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";
 import { fetchUserProfile } from "../services/userService";
-import { FiUsers } from "react-icons/fi";
+// import { FiUsers } from "react-icons/fi";
 import PropTypes from "prop-types";
 
 const Dashboard = ({ user }) => {
@@ -39,7 +39,6 @@ const Dashboard = ({ user }) => {
 
     useEffect(() => {
         if (!userData || !userData.branch_id) {
-            console.warn("⚠️ Dashboard: Waiting for `branch_id`...");
             return;
         }
 
@@ -77,6 +76,21 @@ const Dashboard = ({ user }) => {
         return <p className="text-center text-gray-600">Loading dashboard...</p>;
     }
 
+    // const refreshTasks = async () => {
+    //     try {
+    //         const updatedTasks = await fetchTasks(userData.user_id);
+    //         console.log("✅ Updated Tasks (After Refresh):", updatedTasks);
+    //         setTasks(updatedTasks);
+    //     } catch (error) {
+    //         console.error("❌ Error refreshing tasks:", error);
+    //     }
+    // };
+
+    const handleRefreshTasks = async () => {
+        const updatedTasks = await fetchTasks(userData.user_id);
+        setTasks(updatedTasks);
+    };
+
     const toggleTaskCompletion = async (task) => {
         const updatedTask = { ...task, is_completed: !task.is_completed };
         setTasks(prevTasks => prevTasks.map(t => t.task_id === task.task_id ? updatedTask : t));
@@ -98,36 +112,32 @@ const Dashboard = ({ user }) => {
 
                 {/* 📊 Sales Chart */}
                 {userData.branch_id ? (
-                    <div className="bg-white shadow-md p-6 rounded-lg w-full">
-                        <SalesChart userProfile={userData} />
-                    </div>
+                    <SalesChart userProfile={userData} />
                 ) : (
                     <p className="text-center text-gray-600">Loading Sales Data...</p>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-screen-2xl mx-auto">
-                    <div className="bg-white shadow-md p-6 rounded-lg col-span-2">
+                    {/* 📅 Calendar takes 2/3 of the grid */}
+                    <div className="md:col-span-2">
                         <CalendarComponent events={events} />
                     </div>
-                    <div className="bg-white shadow-md p-6 rounded-lg overflow-y-auto max-h-64">
-                        <EventsSection events={events} user={userData} />
+
+                    {/* 🗓️ Events Section takes 1/3 of the grid */}
+                    <div className="md:col-span-1">
+                    <EventsSection events={events} user={userData} setEvents={setEvents} />
+
                     </div>
                 </div>
 
-                <div className="bg-white shadow-md p-6 rounded-lg overflow-y-auto max-h-64 flex-grow w-full">
-                    <TasksComponent 
-                        tasks={tasks} 
+                <TasksComponent 
+                        tasks={tasks}
+                        user={userData} 
                         toggleTaskCompletion={toggleTaskCompletion}
-                        refreshTasks={fetchTasks}
+                        refreshTasks={handleRefreshTasks}
                     />
-                </div>
-
-                <div className="bg-white shadow-md p-6 rounded-lg overflow-y-auto max-h-64 flex-grow w-full">
-                    <h3 className="text-lg font-bold text-gray-700 flex items-center">
-                        <FiUsers className="mr-2" /> My Accounts
-                    </h3>
-                    <AccountsTable user={userData} />
-                </div>
+                
+                <AccountsTable user={userData} />
             </div>
         </div>
     );
