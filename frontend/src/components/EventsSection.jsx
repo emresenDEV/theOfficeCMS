@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { fetchMeetings } from "../services/calendarService";
 import { useNavigate } from "react-router-dom";
-import { format, isAfter, parse } from "date-fns";
+import { format, isAfter, parseISO, parse } from "date-fns";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid"; 
 
 export const EventsSection = ({ user, setEvents }) => { 
@@ -11,27 +11,35 @@ export const EventsSection = ({ user, setEvents }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!user || !user.id) return;
+        if (!user || !user.id || !setEvents) return; // ✅ Ensure `setEvents` is valid
         
         async function fetchTodayEvents() {
-            const fetchedEvents = await fetchMeetings(user.id);
-            const now = new Date();
-            const today = format(now, "yyyy-MM-dd");
+            try {
+                const fetchedEvents = await fetchMeetings(user.id);
+                console.log("✅ Retrieved Events:", fetchedEvents); // Debugging Log
 
-            // ✅ Filter only upcoming events today
-            const todayEvents = fetchedEvents.filter(event => {
-                const eventEndTime = parse(event.end_time, "HH:mm", now);
-                return event.start_date === today && isAfter(eventEndTime, now);
-            });
+                const now = new Date();
+                const today = format(now, "yyyy-MM-dd");
 
-            setLocalEvents(todayEvents);
-            if (setEvents) {
+                // ✅ Ensure `start_date` is properly parsed
+                const todayEvents = fetchedEvents.filter(event => {
+                    const eventDate = format(parseISO(event.start_date), "yyyy-MM-dd");
+                    const eventEndTime = parse(event.end_time, "HH:mm", now);
+                    
+                    return eventDate === today && isAfter(eventEndTime, now);
+                });
+
+                console.log("📅 Filtered Today's Events:", todayEvents); // Debugging Log
+                
+                setLocalEvents(todayEvents);
                 setEvents(todayEvents);
+            } catch (error) {
+                console.error("❌ Error fetching today's events:", error);
             }
         }
     
         fetchTodayEvents();
-    }, [user]);  // ✅ Only refetch when user changes
+    }, [user, setEvents]);  // ✅ Fix: Include `setEvents` in dependencies
 
     const formatTime = (timeString) => format(parse(timeString, "HH:mm", new Date()), "hh:mm a");
 
@@ -84,7 +92,7 @@ EventsSection.propTypes = {
     user: PropTypes.shape({
         id: PropTypes.number.isRequired
     }).isRequired,
-    setEvents: PropTypes.func,
+    setEvents: PropTypes.func.isRequired, // ✅ Ensure it's always provided
 };
 
 export default EventsSection;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Sidebar from "../components/Sidebar";
 import { logoutUser } from "../services/authService"; 
 import SalesChart from "../components/SalesChart";
@@ -9,7 +9,6 @@ import EventsSection from "../components/EventsSection";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";
 import { fetchUserProfile } from "../services/userService";
-// import { FiUsers } from "react-icons/fi";
 import PropTypes from "prop-types";
 
 const Dashboard = ({ user }) => {
@@ -63,6 +62,11 @@ const Dashboard = ({ user }) => {
         fetchData();
     }, [userData]);
 
+    const updateEvents = useCallback((newEvents) => {
+        setEvents(newEvents);
+    }, []);
+
+
     const handleLogout = async () => {
         await logoutUser();
         window.location.href = "/login";
@@ -85,6 +89,7 @@ const Dashboard = ({ user }) => {
     //         console.error("❌ Error refreshing tasks:", error);
     //     }
     // };
+
 
     const handleRefreshTasks = async () => {
         const updatedTasks = await fetchTasks(userData.user_id);
@@ -125,7 +130,11 @@ const Dashboard = ({ user }) => {
 
                     {/* 🗓️ Events Section takes 1/3 of the grid */}
                     <div className="md:col-span-1">
-                    <EventsSection events={events} user={userData} setEvents={setEvents} />
+                    <EventsSection 
+                        events={events} 
+                        user={userData} 
+                        setEvents={updateEvents} 
+                    />
 
                     </div>
                 </div>

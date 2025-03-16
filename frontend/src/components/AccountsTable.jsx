@@ -11,6 +11,7 @@ export const AccountsTable = ({ user }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [sortColumn, setSortColumn] = useState("business_name");
     const [sortOrder, setSortOrder] = useState("asc");
+    const [industries, setIndustries] = useState([]);
     const [filterIndustry, setFilterIndustry] = useState("all");
     const [isCollapsed, setIsCollapsed] = useState(false);
     const navigate = useNavigate();
@@ -36,6 +37,21 @@ export const AccountsTable = ({ user }) => {
 
     }, [user]);
 
+        // ✅ Extract unique industries (remove empty values)
+        useEffect(() => {
+            if (accounts.length === 0) return;
+        
+            // ✅ Extract unique industries, ensuring no duplicates and filtering out null/empty values
+            const uniqueIndustries = Array.from(
+                new Set(accounts.map(acc => acc.industry_name).filter(industry => industry && industry.trim() !== ""))
+            );
+        
+            console.log("📊 Extracted Industries:", uniqueIndustries); // Debugging log
+        
+            setIndustries(uniqueIndustries);
+        }, [accounts]);
+        
+
     // ✅ Merging account data with metrics
     const mergedAccounts = accounts.map(acc => {
         const metrics = accountMetrics.find(m => m.account_id === acc.account_id) || {};
@@ -49,18 +65,28 @@ export const AccountsTable = ({ user }) => {
     };
 
     const sortedAccounts = [...mergedAccounts].sort((a, b) => {
-        let valueA = a[sortColumn];
-        let valueB = b[sortColumn];
-
-        if (valueA === null || valueA === undefined) valueA = sortColumn === "last_invoice_date" ? "0000-00-00" : 0;
-        if (valueB === null || valueB === undefined) valueB = sortColumn === "last_invoice_date" ? "0000-00-00" : 0;
-
-        if (sortColumn === "business_name" || sortColumn === "industry_name" || sortColumn === "contact_name") {
+        let valueA = a[sortColumn] || "";
+        let valueB = b[sortColumn] || "";
+    
+        // ✅ Sorting for Industry Name (Alphabetically)
+        if (sortColumn === "industry_name") {
             return sortOrder === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
         }
-
-        return sortOrder === "asc" ? valueA - valueB : valueB - valueA;
+    
+        // ✅ Sorting for Last Invoice Date
+        if (sortColumn === "last_invoice_date") {
+            if (!valueA) valueA = "0000-01-01"; // Ensure "N/A" is always last
+            if (!valueB) valueB = "0000-01-01";
+            
+            return sortOrder === "asc" 
+                ? new Date(valueA) - new Date(valueB) 
+                : new Date(valueB) - new Date(valueA);
+        }
+    
+        // ✅ Default Sorting (for numbers & other text fields)
+        return sortOrder === "asc" ? valueA.toString().localeCompare(valueB.toString()) : valueB.toString().localeCompare(valueA.toString());
     });
+    
 
     // ✅ Filtering Logic
     const filteredAccounts = sortedAccounts.filter(acc => {
@@ -90,26 +116,17 @@ export const AccountsTable = ({ user }) => {
             {!isCollapsed && (
                 <div className="p-4">
                     {/* Search & Filters */}
-                    <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-5 gap-4 mb-4">
                         <input
                             type="text"
                             placeholder="Search..."
-                            className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 col-span-4"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
-                        <select
-                            className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={filterIndustry}
-                            onChange={(e) => setFilterIndustry(e.target.value)}
-                        >
-                            <option value="all">All Industries</option>
-                            {[...new Set(accounts.map(acc => acc.industry_name))].map(industry => (
-                                <option key={industry} value={industry}>{industry}</option>
-                            ))}
-                        </select>
+                        
                         <button
-                            className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                            className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors col-span-1"
                             onClick={() => {
                                 setSearchQuery("");
                                 setFilterIndustry("all");
@@ -136,27 +153,25 @@ export const AccountsTable = ({ user }) => {
                                             {sortColumn === col ? (sortOrder === "asc" ? " ↑" : " ↓") : ""}
                                         </th>
                                     ))}
-                                    <th className="p-3 border-b">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAccounts.slice(0, 6).map(acc => (
+                            {filteredAccounts.map(acc => (
                                     <tr key={acc.account_id} className="border-b hover:bg-gray-50 transition-colors">
-                                        <td className="p-3 text-gray-800">{acc.business_name}</td>
+                                        <td className="p-3 text-gray-800">
+                                            <button 
+                                                className="bg-blue-600 text-white font-semibold px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+                                                onClick={() => navigate(`/accounts/details/${acc.account_id}`)}
+                                            >
+                                                {acc.business_name}
+                                            </button>
+                                        </td>
                                         <td className="p-3 text-gray-700">{acc.contact_name}</td>
                                         <td className="p-3 text-gray-700">{acc.industry_name}</td>
                                         <td className="p-3 text-gray-700">{acc.task_count || 0}</td>
                                         <td className="p-3 text-gray-700">${acc.total_revenue ? acc.total_revenue.toFixed(2) : "0.00"}</td>
                                         <td className="p-3 text-gray-700">
                                             {acc.last_invoice_date ? format(new Date(acc.last_invoice_date), "MM/dd/yyyy") : "N/A"}
-                                        </td>
-                                        <td className="p-3">
-                                            <button
-                                                className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
-                                                onClick={() => navigate(`/accounts/details/${acc.account_id}`)}
-                                            >
-                                                View
-                                            </button>
                                         </td>
                                     </tr>
                                 ))}
