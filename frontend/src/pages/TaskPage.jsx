@@ -78,56 +78,19 @@ useEffect(() => {
     loadDropdownData();
 }, []);
 
-// const handleTaskCompletion = (task) => {
-//     if (completingTask[task.task_id]) {
-//         setCompletingTask((prev) => ({ ...prev, [task.task_id]: undefined }));
-//         return;
-//     }
-
-//     setCompletingTask((prev) => ({ ...prev, [task.task_id]: 5 }));
-
-//     const countdown = setInterval(() => {
-//         setCompletingTask((prev) => {
-//             const newTime = prev[task.task_id] - 1;
-
-//             if (newTime <= 0) {
-//                 clearInterval(countdown);
-//                 updateTask(task.task_id, { is_completed: !task.is_completed })
-//                     .then(() => {
-//                         setTasks((prevTasks) => {
-//                             const filteredTasks = prevTasks.filter((t) => t.task_id !== task.task_id);
-//                             return task.is_completed ? filteredTasks : [...filteredTasks, task];
-//                         });
-                        
-//                         setCompletedTasks((prevCompletedTasks) => {
-//                             const filteredCompleted = prevCompletedTasks.filter((t) => t.task_id !== task.task_id);
-//                             return task.is_completed ? [...filteredCompleted, task] : filteredCompleted;
-//                         });
-                        
-//                     })
-//                     .catch((error) => console.error("❌ Error updating task:", error));
-
-//                 return { ...prev, [task.task_id]: undefined };
-//             }
-
-//             return { ...prev, [task.task_id]: newTime };
-//         });
-//     }, 1000);
-// };
-
 const handleTaskCompletion = (task) => {
     if (completingTask[task.task_id]) {
-        // ✅ User clicked "Undo" before the countdown finished, cancel completion.
+        // User clicked "Undo" before the countdown finished, cancel completion.
         clearTimeout(completingTask[task.task_id].timeoutId);
         clearInterval(completingTask[task.task_id].intervalId);
         setCompletingTask((prev) => ({ ...prev, [task.task_id]: undefined }));
         return;
     }
 
-    // ✅ Toggle `is_completed` value
-    const newCompletionStatus = !task.is_completed;
+    // Toggle `is_completed` value
+    // const newCompletionStatus = !task.is_completed;
 
-    // ✅ Start a 5-second countdown for Active Tasks
+    // Start a 5-second countdown for Active Tasks
     if (!task.is_completed) {
         setCompletingTask((prev) => ({
             ...prev,
@@ -136,7 +99,7 @@ const handleTaskCompletion = (task) => {
 
         let timeLeft = 5;
 
-        // ✅ Start countdown timer
+        // Start countdown timer
         const intervalId = setInterval(() => {
             timeLeft -= 1;
             setCompletingTask((prev) => {
@@ -148,7 +111,7 @@ const handleTaskCompletion = (task) => {
             });
         }, 1000);
 
-        // ✅ After 5 seconds, finalize completion
+        // After 5 seconds, finalize completion
         const timeoutId = setTimeout(async () => {
             try {
                 const updatedTask = { ...task, is_completed: true };
@@ -165,7 +128,7 @@ const handleTaskCompletion = (task) => {
             }
         }, 5000);
 
-        // ✅ Store timeout ID so we can cancel it if user clicks "Undo"
+        // Store timeout ID so we can cancel it if user clicks "Undo"
         setCompletingTask((prev) => ({
             ...prev,
             [task.task_id]: { timeLeft: 5, timeoutId, intervalId }
@@ -174,7 +137,7 @@ const handleTaskCompletion = (task) => {
         return;
     }
 
-    // ✅ If task is already completed, Undo instantly
+    // If task is already completed, Undo instantly
     (async () => {
         try {
             const updatedTask = { ...task, is_completed: false };
@@ -200,13 +163,16 @@ const handleEditTaskClick = (task) => {
         return;
     }
 
-    console.log("✏️ Editing Task:", task);  // ✅ Debugging Log
+    setEditError(`You can only edit tasks that you created`);
+    setTimeout(() => setEditError(null), 5000);
+
+    console.log("✏️ Editing Task:", task);  // Debugging Log
 
     setEditingTask({
         task_id: task.task_id,
         task_description: task.task_description,
         due_date: task.due_date
-            ? new Date(task.due_date).toISOString().split("T")[0]  // ✅ Convert to YYYY-MM-DD format for input field
+            ? new Date(task.due_date).toISOString().split("T")[0]  // Convert to YYYY-MM-DD format for input field
             : ""
     });
 };
@@ -233,7 +199,7 @@ const handleEditTask = async () => {
         setTasks((prevTasks) =>
             prevTasks.map((t) =>
                 t.task_id === updatedTask.task_id
-                    ? { ...updatedTask, business_name: t.business_name } // ✅ Preserve business_name
+                    ? { ...updatedTask, business_name: t.business_name } // Preserve business_name
                     : t
             )
         );
@@ -242,7 +208,7 @@ const handleEditTask = async () => {
         setCompletedTasks((prevCompletedTasks) =>
             prevCompletedTasks.map((t) =>
                 t.task_id === updatedTask.task_id
-                    ? { ...updatedTask, business_name: t.business_name } // ✅ Preserve business_name
+                    ? { ...updatedTask, business_name: t.business_name } // Preserve business_name
                     : t
             )
         );
@@ -262,7 +228,7 @@ const handleDeleteTask = async (taskId) => {
             if (deleted) {
                 setTasks((prevTasks) => prevTasks.filter((task) => task.task_id !== taskId));
                 setCompletedTasks((prevCompletedTasks) => prevCompletedTasks.filter((task) => task.task_id !== taskId));
-                setConfirmDelete(null);  // ✅ Reset confirmation state
+                setConfirmDelete(null);  // Reset confirmation state
             }
         } catch (error) {
             console.error("❌ Error deleting task:", error);
@@ -310,7 +276,7 @@ return (
                         <input
                             type="text"
                             value={editingTask.task_description}
-                            onClick={(e) => e.stopPropagation()} // ✅ Prevents unwanted clicks outside
+                            onClick={(e) => e.stopPropagation()} // Prevents unwanted clicks outside
                             onChange={(e) => {
                                 setEditingTask((prev) => ({
                                     ...prev,
@@ -318,13 +284,13 @@ return (
                                 }));
                             }}
                             onInput={(e) => {
-                                e.target.style.height = "auto"; // ✅ Reset height before recalculating
-                                e.target.style.height = `${e.target.scrollHeight}px`; // ✅ Adjust height dynamically
+                                e.target.style.height = "auto"; // Reset height before recalculating
+                                e.target.style.height = `${e.target.scrollHeight}px`; // Adjust height dynamically
                             }}
                             onFocus={(e) => {
-                                e.target.style.height = "auto"; // ✅ Reset height before expanding
-                                e.target.style.height = `${e.target.scrollHeight}px`; // ✅ Adjust height dynamically
-                            }}  // ✅ Selects all text when clicked
+                                e.target.style.height = "auto"; // Reset height before expanding
+                                e.target.style.height = `${e.target.scrollHeight}px`; // Adjust height dynamically
+                            }}  // Selects all text when clicked
                             className="border px-3 py-2 rounded w-full resize-none overflow-auto text-wrap break-words"
                             style={{
                                 minHeight: "60px",     
@@ -382,7 +348,7 @@ return (
                             {/* ✅ Save Button */}
                             <button
                                 className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-                                onClick={() => handleEditTask()} // ✅ Save changes
+                                onClick={() => handleEditTask()} // Save changes
                             >
                                 Save
                             </button>
@@ -390,14 +356,14 @@ return (
                             {/* ✅ Cancel Button */}
                             <button
                                 className="px-3 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white"
-                                onClick={() => setEditingTask(null)} // ✅ Cancels edit mode
+                                onClick={() => setEditingTask(null)} // Cancels edit mode
                             >
                                 Cancel
                             </button>
                         </>
                     ) : (
                         <>
-                            {/* ✅ Edit Button */}
+                            {/* Edit Button */}
                             <button
                                 className={`px-3 py-1 rounded-lg transition-colors ${
                                     task.assigned_by_username === user.username
@@ -410,7 +376,7 @@ return (
                                 Edit
                             </button>
 
-                            {/* ✅ Complete Button with Countdown */}
+                            {/* Complete Button with Countdown */}
                             <button
                                 className={`px-3 py-1 rounded-lg transition-colors ${
                                     completingTask[task.task_id]
@@ -426,7 +392,11 @@ return (
                         </>
                     )}
                 </td>
-
+                {editError && (
+                    <div className="text-red-600 text-sm mt-2 bg-gray-100 p-2 rounded shadow-lg">
+                        {editError}
+                    </div>
+                )}
 
 
                 </tr>

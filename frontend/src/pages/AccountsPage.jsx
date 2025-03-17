@@ -21,7 +21,7 @@ const AccountsPage = ({ user }) => {
     useEffect(() => {
         const lowerQuery = searchQuery.toLowerCase();
         const filtered = accounts.map(acc => {
-            const salesRep = users.find(user => user.user_id === acc.user_id) || {};
+            const salesRep = users.find(user => user.user_id === acc.sales_rep_id) || { first_name: "Unassigned", last_name: "" };
             return {
                 ...acc,
                 sales_rep: salesRep
@@ -42,6 +42,16 @@ const AccountsPage = ({ user }) => {
             );
         setFilteredAccounts(filtered);
     }, [searchQuery, accounts, users]);
+
+    const formatPhoneNumber = (phone) => {
+        if (!phone) return "N/A";
+        const cleaned = ("" + phone).replace(/\D/g, ""); // Remove non-numeric characters
+        if (cleaned.length === 10) {
+            return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+        }
+        return phone; // Return as-is if not 10 digits
+    };
+    
 
     return (
         <div className="flex">
@@ -87,7 +97,7 @@ const AccountsPage = ({ user }) => {
                                 {/* ✅ Sales Representative Section */}
                                 {account.sales_rep ? (
                                     <p className="text-gray-700">
-                                        <span className="font-medium">Sales Representative:</span> {account.sales_rep.first_name} {account.sales_rep.last_name}
+                                        <span className="font-medium">Sales Representative:</span> {account.sales_rep?.first_name || "Unassigned"} {account.sales_rep?.last_name || ""}
                                     </p>
                                 ) : (
                                     <p className="text-gray-500">No assigned sales representative.</p>
@@ -119,7 +129,7 @@ const AccountsPage = ({ user }) => {
 
 AccountsPage.propTypes = {
     user: PropTypes.shape({
-        id: PropTypes.number.isRequired,
+        user_id: PropTypes.number.isRequired,
         firstName: PropTypes.string,
         lastName: PropTypes.string,
         role: PropTypes.string,

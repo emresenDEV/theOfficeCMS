@@ -33,8 +33,17 @@ const CreateNewAccountPage = () => {
 
     useEffect(() => {
         async function loadDropdownData() {
+            // const fetchedIndustries = await fetchIndustries();
+            // setIndustries(fetchedIndustries);
             const fetchedIndustries = await fetchIndustries();
-            setIndustries(fetchedIndustries);
+            console.log("✅ Industries Fetched:", fetchedIndustries); // Debugging log
+
+            if (Array.isArray(fetchedIndustries) && fetchedIndustries.length > 0) {
+                setIndustries(fetchedIndustries);
+            } else {
+                console.error("❌ Expected an array, but received:", fetchedIndustries);
+            }
+
             const fetchedBranches = await fetchBranches();
             setBranches(fetchedBranches);
             const fetchedSalesReps = await fetchSalesReps();
@@ -47,6 +56,20 @@ const CreateNewAccountPage = () => {
     const handleChange = (e) => {
         setAccountData({ ...accountData, [e.target.name]: e.target.value });
     };
+    
+    const handleSalesRepChange = (e) => {
+        const selectedRepId = e.target.value;
+        
+        // Find the selected sales rep
+        const selectedRep = salesReps.find(rep => rep.user_id.toString() === selectedRepId);
+    
+        setAccountData({
+            ...accountData,
+            user_id: selectedRepId || "",
+            branch_id: selectedRep ? selectedRep.branch_id : "",
+        });
+    };
+    
 
     // ✅ Handle Industry Selection
     const handleIndustryChange = (e) => {
@@ -62,21 +85,32 @@ const CreateNewAccountPage = () => {
     // ✅ Handle Creating New Industry
     const handleCreateIndustry = async () => {
         if (!newIndustry.trim()) return;
-        const response = await createIndustry(newIndustry);
-        if (response && response.industry_id) {
-            setIndustries([...industries, { industry_id: response.industry_id, industry_name: newIndustry }]);
-            setAccountData({ ...accountData, industry_id: response.industry_id });
-            setNewIndustry("");
-            setShowNewIndustryInput(false);
+    
+        // Check for duplicate industry
+        const isDuplicate = industries.some(ind => ind.industry_name.toLowerCase() === newIndustry.toLowerCase());
+        if (isDuplicate) {
+            alert("❌ Industry already exists!");
+            return;
+        }
+    
+        try {
+            const response = await createIndustry(newIndustry);
+            if (response && response.industry_id) {
+                const updatedIndustries = [...industries, { industry_id: response.industry_id, industry_name: newIndustry }];
+                setIndustries(updatedIndustries);
+                setAccountData({ ...accountData, industry_id: response.industry_id });
+                setNewIndustry("");
+                setShowNewIndustryInput(false);
+    
+                console.log("✅ Industry added successfully:", newIndustry, updatedIndustries);
+            } else {
+                console.error("❌ Failed to create industry. Response:", response);
+            }
+        } catch (error) {
+            console.error("❌ Error creating industry:", error);
         }
     };
-
-    // ✅ Handle Form Submission
-    // const handleSubmit = async (e) => {
-    //     e.preventDefault();
-    //     const response = await createAccount(accountData);
-    //     if (response) navigate("/accounts");
-    // };
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
     
@@ -166,24 +200,28 @@ const CreateNewAccountPage = () => {
                 <select 
                     name="industry_id" 
                     value={accountData.industry_id || ""}
-                    onChange={(e) => setAccountData({ ...accountData, industry_id: e.target.value || null })} 
+                    onChange={handleIndustryChange} 
                     className="border p-2 w-full"
                 >
                     <option value="">Select Industry</option>
-                        {industries.map(ind => (
+                    {industries.length > 0 ? (
+                        industries.map(ind => (
                             <option key={ind.industry_id} value={ind.industry_id}>
                                 {ind.industry_name}
-                        </option>
-                    ))}
+                            </option>
+                        ))
+                    ) : (
+                        <option disabled>No industries available</option>
+                    )}
                     <option value="new">➕ Add New Industry</option>
                 </select>
 
-                {/* ✅ New Industry Input */}
+                {/* ✅ Show input field when "Add New Industry" is selected */}
                 {showNewIndustryInput && (
-                    <div className="flex">
+                    <div className="flex mt-2">
                         <input 
                             type="text" 
-                            placeholder="New Industry Name" 
+                            placeholder="Enter new industry" 
                             value={newIndustry} 
                             onChange={(e) => setNewIndustry(e.target.value)} 
                             className="border p-2 w-full" 
@@ -198,11 +236,13 @@ const CreateNewAccountPage = () => {
                     </div>
                 )}
 
+
                 {/* ✅ Sales Representative Selection */}
                 <select
                     className="w-full p-2 border rounded"
                     value={accountData.user_id || ""}
-                    onChange={(e) => setAccountData({ ...accountData, user_id: e.target.value || null})}
+                    // onChange={(e) => setAccountData({ ...accountData, user_id: e.target.value || null})}
+                    onChange={handleSalesRepChange}
                 >
                     <option value="">No Sales Representative Assigned</option>
                     {salesReps.map(rep => (
@@ -250,7 +290,7 @@ const CreateNewAccountPage = () => {
 
 CreateNewAccountPage.propTypes = {
     user: PropTypes.shape({
-        id: PropTypes.number.isRequired,
+        user_id: PropTypes.number.isRequired,
         firstName: PropTypes.string,
         lastName: PropTypes.string,
         email: PropTypes.string,
