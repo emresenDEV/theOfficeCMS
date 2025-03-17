@@ -5,7 +5,7 @@ from database import db
 from flask_cors import cross_origin
 
 
-# ✅ Create Blueprint
+# Create Blueprint
 account_bp = Blueprint("accounts", __name__)
 
 @account_bp.route("/update/<int:account_id>", methods=["OPTIONS"])
@@ -18,7 +18,7 @@ def handle_options_update_account(account_id):
     response.headers["Access-Control-Allow-Credentials"] = "true"
     return response, 200
 
-# ✅ GET Assigned Accounts API
+# GET Assigned Accounts API
 @account_bp.route("/assigned", methods=["GET"])
 @cross_origin()
 def get_assigned_accounts():
@@ -30,7 +30,7 @@ def get_assigned_accounts():
     return jsonify([account.to_dict() for account in accounts]), 200
 
 
-# ✅ Get All Accounts API
+# Get All Accounts API
 @account_bp.route("/", methods=["GET"])
 def get_accounts():
     accounts = Account.query.all()
@@ -56,7 +56,7 @@ def get_accounts():
     ]
     return jsonify(account_list), 200
 
-# ✅ Get Account By ID API
+# Get Account By ID API
 @account_bp.route("/<int:account_id>", methods=["GET"])
 def get_account_by_id(account_id):
     account = Account.query.get(account_id)
@@ -71,7 +71,7 @@ def get_account_by_id(account_id):
         "phone_number": account.phone_number,
     })
 
-# ✅ Get Account Details API (with Sales Rep and Branch Info)
+# Get Account Details API (with Sales Rep and Branch Info)
 @account_bp.route("/details/<int:account_id>", methods=["GET"])
 def get_account_details(account_id):
     account = Account.query.get_or_404(account_id)
@@ -128,7 +128,7 @@ def get_account_details(account_id):
         "date_updated": account.date_updated.strftime("%Y-%m-%d"),
     }), 200
 
-# ✅ Fetch account revenue, last invoice date, and task count
+# Fetch account revenue, last invoice date, and task count
 @account_bp.route("/account_metrics", methods=["GET"])
 def get_account_metrics():
     sales_rep_id = request.args.get("sales_rep_id", type=int)
@@ -168,13 +168,13 @@ def get_account_metrics():
 
     return jsonify(result), 200
 
-# ✅ Update Account Details
+# Update Account Details
 @account_bp.route("/update/<int:account_id>", methods=["PUT"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def update_account(account_id):
     try:
         data = request.json
-        print(f"🔍 Received update data: {data}")  # ✅ Log incoming data
+        print(f"🔍 Received update data: {data}")  # Log incoming data
 
         account = Account.query.get(account_id)
 
@@ -182,7 +182,7 @@ def update_account(account_id):
             print(f"❌ Account with ID {account_id} not found")
             return jsonify({"message": "Account not found"}), 404
 
-        # ✅ Log before updating
+        # Log before updating
         print(f"📝 Existing Account Before Update: {account.to_dict()}")
 
         # Update account fields
@@ -199,12 +199,14 @@ def update_account(account_id):
         account.branch_id = data.get("branch_id", account.branch_id) or None
         account.notes = data.get("notes", account.notes) or None
 
-        # ✅ Automatically update the timestamp
+        # Automatically update the timestamp
         account.date_updated = db.func.current_timestamp()
+        account.updated_by_user_id = data.get("updated_by_user_id", account.updated_by_user_id)
+
 
         db.session.commit()
 
-        # ✅ Log after updating
+        # Log after updating
         print(f"✅ Updated Account: {account.to_dict()}")
 
         return jsonify({"message": "Account updated successfully", "account": account.to_dict()}), 200
@@ -213,20 +215,19 @@ def update_account(account_id):
         print(f"❌ Exception during update: {str(e)}")
         return jsonify({"error": "An error occurred during the update", "details": str(e)}), 500
 
-# ✅ Create a New Account API
+# Create a New Account API
 @account_bp.route("/", methods=["POST"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def create_account():
     try:
-        data = request.json  # ✅ Receive account data
+        data = request.json  
         print(f"🔍 Incoming account data: {data}")
         
-        # ✅ Convert empty strings to None for integer fields
         industry_id = int(data.get("industry_id")) if data.get("industry_id") else None
-        user_id = int(data.get("user_id")) if data.get("user_id") else None #sales_rep_id? 
+        user_id = int(data.get("user_id")) if data.get("user_id") else None
         branch_id = int(data.get("branch_id")) if data.get("branch_id") else None
+        created_by = int(data.get("created_by")) if data.get("created_by") else None
 
-        # ✅ Create a new account instance
         new_account = Account(
             business_name=data.get("business_name"),
             contact_name=data.get("contact_name") or None,
@@ -236,19 +237,17 @@ def create_account():
             city=data.get("city"),
             state=data.get("state"),
             zip_code=data.get("zip_code"),
-            industry_id=data.get("industry_id") or None,
-            sales_rep_id=data.get("sales_rep_id") or None,
-            branch_id=data.get("branch_id") or None,
+            industry_id=industry_id,
+            sales_rep_id=user_id,
+            branch_id=branch_id,
             notes=data.get("notes"),
-            date_created=db.func.current_timestamp(),
-            date_updated=db.func.current_timestamp()
-        )
-
-        # ✅ Add the new account to the database
+            date_created=func.current_timestamp(),
+            date_updated=func.current_timestamp(),
+            updated_by_user_id=created_by
+            )
         db.session.add(new_account)
         db.session.commit()
 
-        # ✅ Return the newly created account as a response
         return jsonify({"message": "Account created successfully", "account_id": new_account.account_id}), 201
 
     except Exception as e:

@@ -136,13 +136,14 @@ const AccountDetailsPage = ({ user }) => {
                 </div>
                 <div className="w-1/2 text-right">
                     <p className="text-lg font-semibold">Account Number: {account.account_id}</p>
-                    {/* Update Account Button */}
+                    {/* Update Account Button - `user` is passed via state */}
                     <button
                         className="bg-yellow-500 text-white px-3 py-2 rounded my-2"
-                        onClick={() => navigate(`/accounts/update/${account.account_id}`)}
+                        onClick={() => navigate(`/accounts/update/${account.account_id}`, { state: { user } })}
                     >
                         Update Account
                     </button>
+
                     <p><strong>Sales Rep:</strong> {account.sales_rep?.first_name} {account.sales_rep?.last_name || "N/A"}</p>
                     <p><strong>Branch:</strong> {account.branch?.branch_name || "N/A"}</p>
                     <p>{account.branch?.address}</p>

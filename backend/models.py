@@ -17,15 +17,22 @@ class Account(db.Model):
     state = db.Column(db.String(2))
     zip_code = db.Column(db.String(10), db.ForeignKey('tax_rates.zip_code'))
     industry_id = db.Column(db.Integer, db.ForeignKey('industries.industry_id'))
-    sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
+    sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     notes = db.Column(db.Text)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'), nullable=True)
+    updated_by_user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=True)
     
     # Relationships
     invoices = db.relationship('Invoice', back_populates='account')
-    sales_rep = db.relationship('Users', back_populates='accounts', foreign_keys=[sales_rep_id])
+    # sales_rep = db.relationship('Users', back_populates='accounts', foreign_keys=[sales_rep_id])
+    sales_rep = db.relationship("Users", foreign_keys=[sales_rep_id], overlaps="accounts_assigned")
+    updated_by_user = db.relationship("Users", foreign_keys=[updated_by_user_id], overlaps="accounts_updated")
+
+
+
+
     
     # ✅ Convert object to dictionary for JSON responses
     def to_dict(self):
@@ -40,11 +47,12 @@ class Account(db.Model):
             "state": self.state,
             "zip_code": self.zip_code,
             "industry_id": self.industry_id,
-            "sale_rep_id": self.sales_rep_id,
+            "sales_rep_id": self.sales_rep_id,
             "branch_id": self.branch_id,
             "notes": self.notes,
             "date_created": self.date_created.strftime("%Y-%m-%d %H:%M:%S") if self.date_created else None,
             "date_updated": self.date_updated.strftime("%Y-%m-%d %H:%M:%S") if self.date_updated else None,
+            "updated_by_user_id": self.updated_by_user_id,
         }
 
 class Branches(db.Model):
@@ -141,8 +149,9 @@ class InvoiceServices(db.Model):
     total_price = db.Column(db.Numeric, nullable=False)  # Computed as quantity * price
     
     # Relationships
-    invoice = db.relationship('Invoice', back_populates='invoice_services', foreign_keys=[invoice_id], overlaps="services")
-    service = db.relationship('Service', back_populates='invoice_services', foreign_keys=[service_id])
+    invoice = db.relationship('Invoice', back_populates='invoice_services', foreign_keys=[invoice_id])
+    service = db.relationship('Service', back_populates='invoice_services', foreign_keys=[service_id], overlaps="invoices")
+
 
 class Notes(db.Model): 
     __tablename__ = 'notes'
@@ -232,14 +241,19 @@ class Users(db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
     
     # Relationships
-    accounts = db.relationship('Account', back_populates='sales_rep')
+    accounts_assigned = db.relationship('Account', foreign_keys=[Account.sales_rep_id], overlaps="sales_rep")
+    accounts_updated = db.relationship('Account', foreign_keys=[Account.updated_by_user_id], overlaps="updated_by_user")
+
+
+
+
     invoices = db.relationship("Invoice", back_populates="sales_rep")
     commissions = db.relationship("Commissions", back_populates="sales_rep")
     department = db.relationship("Departments", back_populates="users")
     role = db.relationship(
         "UserRoles",
         back_populates="users",
-        foreign_keys=[role_id]  # ✅ Specify correct FK explicitly
+        foreign_keys=[role_id] 
     )
     manager = db.relationship(
         "Users",

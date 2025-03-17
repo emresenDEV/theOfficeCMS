@@ -73,10 +73,10 @@ export const createAccount = async (accountData) => {
 };
 
 // ✅ Update an Existing Account
-
-export const updateAccount = async (accountId, accountData) => {
+export const updateAccount = async (accountId, accountData, userId) => {
     try {
-        const response = await api.put(`/accounts/update/${accountId}`, accountData);
+        const updatedData = { ...accountData, updated_by_user_id: userId };
+        const response = await api.put(`/accounts/update/${accountId}`, updatedData);
         console.log("✅ Account updated in DB:", response.data);
         return { success: true, data: response.data };
     } catch (error) {
@@ -84,4 +84,15 @@ export const updateAccount = async (accountId, accountData) => {
         return { success: false, message: error.response?.data || "Update failed" };
     }
 };
+
+// export const updateAccount = async (accountId, accountData) => {
+//     try {
+//         const response = await api.put(`/accounts/update/${accountId}`, accountData);
+//         console.log("✅ Account updated in DB:", response.data);
+//         return { success: true, data: response.data };
+//     } catch (error) {
+//         console.error("❌ Error updating account:", error.response?.data || error.message);
+//         return { success: false, message: error.response?.data || "Update failed" };
+//     }
+// };
 
