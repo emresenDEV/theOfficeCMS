@@ -2,12 +2,14 @@
 import api from "./api";
 
 // ✅ Fetch User's Commissions
-export const fetchCommissions = async (userId) => {
+export const fetchCommissions = async (salesRepId) => {
     try {
-        console.log(`🔍 Fetching commissions for user ${userId}...`);
+        console.log(`🔍 Fetching commissions for user ${salesRepId}...`);
         
-        const response = await api.get(`/commissions?user_id=${userId}`);
-        
+        const response = await api.get(`/commissions`, {
+            params: { sales_rep_id: salesRepId }, // ✅ Corrected parameter name
+        });
+
         if (!response.data || !Array.isArray(response.data)) {
             console.warn("⚠️ API returned no valid data:", response.data);
             return [];
@@ -22,97 +24,131 @@ export const fetchCommissions = async (userId) => {
         console.log("✅ Commissions Data Loaded:", formattedData);
         return formattedData;
     } catch (error) {
-        console.error("❌ Error fetching commissions:", error);
+        console.error("❌ Error fetching commissions:", error.response?.data || error.message);
         return [];
     }
 };
 
-// export const fetchCurrentMonthCommissions = (userId) =>
-//     api.get(`/commissions/current_month?user_id=${userId}`).then(res => res.data);
-
-// export const fetchCurrentYearCommissions = (userId) =>
-//     api.get(`/commissions/current_year?user_id=${userId}`).then(res => res.data);
-
-// export const fetchLastYearCommissions = (userId) =>
-//     api.get(`/commissions/last_year?user_id=${userId}`).then(res => res.data);
-
-// export const fetchProjectedCommissions = (userId) =>
-//     api.get(`/commissions/projected?user_id=${userId}`).then(res => res.data);
-
-export const fetchCurrentMonthCommissions = async (userId) => {
-    console.log(`🔍 Fetching Current Month Commissions for user ${userId}...`);
+// ✅ Fetch Commissions for Current Month
+export const fetchCurrentMonthCommissions = async (salesRepId) => {
+    console.log(`🔍 Fetching Current Month Commissions for user ${salesRepId}...`);
     try {
-        const response = await api.get(`/commissions/current_month?user_id=${userId}`);
+        const response = await api.get(`/commissions/current_month`, {
+            params: { sales_rep_id: salesRepId },
+        });
         console.log("✅ Current Month Commissions:", response.data);
         return response.data;
     } catch (error) {
-        console.error("❌ Error fetching current month commissions:", error);
+        console.error("❌ Error fetching current month commissions:", error.response?.data || error.message);
         return { total_commissions: 0 };
     }
 };
 
-export const fetchAllYearsCommissions = async (userId) => {
-    console.log(`🔍 Fetching All Years for user ${userId}...`);
+// ✅ Fetch Available Years
+export const fetchAllYearsCommissions = async (salesRepId) => {
+    console.log(`🔍 Fetching All Years for user ${salesRepId}...`);
     try {
-        const response = await api.get(`/commissions/all_years?user_id=${userId}`);
+        const response = await api.get(`/commissions/all_years`, {
+            params: { sales_rep_id: salesRepId },
+        });
         console.log("✅ Available Years:", response.data);
         return response.data;
     } catch (error) {
-        console.error("❌ Error fetching all years:", error);
+        console.error("❌ Error fetching all years:", error.response?.data || error.message);
         return [];
     }
 };
 
-
-export const fetchCurrentYearCommissions = async (userId) => {
-    console.log(`🔍 Fetching Current Year Commissions for user ${userId}...`);
-    const response = await api.get(`/commissions/current_year?user_id=${userId}`);
-    console.log("✅ Current Year Commissions:", response.data);
-    return response.data;
-};
-
-export const fetchLastYearCommissions = async (userId) => {
-    console.log(`🔍 Fetching Last Year Commissions for user ${userId}...`);
-    const response = await api.get(`/commissions/last_year?user_id=${userId}`);
-    console.log("✅ Last Year Commissions:", response.data);
-    return response.data;
-};
-
-export const fetchProjectedCommissions = async (userId) => {
-    console.log(`🔍 Fetching Projected Commissions for user ${userId}...`);
-    const response = await api.get(`/commissions/projected?user_id=${userId}`);
-    console.log("✅ Projected Commissions:", response.data);
-    return response.data;
-};
-
-
-export async function fetchMonthlyCommissions(userId, year) {
-    const url = `http://localhost:5001/commissions/monthly/${year}?user_id=${userId}`;
-
-    console.log(`🔍 Fetching Monthly Commissions from: ${url}`); // ✅ Debugging log
-
+// ✅ Fetch Commissions for Current Year
+export const fetchCurrentYearCommissions = async (salesRepId) => {
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-        const textResponse = await response.text(); // ✅ Read raw response (debugging)
-        console.log("📥 Raw Response:", textResponse); // ✅ Log what API is sending
-
-        const data = JSON.parse(textResponse);
-        console.log("📥 Parsed JSON Response:", data);
-        
-        return data;
+        const response = await api.get(`/commissions/current_year`, {
+            params: { sales_rep_id: salesRepId },
+        });
+        console.log("✅ Fetched Current Year Commissions:", response.data);
+        return response.data;
     } catch (error) {
-        console.error("❌ Error Fetching Monthly Commissions:", error);
-        return [];
+        console.error("❌ Error fetching current year commissions:", error.response?.data || error.message);
+        return { total_commissions: 0 };
     }
-}
+};
 
+// ✅ Fetch Last Year Commissions
+export const fetchLastYearCommissions = async (salesRepId) => {
+    try {
+        const response = await api.get(`/commissions/last_year`, {
+            params: { sales_rep_id: salesRepId },
+        });
+        console.log("✅ Fetched Last Year Commissions:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching last year commissions:", error.response?.data || error.message);
+        return { total_commissions: 0 };
+    }
+};
 
+// ✅ Fetch Projected Commissions
+export const fetchProjectedCommissions = async (salesRepId) => {
+    try {
+        const response = await api.get(`/commissions/projected`, {
+            params: { sales_rep_id: salesRepId },
+        });
+        console.log("✅ Projected Commissions:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching projected commissions:", error.response?.data || error.message);
+        return { projected_commissions: 0 };
+    }
+};
 
+// ✅ Fetch Monthly Commissions for a Specific Year
+export const fetchMonthlyCommissions = async (salesRepId, year) => {
+    console.log(`🔍 Fetching Monthly Commissions for ${year}...`);
+    try {
+        const response = await api.get(`/commissions/monthly/${year}`, {
+            params: { sales_rep_id: salesRepId },
+        });
 
+        console.log("✅ Fetched Monthly Commissions:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching monthly commissions:", error.response?.data || error.message);
+        return Array(12).fill(0); // Return an empty 12-month array
+    }
+};
 
-export const fetchWeeklyCommissions = (userId, year, month) =>
-    api.get(`/commissions/weekly/${year}/${month}?user_id=${userId}`).then(res => res.data);
+// ✅ Fetch Weekly Commissions for a Specific Year & Month
+export const fetchWeeklyCommissions = async (salesRepId, year, month) => {
+    console.log(`🔍 Fetching Weekly Commissions for ${month}/${year}...`);
+    try {
+        const response = await api.get(`/commissions/weekly/${year}/${month}`, {
+            params: { sales_rep_id: salesRepId },
+        });
 
+        console.log("✅ Fetched Weekly Commissions:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching weekly commissions:", error.response?.data || error.message);
+        return Array(5).fill(0); // Default to 5 weeks
+    }
+};
 
+// ✅ Fetch Yearly Commissions for a Date Range
+export const fetchYearlyCommissions = async (salesRepId, fromYear, toYear) => {
+    console.log(`🔍 Fetching Yearly Commissions for ${fromYear} to ${toYear}...`);
+    try {
+        const response = await api.get(`/commissions/yearly`, {
+            params: {
+                sales_rep_id: salesRepId,
+                from_year: fromYear,
+                to_year: toYear,
+            },
+        });
+
+        console.log("✅ Fetched Yearly Commissions:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching yearly commissions:", error.response?.data || error.message);
+        return {};
+    }
+};

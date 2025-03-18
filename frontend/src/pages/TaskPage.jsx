@@ -244,7 +244,7 @@ return (
     <div className="flex bg-gray-100 min-h-screen">
     <Sidebar user={user} />
     <div className="flex-1 p-6 ml-64">
-        <h1 className="text-2xl font-bold text-blue-700">My Tasks</h1>
+        <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
 
         <CreateTaskComponent
         user={user}

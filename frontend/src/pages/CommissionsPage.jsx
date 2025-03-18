@@ -31,215 +31,116 @@ const CommissionsPage = ({ user }) => {
     const [currentYearCommission, setCurrentYearCommission] = useState(0);
     const [lastYearCommission, setLastYearCommission] = useState(0);
     const [projectedCommission, setProjectedCommission] = useState(0);
-    const [formattedMonthlyData, setFormattedMonthlyData] = useState(Array(12).fill(0));
-    const [weeklyCommissions, setWeeklyCommissions] = useState(Array(4).fill(0)); // Default to 4 weeks
 
+    // Chart Data
+    const [yearlyData, setYearlyData] = useState({});
+    const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
+    const [weeklyData, setWeeklyData] = useState(Array(4).fill(0));
 
-    // useEffect(() => {
-    //     if (user?.id) {
-    //         fetchMonthlyCommissions(user.id, selectedYear)
-    //             .then(data => {
-    //                 console.log("📥 Fetched Monthly Commissions API Response:", data);
-    //                 setFormattedMonthlyData(Array.isArray(data) ? data : Array(12).fill(0));
-    //             })
-    //             .catch(error => console.error("❌ Error Fetching Monthly Commissions:", error));
-        
-    //     // ✅ Fetch full commission data for related accounts
-    //     fetchCommissions(user.id)
-    //         .then(data => {
-    //             console.log("🔍 Full Commissions Data Received:", data);
-    //             setCommissions(Array.isArray(data) ? data : []);
-    //         })
-    //         .catch(error => console.error("❌ Error Fetching Full Commissions:", error));
-    //     }
-
-    //     console.log("🚀 Fetching commissions data for user ID:", user.id);
-    //     Promise.all([
-    //         fetchCommissions(user.id), // ✅ Fetch complete commissions data for RelatedAccounts
-    //         fetchCurrentMonthCommissions(user.id),
-    //         fetchCurrentYearCommissions(user.id),
-    //         fetchLastYearCommissions(user.id),
-    //         fetchProjectedCommissions(user.id),
-    //         fetchMonthlyCommissions(user.id, selectedYear),
-    //         fetchAllYearsCommissions(user.id)
-    //     ]).then(([detailedCommissions, currentMonth, currentYear, lastYear, projected, allCommissions, allYears]) => {
-    //         console.log("✅ API Responses Received:", { currentMonth, currentYear, lastYear, projected, allYears });
-
-    //         setCurrentMonthCommission(currentMonth.total_commissions || 0);
-    //         setCurrentYearCommission(currentYear.total_commissions || 0);
-    //         setLastYearCommission(lastYear.total_commissions || 0);
-    //         setProjectedCommission(projected.projected_commissions || 0);
-    //         setCommissions(detailedCommissions); // ✅ Use detailed commissions for invoices/accounts
-
-    //         if (Array.isArray(allYears) && allYears.length > 0) {
-    //             setYearRange(prevYears => [...new Set([...prevYears, ...allYears])].sort((a, b) => a - b));
-    //         } else {
-    //             console.warn("⚠️ API failed or returned empty, keeping previous year range:", yearRange);
-    //         }
-    //     }).catch(error => console.error("❌ Error Fetching Commissions Data:", error));
-    // }, [user?.id, selectedYear, viewMode]);
-
-    useEffect(() => {
-        if (user?.id) {
-            console.log("🚀 Fetching commissions data for user ID:", user.id);
-    
-            Promise.all([
-                fetchCommissions(user.id),
-                fetchCurrentMonthCommissions(user.id),
-                fetchCurrentYearCommissions(user.id),
-                fetchLastYearCommissions(user.id),
-                fetchProjectedCommissions(user.id),
-                fetchMonthlyCommissions(user.id, selectedYear),
-                fetchAllYearsCommissions(user.id)
-            ])
-            .then(([detailedCommissions, currentMonth, currentYear, lastYear, projected, allCommissions, allYears]) => {
-                console.log("✅ API Responses Received:", { currentMonth, currentYear, lastYear, projected, allYears });
-    
-                setCurrentMonthCommission(currentMonth.total_commissions || 0);
-                setCurrentYearCommission(currentYear.total_commissions || 0);
-                setLastYearCommission(lastYear.total_commissions || 0);
-                setProjectedCommission(projected.projected_commissions || 0);
-    
-                // ✅ Filter out only paid invoices within the selected time period
-                const filteredCommissions = detailedCommissions.filter(com => {
-                    // ✅ Ensure `invoice` and `date_paid` exist before processing
-                    if (!com.invoice || !com.invoice.date_paid || !com.invoice.paid) return false;
-                
-                    const invoiceYear = new Date(com.invoice.date_paid).getFullYear();
-                    const invoiceMonth = new Date(com.invoice.date_paid).getMonth() + 1;
-                
-                    if (viewMode === "yearly") {
-                        return invoiceYear >= fromYear && invoiceYear <= toYear;
-                    } 
-                    if (viewMode === "monthly") {
-                        return invoiceYear === selectedYear;
-                    } 
-                    if (viewMode === "weekly") {
-                        return invoiceYear === selectedYear && invoiceMonth === selectedMonth;
-                    }
-                
-                    return false;
-                });
-                
-                
-    
-                console.log("✅ Filtered Commissions:", filteredCommissions);
-                setCommissions(filteredCommissions);
-    
-                // ✅ Compute Monthly Data (Ensures only commissions for selectedYear are counted)
-                const updatedMonthlyData = Array(12).fill(0);
-                filteredCommissions.forEach(com => {
-                    const invoiceDate = new Date(com.invoice.date_paid);
-                    if (invoiceDate.getFullYear() === selectedYear) {
-                        updatedMonthlyData[invoiceDate.getMonth()] += com.commission_amount;
-                    }
-                });
-    
-                // ✅ Update Monthly Data
-                setFormattedMonthlyData(updatedMonthlyData);
-    
-                // ✅ Ensure yearRange contains all available years
-                if (Array.isArray(allYears) && allYears.length > 0) {
-                    setYearRange(prevYears => [...new Set([...prevYears, ...allYears])].sort((a, b) => a - b));
-                } else {
-                    console.warn("⚠️ API failed or returned empty, keeping previous year range:", yearRange);
-                }
-            })
-            .catch(error => console.error("❌ Error Fetching Commissions Data:", error));
-        }
-    }, [user?.id, selectedYear, fromYear, toYear, selectedMonth, viewMode]);
-    
-    
-
-    // ✅ Fetch ALL available years for dropdown
+    // Fetch all available years for filtering
     useEffect(() => {
         if (user?.id) {
             fetchAllYearsCommissions(user.id)
                 .then(data => {
-                    console.log("📅 Fetched All Years API Response:", data);
-                    setYearRange(prevYears => {
-                        if (Array.isArray(data) && data.length > 0) {
-                            const updatedYears = [...new Set([...prevYears, ...data])].sort((a, b) => a - b);
-                            console.log("✅ Ensuring Year Range Stays Consistent:", updatedYears);
-                            return updatedYears;
-                        }
-                        return prevYears;
-                    });
+                    setYearRange(data.length ? [...new Set(data)].sort((a, b) => a - b) : [selectedYear]);
                 })
                 .catch(error => console.error("❌ Error Fetching All Years:", error));
         }
-    }, [user?.id]);
+    }, [user?.id, selectedYear]);
 
-    // ✅ Fetch Weekly Data Based on Selected Month and Year
+
+// Fetch commissions and summary data
     useEffect(() => {
-        if (user?.id && viewMode === "weekly") {
-            fetchWeeklyCommissions(user.id, selectedYear, selectedMonth)
-                .then(data => {
-                    console.log("📥 Fetched Weekly Commissions API Response:", data);
-                    setWeeklyCommissions(Array.isArray(data) ? data : Array(4).fill(0)); // Default to 4 weeks
-                })
-                .catch(error => console.error("❌ Error Fetching Weekly Commissions:", error));
-        }
-    }, [user?.id, selectedYear, selectedMonth, viewMode]);
-    
+        if (!user?.id) return;
 
-    // ✅ Debugging: View Mode Changes
-    useEffect(() => {
-        console.log("🖥️ View Mode Changed to:", viewMode);
-        console.log("📊 Current Year Range Before View Change:", yearRange);
-    }, [viewMode]);
+        console.log("🚀 Fetching commissions for user ID:", user.id);
+        
+        Promise.all([
+            fetchCommissions(user.id),
+            fetchCurrentMonthCommissions(user.id),
+            fetchCurrentYearCommissions(user.id),
+            fetchLastYearCommissions(user.id),
+            fetchProjectedCommissions(user.id),
+            fetchMonthlyCommissions(user.id, selectedYear),
+            fetchWeeklyCommissions(user.id, selectedYear, selectedMonth),
+        ])
+        .then(([detailedCommissions, currentMonth, currentYear, lastYear, projected, monthly, weekly]) => {
+            console.log("✅ API Responses Received:", { currentMonth, currentYear, lastYear, projected }); //debugging
 
-    // ✅ Format Yearly Data
-    const filteredYears = yearRange.filter(year => year >= fromYear && year <= toYear);
-    const formattedYearlyData = filteredYears.reduce((acc, year) => {
-        acc[year] = commissions
-            .filter(com => new Date(com.invoice.date_paid).getFullYear() === year)
-            .reduce((sum, com) => sum + com.commission_amount, 0);
-        return acc;
-    }, {});
+            setCurrentMonthCommission(currentMonth.total_commissions || 0);
+            setCurrentYearCommission(currentYear.total_commissions || 0);
+            setLastYearCommission(lastYear.total_commissions || 0);
+            setProjectedCommission(projected.projected_commissions || 0);
 
+            setMonthlyData(monthly || Array(12).fill(0));
+            setWeeklyData(weekly || Array(4).fill(0));
 
-    
+            // ✅ Filter out only paid invoices within the selected time period
+            const filteredCommissions = detailedCommissions.filter(com => {
+                if (!com.invoice?.date_paid || !com.invoice.paid) return false;
 
-    // ✅ Format Weekly Data
-    const numWeeks = Math.ceil(new Date(selectedYear, selectedMonth, 0).getDate() / 7);
-    const formattedWeeklyData = weeklyCommissions.length > 0 ? weeklyCommissions : Array(4).fill(0);
+                const invoiceYear = new Date(com.invoice.date_paid).getFullYear();
+                const invoiceMonth = new Date(com.invoice.date_paid).getMonth() + 1;
 
+                if (viewMode === "yearly") return invoiceYear >= fromYear && invoiceYear <= toYear;
+                if (viewMode === "monthly") return invoiceYear === selectedYear;
+                if (viewMode === "weekly") return invoiceYear === selectedYear && invoiceMonth === selectedMonth;
 
-    // commissions.forEach(com => {
-    //     const invoiceDate = new Date(com.invoice.date_paid);
-    //     if (invoiceDate.getFullYear() === selectedYear && invoiceDate.getMonth() + 1 === selectedMonth) {
-    //         const weekIndex = Math.floor(invoiceDate.getDate() / 7);
-    //         formattedWeeklyData[weekIndex] += com.commission_amount;
-    //     }
-    // });
+                return false;
+            });
 
-    console.log("📄 Related Accounts Data:", commissions);
+            console.log("✅ Filtered Commissions:", filteredCommissions);  //debugging
+            setCommissions(filteredCommissions);
 
-    return (
-        <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} p-6`}>
-            <div className="flex min-h-screen">
-                <div className="flex-1 ml-64">
-                    <h1 className="text-2xl font-bold text-dark-cornflower dark:text-blue-300">Commissions</h1>
+            // ✅ Compute Yearly Data
+            const yearlyDataMap = {};
+            filteredCommissions.forEach(com => {
+                const year = new Date(com.invoice.date_paid).getFullYear();
+                yearlyDataMap[year] = (yearlyDataMap[year] || 0) + com.commission_amount;
+            });
 
-                    {/* Filters */}
-                    <Filters {...{ viewMode, setViewMode, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, fromYear, setFromYear, toYear, setToYear, yearRange }} />
+            setYearlyData(yearlyDataMap);
+        })
+        .catch(error => console.error("❌ Error Fetching Commissions Data:", error));  //debugging
 
-                    {/* Summary */}
-                    <SummaryCards {...{ currentMonthCommission, currentYearCommission, lastYearCommission, projectedCommission }} />
+    }, [user?.id, viewMode, selectedYear, fromYear, toYear, selectedMonth]);
 
-                    {/* Bar Chart */}
-                    <CommissionsChart {...{ viewMode, pastFiveYears: yearRange.slice(-5), yearlyData: formattedYearlyData, monthlyData: formattedMonthlyData, weeklyData: formattedWeeklyData, numWeeks: weeklyCommissions.length || 4 }} />
+    console.log("📄 Related Accounts Data:", commissions);  //debugging
 
-                    {/* Related Accounts & Invoices */}
-                    <RelatedAccounts commissions={commissions} />
-                </div>
+return (
+    <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} p-6`}>
+        <div className="flex min-h-screen">
+            <div className="flex-1 ml-64">
+                <h1 className="text-2xl font-bold text-gray-900 pb-4">Commissions</h1>
+
+                {/* Filters */}
+                <Filters {...{ viewMode, setViewMode, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, fromYear, setFromYear, toYear, setToYear, yearRange }} />
+
+                {/* Summary */}
+                <SummaryCards {...{
+                    currentMonthCommission,
+                    currentYearCommission,
+                    lastYearCommission,
+                    projectedCommission,
+                }} />
+
+                {/* Bar Chart */}
+                <CommissionsChart {...{
+                    viewMode,
+                    pastFiveYears: yearRange.slice(-5),
+                    yearlyData,
+                    monthlyData,
+                    weeklyData,
+                    numWeeks: weeklyData.length || 4,
+                }} />
+
+                {/* Related Accounts & Invoices */}
+                <RelatedAccounts commissions={commissions} />
             </div>
         </div>
-    );
+    </div>
+);
 };
-
-
 
 CommissionsPage.propTypes = {
     user: PropTypes.shape({
@@ -254,7 +155,7 @@ CommissionsPage.propTypes = {
         PropTypes.shape({
             commission_id: PropTypes.number.isRequired,
             sales_rep_id: PropTypes.number.isRequired,
-            invoice_id: PropTypes.number, // 🔹 Can be `null` if no invoice
+            invoice_id: PropTypes.number,
             commission_amount: PropTypes.number.isRequired,
             date_paid: PropTypes.string.isRequired, // 🔹 Ensure this is always a string (from API)
             invoice: PropTypes.shape({

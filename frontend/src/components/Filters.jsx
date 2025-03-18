@@ -36,7 +36,7 @@ const Filters = ({
                 {viewMode === "yearly" ? (
                     <div className="flex gap-4">
                         <div>
-                            <label className="text-sm font-medium">From Year</label>
+                            <label className="text-sm font-medium p-2">From Year</label>
                             <select
                                 className="border p-2 w-40 shadow-lg rounded"
                                 value={fromYear}
@@ -50,7 +50,7 @@ const Filters = ({
                             </select>
                         </div>
                         <div>
-                            <label className="text-sm font-medium">To Year</label>
+                            <label className="text-sm font-medium p-2">To Year</label>
                             <select
                                 className="border p-2 w-40 shadow-lg rounded"
                                 value={toYear}
