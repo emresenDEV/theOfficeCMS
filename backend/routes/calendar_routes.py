@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from models import CalendarEvent  
 from database import db
 from datetime import datetime
@@ -21,7 +21,9 @@ def options_update_event(event_id):
 @calendar_bp.route("/events", methods=["GET"])
 def get_calendar_events():
     user_id = request.args.get("user_id", type=int)
-
+        
+    if not user_id:
+        user_id = request.args.get("user_id", type=int) 
     if not user_id:
         return jsonify({"message": "User ID is required"}), 400
 
@@ -49,26 +51,45 @@ def get_calendar_events():
 @calendar_bp.route("/events", methods=["POST"])
 def create_calendar_event():
     data = request.json
-    if not data.get("event_title") or not data.get("start_time") or not data.get("end_time"):
-        return jsonify({"error": "Missing required fields"}), 400
 
-    new_event = CalendarEvent(
-        event_title=data["event_title"],
-        location=data.get("location"),
-        start_time=datetime.strptime(data["start_time"], "%H:%M").time(),
-        end_time=datetime.strptime(data["end_time"], "%H:%M").time(),
-        start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date(),
-        end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date(),
-        notes=data.get("notes"),
-        account_id=data.get("account_id"),
-        user_id=data["user_id"],
-        contact_name=data.get("contact_name"),
-        phone_number=data.get("phone_number"),
-    )
+    # ✅ Simulating getting the user_id from the session (or authentication)
+    # If you have authentication middleware, use the logged-in user
+    user_id = data.get("user_id")
+    if not user_id:
+        return jsonify({"error": "User authentication required"}), 401
 
-    db.session.add(new_event)
-    db.session.commit()
-    return jsonify({"message": "Event created successfully", "event_id": new_event.event_id}), 201
+    try:
+        # ✅ Ensure user_id is an integer
+        user_id = int(user_id)
+
+        # ✅ Convert account_id if provided
+        account_id = int(data["account_id"]) if data.get("account_id") else None
+
+        # ✅ Ensure start_time and end_time are properly formatted
+        start_time = datetime.strptime(data["start_time"], "%H:%M:%S").time()
+        end_time = datetime.strptime(data["end_time"], "%H:%M:%S").time()
+
+        new_event = CalendarEvent(
+            event_title=data["event_title"],
+            location=data.get("location"),
+            start_time=start_time,
+            end_time=end_time,
+            start_date=datetime.strptime(data["start_date"], "%Y-%m-%d").date(),
+            end_date=datetime.strptime(data["end_date"], "%Y-%m-%d").date(),
+            notes=data.get("notes"),
+            account_id=account_id,
+            user_id=user_id,
+            contact_name=data.get("contact_name"),
+            phone_number=data.get("phone_number"),
+        )
+
+        db.session.add(new_event)
+        db.session.commit()
+        return jsonify({"message": "Event created successfully", "event_id": new_event.event_id}), 201
+
+    except ValueError as e:
+        return jsonify({"error": f"Invalid data format: {str(e)}"}), 400
+
 
 # ✅ Update an Existing Calendar Event
 @calendar_bp.route("/events/<int:event_id>", methods=["PUT", "OPTIONS"])

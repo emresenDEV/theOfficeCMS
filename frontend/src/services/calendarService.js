@@ -16,9 +16,33 @@ export const createCalendarEvent = async (eventData) => {
 };
 
 // ✅ Fetch Calendar Events
+// export const fetchCalendarEvents = async (userId) => {
+//     if (!userId) {
+//         console.error("❌ No user ID provided for fetching calendar events.");
+//         return [];
+//     }
+
+//     try {
+//         const response = await api.get(`/calendar/events?user_id=${userId}`);
+//         console.log("✅ Fetched Events:", response.data);
+//         return response.data;
+//     } catch (error) {
+//         console.error("❌ Error fetching calendar events:", error.response?.data || error.message);
+//         return [];
+//     }
+// };
+
 export const fetchCalendarEvents = async (userId) => {
     try {
-        const response = await api.get(`/calendar/events?user_id=${userId}`);
+        if (!userId) {
+            console.error("❌ No user ID provided for fetching calendar events.");
+            return [];
+        }
+
+        const response = await api.get(`/calendar/events`, {
+            params: { user_id: userId },  // ✅ Use query params
+        });
+
         console.log("✅ Fetched Events:", response.data);
         return response.data;
     } catch (error) {
@@ -26,6 +50,7 @@ export const fetchCalendarEvents = async (userId) => {
         return [];
     }
 };
+
 
 // ✅ Fetch Calendar Events (Meetings) for a User
 export const fetchMeetings = async (userId) => {

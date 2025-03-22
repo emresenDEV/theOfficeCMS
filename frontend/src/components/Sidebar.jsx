@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { FiHome, FiUsers, FiSettings, FiBriefcase, FiLogOut, FiMenu } from "react-icons/fi";
+import { FiHome, FiUsers, FiSettings, FiBriefcase, FiLogOut, FiMenu, FiClipboard, FiTrendingUp } from "react-icons/fi";
 import PropTypes from "prop-types";
 
 const Sidebar = ({ user, handleLogout }) => {
@@ -38,11 +38,11 @@ const Sidebar = ({ user, handleLogout }) => {
                     {/* Navigation */}
                     <nav className="mt-6 space-y-2">
                         <NavItem to="/" icon={<FiHome />} label="Dashboard" />
-                        <NavItem to="/tasks" icon={<FiBriefcase />} label="My Tasks" />
-                        <NavItem to="/calendar" icon={<FiBriefcase />} label="Calendar" />
-                        <NavItem to="/accounts" icon={<FiBriefcase />} label="Accounts" />
-                        <NavItem to="/commissions" icon={<FiBriefcase />} label="Commissions" />
-                        <NavItem to="/employee-info" icon={<FiUsers />} label="My Info" />
+                        <NavItem to="/tasks" icon={<FiClipboard />} label="My Tasks" />
+                        {/* <NavItem to="/calendar" icon={<FiBriefcase />} label="Calendar" /> */}
+                        <NavItem to="/accounts" icon={<FiUsers />} label="Accounts" />
+                        <NavItem to="/commissions" icon={<FiTrendingUp />} label="Commissions" />
+                        {/* <NavItem to="/employee-info" icon={<FiUsers />} label="My Info" /> */}
                         <NavItem to="/settings" icon={<FiSettings />} label="Settings" />
                     </nav>
                 </div>

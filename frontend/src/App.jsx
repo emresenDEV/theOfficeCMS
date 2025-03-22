@@ -71,7 +71,7 @@ function App() {
                         lastName: sessionUser.last_name || "",
                         role: sessionUser.role_name || "",
                     });
-                    localStorage.setItem("user", JSON.stringify(sessionUser)); // ✅ Store session in localStorage
+                    localStorage.setItem("user", JSON.stringify(sessionUser)); 
                 }
             }
         } catch (error) {

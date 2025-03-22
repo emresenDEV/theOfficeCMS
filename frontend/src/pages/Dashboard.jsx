@@ -80,17 +80,6 @@ const Dashboard = ({ user }) => {
         return <p className="text-center text-gray-600">Loading dashboard...</p>;
     }
 
-    // const refreshTasks = async () => {
-    //     try {
-    //         const updatedTasks = await fetchTasks(userData.user_id);
-    //         console.log("✅ Updated Tasks (After Refresh):", updatedTasks);
-    //         setTasks(updatedTasks);
-    //     } catch (error) {
-    //         console.error("❌ Error refreshing tasks:", error);
-    //     }
-    // };
-
-
     const handleRefreshTasks = async () => {
         const updatedTasks = await fetchTasks(userData.user_id);
         setTasks(updatedTasks);

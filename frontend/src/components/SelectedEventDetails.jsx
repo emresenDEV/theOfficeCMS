@@ -1,7 +1,13 @@
 import PropTypes from "prop-types";
 import { format } from "date-fns";
 
-const SelectedEventDetails = ({ events, selectedDate, onEdit }) => {
+const SelectedEventDetails = ({ events = [], selectedDate = "", onEdit = () => {} }) => {
+    // 🛠 Prevent `.map()` error by ensuring `events` is always an array
+    if (!Array.isArray(events)) {
+        console.error("❌ Expected 'events' to be an array, but got:", events);
+        return <p className="text-gray-500 text-sm italic">No events found.</p>;
+    }
+
     return (
         <div className="mt-6">
             <h2 className="text-lg font-bold text-gray-700">
@@ -44,7 +50,7 @@ const SelectedEventDetails = ({ events, selectedDate, onEdit }) => {
     );
 };
 
-// ✅ **PropTypes Validation**
+// **PropTypes Validation**
 SelectedEventDetails.propTypes = {
     events: PropTypes.arrayOf(
         PropTypes.shape({
