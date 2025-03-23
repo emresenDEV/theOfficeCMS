@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy.sql import func
 
 
-invoice_bp = Blueprint("invoice", __name__)
+invoice_bp = Blueprint("invoice", __name__, url_prefix="/invoices")
 
 # ✅ Update Invoice Status (Pending to Paid, Past Due, etc.)
 @invoice_bp.route("/invoices/<int:invoice_id>/update_status", methods=["PUT", "OPTIONS"])
@@ -194,7 +194,7 @@ def get_invoices_by_account(account_id):
                 "date_created": inv.date_created.strftime('%Y-%m-%d') if inv.date_created else None,
                 "date_updated": inv.date_updated.strftime('%Y-%m-%d') if inv.date_updated else None,
                 "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else None,
-                "commission_amount": float(inv.commission_amount or 0)  # ✅ Add this line
+                "commission_amount": float(inv.commission_amount or 0)
             })
 
         return jsonify(result), 200
@@ -209,7 +209,7 @@ def get_invoices_by_account(account_id):
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def validate_invoice_for_account(account_id, invoice_id):
     try:
-        # ✅ Query invoice by ID and check if it belongs to the account
+        # Query invoice by ID and check if it belongs to the account
         invoice = Invoice.query.filter_by(account_id=account_id, invoice_id=invoice_id).first()
 
         if invoice:
@@ -224,7 +224,8 @@ def validate_invoice_for_account(account_id, invoice_id):
 
 # Update Invoice (SINGLE) API
 # @invoice_bp.route("/invoices/invoice/<int:invoice_id>", methods=["PUT", "OPTIONS"])
-@invoice_bp.route("/invoices/<int:invoice_id>", methods=["PUT", "OPTIONS"])
+# @invoice_bp.route("/invoices/<int:invoice_id>", methods=["PUT", "OPTIONS"])
+@invoice_bp.route("/<int:invoice_id>", methods=["PUT", "OPTIONS"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def update_invoice(invoice_id):
     if request.method == "OPTIONS":
@@ -253,7 +254,7 @@ def update_invoice(invoice_id):
                 invoice_id=invoice_id,
                 service_id=s["service_id"],
                 quantity=s["quantity"],
-                price=s["price_per_unit"],
+                price_per_unit=s["price_per_unit"],
                 total_price=s["total_price"]
             )
             db.session.add(new_service)
@@ -262,7 +263,8 @@ def update_invoice(invoice_id):
     return jsonify({"message": "Invoice updated successfully"}), 200
 
 # Delete Invoice (SINGLE) API
-@invoice_bp.route("/invoices/<int:invoice_id>", methods=["DELETE"])
+# @invoice_bp.route("/invoices/<int:invoice_id>", methods=["DELETE"])
+@invoice_bp.route("/<int:invoice_id>", methods=["DELETE"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def delete_invoice(invoice_id):
     invoice = Invoice.query.get(invoice_id)
@@ -349,7 +351,8 @@ def get_past_due_invoices():
     ])
 
 # Create Invoices API
-@invoice_bp.route("/invoices", methods=["POST"])
+# @invoice_bp.route("/invoices", methods=["POST"])
+@invoice_bp.route("/", methods=["POST"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def create_invoice():
     data = request.json
@@ -415,7 +418,8 @@ def create_payment_method():
 
 
 # Log Payment
-@invoice_bp.route("/invoices/<int:invoice_id>/log_payment", methods=["POST"])
+# @invoice_bp.route("/invoices/<int:invoice_id>/log_payment", methods=["POST"])
+@invoice_bp.route("/<int:invoice_id>/log_payment", methods=["POST"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def log_payment(invoice_id):
     data = request.get_json()

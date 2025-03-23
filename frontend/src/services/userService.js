@@ -35,7 +35,7 @@ export const fetchUserProfile = async (userId) => {
     }
 };
 
-// ✅ Fetch Sales Representatives
+// Fetch Sales Representatives
 export const fetchSalesReps = async () => {
     try {
         const response = await api.get("/users", {

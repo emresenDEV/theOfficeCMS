@@ -12,6 +12,7 @@ createService,
 updateService,
 } from "../services/servicesService";
 import { fetchNotesByInvoice } from "../services/notesService";
+import { fetchSalesReps } from "../services/userService";
 import Sidebar from "../components/Sidebar";
 import NotesSection from "../components/NotesSection";
 import PropTypes from "prop-types";
@@ -20,7 +21,7 @@ import PropTypes from "prop-types";
 const InvoiceDetailsPage = ({ user }) => {
 const { invoiceId } = useParams();
 const navigate = useNavigate();
-
+const [salesReps, setSalesReps] = useState([]);
 const [invoice, setInvoice] = useState(null);
 const [notes, setNotes] = useState([]);
 const [paymentMethods, setPaymentMethods] = useState([]);
@@ -35,81 +36,117 @@ const [newServiceRow, setNewServiceRow] = useState({
     isNew: false,
     });
 
-// const [newService, setNewService] = useState({
-//     service_name: "",
-//     price_per_unit: "",
-//     quantity: 1,
-//     isNew: false,
-// });
+const [invoiceForm, setInvoiceForm] = useState({
+    discount_percent: 0,
+    tax_rate: 0,
+    sales_rep_id: null,
+    });
+
 const [deletedServiceIndex, setDeletedServiceIndex] = useState(null);
 const [undoTimeoutId, setUndoTimeoutId] = useState(null);
 const [editingIndex, setEditingIndex] = useState(null);
 
-    useEffect(() => {
-        async function loadData() {
-        try {
-            const data = await fetchInvoiceById(invoiceId);
-            if (!data) throw new Error("Invoice not found");
-            setInvoice(data);
-            setServices(data.services);
-        } catch (error) {
-            console.error("Error fetching invoice:", error);
-        }
-    
-        try {
-            const notes = await fetchNotesByInvoice(invoiceId);
-            setNotes(notes);
-        } catch (error) {
-            console.error("Error fetching notes:", error);
-        }
-    
-        try {
-            const methods = await fetchPaymentMethods();
-            setPaymentMethods(methods);
-        } catch (error) {
-            console.error("Error fetching payment methods:", error);
-        }
-    
-        try {
-            const availableServices = await fetchServices();
-            setAllServiceOptions(
-            availableServices.sort((a, b) =>
-                a.service_name.localeCompare(b.service_name)
-            )
-            );
-        } catch (error) {
-            console.error("Error fetching available services:", error);
-        }
-        }
-    
-        loadData();
-    }, [invoiceId]);
+useEffect(() => {
+    async function loadData() {
+    try {
+        const data = await fetchInvoiceById(invoiceId);
+        if (!data) throw new Error("Invoice not found");
+        setInvoice(data);
+        setInvoiceForm({
+            discount_percent: data.discount_percent || 0,
+            tax_rate: data.tax_rate || 0,
+            sales_rep_id: data.sales_rep_id || null,
+            });
+        
+        setServices(data.services);
+    } catch (error) {
+        console.error("Error fetching invoice:", error);
+    }
+    try {
+        const reps = await fetchSalesReps();
+        setSalesReps(reps);
+        } catch (err) {
+        console.error("❌ Error loading sales reps:", err);
+    }
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        }).format(amount);
-    };
+    try {
+        const notes = await fetchNotesByInvoice(invoiceId);
+        setNotes(notes);
+    } catch (error) {
+        console.error("Error fetching notes:", error);
+    }
+
+    try {
+        const methods = await fetchPaymentMethods();
+        setPaymentMethods(methods);
+    } catch (error) {
+        console.error("Error fetching payment methods:", error);
+    }
+
+    try {
+        const availableServices = await fetchServices();
+        setAllServiceOptions(
+        availableServices.sort((a, b) =>
+            a.service_name.localeCompare(b.service_name)
+        )
+        );
+    } catch (error) {
+        console.error("Error fetching available services:", error);
+    }
+    }
+
+    loadData();
+}, [invoiceId]);
+
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    }).format(amount);
+};
+
+    // const calculateFinancials = () => {
+    //     const subtotal = services.reduce(
+    //       (sum, s) => sum + s.price_per_unit * s.quantity * (1 - (s.discount_percent || 0)),
+    //         0
+    //     );
+    //     const discountAmount = services.reduce(
+    //         (sum, s) => sum + s.price_per_unit * s.quantity * (s.discount_percent || 0),
+    //         0
+    //     );
+    //     const taxAmount = subtotal * (invoice.tax_rate || 0);
+    //     const total = subtotal + taxAmount;
+    //     return {
+    //         discountAmount,
+    //         taxAmount,
+    //         total,
+    //     };
+    // };
 
     const calculateFinancials = () => {
-        const subtotal = services.reduce(
-          (sum, s) => sum + s.price_per_unit * s.quantity * (1 - (s.discount_percent || 0)),
-            0
+        const subtotalBeforeInvoiceDiscount = services.reduce(
+            (sum, s) => sum + s.price_per_unit * s.quantity * (1 - (s.discount_percent || 0)),
+        0
         );
-        const discountAmount = services.reduce(
+    
+        const perServiceDiscountTotal = services.reduce(
             (sum, s) => sum + s.price_per_unit * s.quantity * (s.discount_percent || 0),
-            0
+        0
         );
-        const taxAmount = subtotal * (invoice.tax_rate || 0);
-        const total = subtotal + taxAmount;
+    
+        const invoiceLevelDiscountAmount = subtotalBeforeInvoiceDiscount * (invoice.discount_percent || 0);
+    
+        const taxAmount = (subtotalBeforeInvoiceDiscount - invoiceLevelDiscountAmount) * (invoice.tax_rate || 0);
+        const total = subtotalBeforeInvoiceDiscount - invoiceLevelDiscountAmount + taxAmount;
+    
         return {
-            discountAmount,
+            perServiceDiscountTotal,
+            invoiceLevelDiscountAmount,
             taxAmount,
             total,
         };
     };
-
+    
     const handleEditService = (index) => {
     setEditingIndex(index);
     };
@@ -181,9 +218,18 @@ const [editingIndex, setEditingIndex] = useState(null);
                     discount_percent: newEntry.discount_percent || 0,
                 };
             }
+            if (newEntry.quantity <= 0) {
+                alert("Quantity must be greater than 0.");
+                return;
+            }              
             newEntry.total_price =
                 newEntry.price_per_unit * newEntry.quantity * (1 - (newEntry.discount_percent || 0));
             setServices((prev) => [...prev, newEntry]);
+            await updateInvoice(invoiceId, { services: [...services, newEntry] });
+            const updated = await fetchInvoiceById(invoiceId);
+            setInvoice(updated);
+            setServices(updated.services);
+
             setNewServiceRow({
                 service_name: "",
                 price_per_unit: "",
@@ -191,7 +237,8 @@ const [editingIndex, setEditingIndex] = useState(null);
                 discount_percent: 0,
                 isNew: false,
             });
-            updateInvoice(invoiceId, { services: [...services, newEntry] });
+
+            setAddingService(false);
         };
 
     if (!invoice)
@@ -213,7 +260,22 @@ const [editingIndex, setEditingIndex] = useState(null);
             <h1 className="text-3xl font-bold text-left">{invoice.business_name}</h1>
             <h1 className="text-3xl font-bold text-right">Invoice #{invoice.invoice_id}</h1>
             </div>
+            {/* Date Created and Updated */}
+            <div className="flex justify-between items-start mb-4">
+            <p className="text-sm text-gray-600 font-bold text-left">
+                Created: {new Date(invoice.date_created).toLocaleDateString()}</p>
 
+            <p className="text-sm text-gray-600 font-bold text-left">
+                Updated: {new Date(invoice.date_updated).toLocaleString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true
+            })}
+            </p>
+            </div>
             <div className="flex justify-between mb-6">
             <div className="text-left">
                 <p className="text-lg font-semibold">{invoice.business_name}</p>
@@ -232,6 +294,85 @@ const [editingIndex, setEditingIndex] = useState(null);
                 )}
             </div>
             </div>
+            {/* Edit Invoice Form */}
+            <section className="mb-6 border p-4 rounded-lg">
+                <h2 className="text-xl font-semibold mb-2 text-left">Invoice Settings</h2>
+                <div className="flex gap-6 items-end">
+                    {/* Discount Percent */}
+                    <div className="flex flex-col">
+                    <label className="text-sm font-medium">Invoice Discount %</label>
+                    <input
+                        type="number"
+                        value={(invoiceForm.discount_percent * 100).toFixed(0)}
+                        onChange={(e) =>
+                        setInvoiceForm((prev) => ({
+                            ...prev,
+                            discount_percent: parseFloat(e.target.value) / 100 || 0,
+                        }))
+                        }
+                        className="border p-2 rounded w-28 text-right"
+                    />
+                    </div>
+
+                    {/* Tax Rate */}
+                    <div className="flex flex-col">
+                    <label className="text-sm font-medium">Tax Rate %</label>
+                    <input
+                        type="number"
+                        value={(invoiceForm.tax_rate * 100).toFixed(2)}
+                        onChange={(e) =>
+                        setInvoiceForm((prev) => ({
+                            ...prev,
+                            tax_rate: parseFloat(e.target.value) / 100 || 0,
+                        }))
+                        }
+                        className="border p-2 rounded w-28 text-right"
+                    />
+                    </div>
+
+                    {/* Sales Rep ID */}
+                    <div className="flex flex-col">
+                    <label className="text-sm font-medium">Sales Representative</label>
+                    <select
+                        className="w-full border p-2 rounded text-left"
+                        value={invoice.sales_rep_id}
+                        onChange={(e) => setInvoice({ ...invoice, sales_rep_id: parseInt(e.target.value) })}
+                    >
+                        <option value="">-- Select a Sales Rep --</option>
+                        {salesReps.map((rep) => (
+                        <option key={rep.user_id} value={rep.user_id}>
+                            {rep.first_name} {rep.last_name}
+                        </option>
+                        ))}
+                    </select>
+                    </div>
+
+                    {/* Due Date Picker */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 text-left mb-1">Due Date</label>
+                        <input
+                            type="date"
+                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                            value={invoice.due_date || ""}
+                            onChange={(e) => setInvoice((prev) => ({ ...prev, due_date: e.target.value }))
+                        }
+                        />
+                        </div>
+
+                    {/* Save Button */}
+                    <div className="flex justify-end mt-6">
+                        <button
+                            onClick={() => updateInvoice(invoiceId, invoice)}
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        >
+                            Save Update
+                        </button>
+                    </div>
+
+
+                </div>
+                </section>
+
             {/* SERVICES TABLE */}
             <section className="mb-6 border p-4 rounded-lg">
             <div className="flex justify-between items-center mb-2">
@@ -248,14 +389,17 @@ const [editingIndex, setEditingIndex] = useState(null);
                     <th className="font-bold p-2 border-b border-r text-left">Service</th>
                     <th className="font-bold p-2 border-b border-r text-right">Price / Unit</th>
                     <th className="font-bold p-2 border-b border-r text-right">Quantity</th>
-                    <th className="font-bold p-2 border-b border-r text-right">Discount %</th>
-                    <th className="font-bold p-2 border-b border-r text-right">Discount</th>
-                    <th className="font-bold p-2 border-b border-r text-right">Final</th>
+                    <th className="font-bold p-2 border-b border-r text-right">Service Discount %</th>
+                    <th className="font-bold p-2 border-b border-r text-right">Service Discount</th>
+                    <th className="font-bold p-2 border-b border-r text-right">Total</th>
                     <th className="font-bold p-2 border-b text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {services.map((s, index) => (
+                    {services.map((s, index) => {
+                        const displayDiscount = (s.discount_percent || 0) * 100;
+
+                        return (
                         <tr key={index} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
                         <td className="p-2 border-b border-r text-left">
                             {editingIndex === index ? (
@@ -281,20 +425,17 @@ const [editingIndex, setEditingIndex] = useState(null);
                             s.service_name
                             )}
                         </td>
-
+                        {/* Price per unit */}
                         <td className="p-2 border-b border-r text-right">
-                            {editingIndex === index ? (
-                            <input
-                                className="w-full p-1 border rounded text-right"
-                                type="number"
-                                value={s.price_per_unit}
-                                readOnly
-                            />
-                            ) : (
-                            formatCurrency(s.price_per_unit)
-                            )}
-                        </td>
-
+                                {editingIndex === index ? (
+                                <span className="block text-right px-1">${
+                                    (s.price_per_unit || 0).toFixed(2)
+                                }</span>
+                                ) : (
+                                formatCurrency(s.price_per_unit)
+                                )}
+                            </td>
+                        {/* Quantity */}
                         <td className="p-2 border-b border-r text-right">
                             {editingIndex === index ? (
                             <input
@@ -309,33 +450,32 @@ const [editingIndex, setEditingIndex] = useState(null);
                             s.quantity
                             )}
                         </td>
-
+                        {/* Discount % */}
                         <td className="p-2 border-b border-r text-right">
                             {editingIndex === index ? (
                             <input
                                 className="w-full p-1 border rounded text-right"
                                 type="number"
-                                value={(s.discount_percent || 0) * 100}
+                                value={isNaN(displayDiscount) ? "" : displayDiscount}
                                 onChange={(e) =>
-                                handleServiceFieldChange(index, "discount_percent", e.target.value)
-                                }
+                                    handleServiceFieldChange(index, "discount_percent", e.target.value)}
                                 onFocus={(e) => e.target.select()}
                             />
                             ) : (
-                            `${((s.discount_percent || 0) * 100).toFixed(2)}%`
+                            `${displayDiscount.toFixed(0)}%`
                             )}
                         </td>
-
+                        {/* Discount Amount */}
                         <td className="p-2 border-b border-r text-right">
                             {formatCurrency(
                             s.price_per_unit * s.quantity * (s.discount_percent || 0)
                             )}
                         </td>
-
+                        {/* Final total */}
                         <td className="p-2 border-b border-r text-right">
                             {formatCurrency(s.total_price)}
                         </td>
-
+                        {/* Action buttons */}
                         <td className="p-2 border-b text-center space-x-2">
                             {deletedServiceIndex === index ? (
                             <button
@@ -377,8 +517,8 @@ const [editingIndex, setEditingIndex] = useState(null);
                             )}
                         </td>
                         </tr>
-                    ))}
-                    {/* ✅ Add New Row at the Bottom if Adding */}
+                    )})}
+                    {/* Add New Row at the Bottom if Adding */}
                     {editingIndex === null && addingService && (
                         <tr className="bg-green-50">
                         <td className="p-2 border-b border-r text-left">
@@ -474,11 +614,22 @@ const [editingIndex, setEditingIndex] = useState(null);
             </div>
             </section>
 
+            {/* FInancial Summary */}
             <section className="mb-6 text-left">
+                
             <h2 className="text-xl font-semibold">Financial Summary</h2>
-            <p><strong>Discount:</strong> {formatCurrency(calculateFinancials().discountAmount)} ({(invoice.discount_percent * 100).toFixed(2)}%)</p>
-            <p><strong>Tax:</strong> {formatCurrency(calculateFinancials().taxAmount)} ({(invoice.tax_rate * 100).toFixed(2)}%)</p>
-            <p><strong>Total:</strong> {formatCurrency(calculateFinancials().total)}</p>
+                <p className="text-sm text-gray-600 mb-2">
+                    Discounts are applied in two ways:
+                    <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
+                        <li><strong>Service Discount</strong> — applied per service and reduces the price for the specific service.</li>
+                        <li><strong>Invoice Discount</strong> — applied once across the subtotal before tax.</li>
+                    </ul>
+                </p>
+                <p><strong>Service Discounts:</strong> {formatCurrency(calculateFinancials().perServiceDiscountTotal)}</p>
+                <p><strong>Invoice Discount:</strong> {formatCurrency(calculateFinancials().invoiceLevelDiscountAmount)} ({(invoice.discount_percent * 100).toFixed(2)}%)</p>
+                <p><strong>Tax:</strong> {formatCurrency(calculateFinancials().taxAmount)} ({(invoice.tax_rate * 100).toFixed(2)}%)</p>
+                <p><strong>Total:</strong> {formatCurrency(calculateFinancials().total)}</p>
+
             </section>
             {/* LOG PAYMENT */}
             <section className="mb-6 text-left">

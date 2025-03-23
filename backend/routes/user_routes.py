@@ -156,3 +156,17 @@ def get_user_by_id(user_id):
         "date_created": user.date_created.isoformat() if user.date_created else None,
         "date_updated": user.date_updated.isoformat() if user.date_updated else None,
     }), 200
+    
+@user_bp.route("/sales_reps", methods=["GET"])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+def get_sales_reps():
+    sales_reps = Users.query.filter_by(role_id=3).all()
+    return jsonify([
+        {
+            "user_id": user.user_id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "branch_id": user.branch_id
+        } for user in sales_reps
+    ]), 200
