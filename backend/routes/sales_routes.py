@@ -1,37 +1,35 @@
 from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
-from models import Invoice, Users, Branches
+from models import Payment, Users, Branches, Invoice
 from database import db
 from sqlalchemy.sql import func
 from datetime import datetime
 
-sales_bp = Blueprint("sales", __name__)  # ✅ Create a sales blueprint
+sales_bp = Blueprint("sales", __name__)
 
-## ✅ Fetch company-wide monthly sales filtered by year
+# ✅ Company-wide monthly sales
 @sales_bp.route("/company", methods=["GET"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def get_company_sales():
-    """Retrieve total monthly sales for the entire company"""
     year = request.args.get("year", type=int)
 
     query = (
         db.session.query(
-            func.extract('month', Invoice.date_paid).label("month"),
-            func.sum(Invoice.amount).label("total_sales")
+            func.extract('month', Payment.date_paid).label("month"),
+            func.sum(Payment.total_paid).label("total_sales")
         )
     )
 
     if year:
-        query = query.filter(func.extract('year', Invoice.date_paid) == year)
+        query = query.filter(func.extract('year', Payment.date_paid) == year)
 
-    query = query.group_by("month").order_by("month").all()
+    results = query.group_by("month").order_by("month").all()
 
     sales_data = [0] * 12
-    for month, total_sales in query:
+    for month, total_sales in results:
         sales_data[int(month) - 1] = float(total_sales)
 
     return jsonify(sales_data), 200
-
 
 
 # ✅ Fetch sales for a specific user
@@ -50,12 +48,13 @@ def get_user_sales():
 
         user_sales = (
             db.session.query(
-                func.extract('month', Invoice.date_paid).label("month"),
-                func.sum(Invoice.amount).label("total_sales")
+                func.extract('month', Payment.date_paid).label("month"),
+                func.sum(Payment.total_paid).label("total_sales")
             )
-            .filter(Invoice.sales_rep_id == sales_rep_id)
-            .filter(func.extract('year', Invoice.date_paid) == year)
-            .filter(Invoice.date_paid <= datetime.now())  # ✅ Exclude future invoices
+            .join(Invoice, Payment.invoice_id == Invoice.invoice_id)
+            .filter(Payment.sales_rep_id == sales_rep_id)
+            .filter(func.extract('year', Payment.date_paid) == year)
+            .filter(Payment.date_paid <= datetime.now())
             .group_by("month")
             .order_by("month")
             .all()
@@ -72,29 +71,25 @@ def get_user_sales():
         return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
 
 
-# ✅ Fetch branch-specific sales filtered by year
+# ✅ Branch-wide monthly sales
 @sales_bp.route("/branch", methods=["GET"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def get_branch_sales():
-    """Retrieve total monthly sales grouped by branch filtered by year"""
     year = request.args.get("year", type=int)
-
     if not year:
         return jsonify({"error": "Year is required"}), 400
-
-    print(f"🔍 Fetching branch sales for year {year}")
 
     branch_sales = (
         db.session.query(
             Branches.branch_name,
-            func.extract('month', Invoice.date_paid).label("month"),
-            func.sum(Invoice.amount).label("total_sales")
+            func.extract('month', Payment.date_paid).label("month"),
+            func.sum(Payment.total_paid).label("total_sales")
         )
-        .join(Users, Users.user_id == Invoice.sales_rep_id)
+        .join(Users, Users.user_id == Payment.sales_rep_id)
         .join(Branches, Users.branch_id == Branches.branch_id)
-        .filter(func.extract('year', Invoice.date_paid) == year)  # ✅ Filter by year
-        .group_by(Branches.branch_name, func.extract('month', Invoice.date_paid))  # ✅ FIXED
-        .order_by(func.extract('month', Invoice.date_paid))  # ✅ FIXED ORDER BY
+        .filter(func.extract('year', Payment.date_paid) == year)
+        .group_by(Branches.branch_name, func.extract('month', Payment.date_paid))
+        .order_by(func.extract('month', Payment.date_paid))
         .all()
     )
 
@@ -107,12 +102,10 @@ def get_branch_sales():
     return jsonify(sales_data), 200
 
 
-
-# ✅ Fetch sales for all users in a branch filtered by year
+# ✅ Sales for all users in a branch
 @sales_bp.route("/branch-users", methods=["GET"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def get_branch_users_sales():
-    """Retrieve sales of all users in a branch for a specific year."""
     branch_id = request.args.get("branch_id", type=int)
     year = request.args.get("year", type=int, default=datetime.now().year)
 
@@ -120,21 +113,19 @@ def get_branch_users_sales():
         return jsonify({"error": "Branch ID is required"}), 400
 
     try:
-        print(f"🔍 API Called with: branch_id={branch_id}, year={year}")
-
         user_sales = (
             db.session.query(
                 Users.first_name,
                 Users.last_name,
                 Users.role_id,
                 Users.branch_id,
-                func.extract('month', Invoice.date_paid).label("month"),
-                func.sum(Invoice.amount).label("total_sales")
+                func.extract('month', Payment.date_paid).label("month"),
+                func.sum(Payment.total_paid).label("total_sales")
             )
-            .join(Invoice, Users.user_id == Invoice.sales_rep_id)
+            .join(Payment, Users.user_id == Payment.sales_rep_id)
             .filter(Users.branch_id == branch_id)
-            .filter(func.extract('year', Invoice.date_paid) == year)
-            .filter(Invoice.date_paid <= datetime.now())  # ✅ Exclude future invoices
+            .filter(func.extract('year', Payment.date_paid) == year)
+            .filter(Payment.date_paid <= datetime.now())
             .group_by(
                 Users.first_name,
                 Users.last_name,
@@ -153,7 +144,7 @@ def get_branch_users_sales():
                 formatted_sales[full_name] = {
                     "role_id": role_id,
                     "branch_id": branch_id,
-                    "sales": [0] * 12  # Default array for 12 months
+                    "sales": [0] * 12
                 }
             formatted_sales[full_name]["sales"][int(month) - 1] = float(total_sales)
 

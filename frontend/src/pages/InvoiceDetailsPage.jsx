@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-fetchInvoiceById, 
-updateInvoice, 
-deleteInvoice, 
-fetchPaymentMethods 
+import {
+    fetchInvoiceById,
+    updateInvoice,
+    deleteInvoice,
+    fetchPaymentMethods,
 } from "../services/invoiceService";
+import {
+fetchServices,
+createService,
+updateService,
+} from "../services/servicesService";
 import { fetchNotesByInvoice } from "../services/notesService";
 import Sidebar from "../components/Sidebar";
 import NotesSection from "../components/NotesSection";
 import PropTypes from "prop-types";
-import { format } from "date-fns";
+// import { format } from "date-fns";
 
 const InvoiceDetailsPage = ({ user }) => {
 const { invoiceId } = useParams();
@@ -18,296 +23,501 @@ const navigate = useNavigate();
 
 const [invoice, setInvoice] = useState(null);
 const [notes, setNotes] = useState([]);
-const [isLoggingPayment, setIsLoggingPayment] = useState(false);
-const [formData, setFormData] = useState({});
 const [paymentMethods, setPaymentMethods] = useState([]);
-const [paymentData, setPaymentData] = useState({
-    payment_method: "",
-    last_four_payment_method: "",
-    total_paid: 0,
-    date_paid: format(new Date(), "yyyy-MM-dd"),
-});
-
-// Fetch invoice, notes, and payment methods
-useEffect(() => {
-    fetchInvoiceById(invoiceId)
-    .then((data) => {
-        if (!data) throw new Error("Invoice not found");
-        // Massage the fetched data with fallback defaults
-        const invoiceData = {
-        ...data,
-        discount_amount: data.discount_amount != null ? parseFloat(data.discount_amount) : 0,
-        discount_percent: data.discount_percent != null ? parseFloat(data.discount_percent) : 0,
-        tax_rate: data.tax_rate != null ? parseFloat(data.tax_rate) : 0,
-        tax_amount: data.tax_amount != null ? parseFloat(data.tax_amount) : 0,
-        final_total: data.final_total != null ? parseFloat(data.final_total) : 0,
-        commission_amount: data.commission_amount != null ? parseFloat(data.commission_amount) : 0,
-        };
-        setInvoice(invoiceData);
-        setFormData(invoiceData);
-        setPaymentData((prev) => ({
-        ...prev,
-        total_paid: invoiceData.final_total,
-        }));
-    })
-    .catch((error) => {
-        console.error("Error fetching invoice:", error);
-        setInvoice(null);
+const [services, setServices] = useState([]);
+const [allServiceOptions, setAllServiceOptions] = useState([]);
+const [addingService, setAddingService] = useState(false);
+const [newServiceRow, setNewServiceRow] = useState({
+    service_name: "",
+    price_per_unit: "",
+    quantity: 1,
+    discount_percent: 0,
+    isNew: false,
     });
 
-    fetchNotesByInvoice(invoiceId)
-    .then(setNotes)
-    .catch((error) => console.error("Error fetching notes:", error));
+// const [newService, setNewService] = useState({
+//     service_name: "",
+//     price_per_unit: "",
+//     quantity: 1,
+//     isNew: false,
+// });
+const [deletedServiceIndex, setDeletedServiceIndex] = useState(null);
+const [undoTimeoutId, setUndoTimeoutId] = useState(null);
+const [editingIndex, setEditingIndex] = useState(null);
 
-    fetchPaymentMethods()
-    .then(setPaymentMethods)
-    .catch((error) => console.error("Error fetching payment methods:", error));
-}, [invoiceId]);
+    useEffect(() => {
+        async function loadData() {
+        try {
+            const data = await fetchInvoiceById(invoiceId);
+            if (!data) throw new Error("Invoice not found");
+            setInvoice(data);
+            setServices(data.services);
+        } catch (error) {
+            console.error("Error fetching invoice:", error);
+        }
+    
+        try {
+            const notes = await fetchNotesByInvoice(invoiceId);
+            setNotes(notes);
+        } catch (error) {
+            console.error("Error fetching notes:", error);
+        }
+    
+        try {
+            const methods = await fetchPaymentMethods();
+            setPaymentMethods(methods);
+        } catch (error) {
+            console.error("Error fetching payment methods:", error);
+        }
+    
+        try {
+            const availableServices = await fetchServices();
+            setAllServiceOptions(
+            availableServices.sort((a, b) =>
+                a.service_name.localeCompare(b.service_name)
+            )
+            );
+        } catch (error) {
+            console.error("Error fetching available services:", error);
+        }
+        }
+    
+        loadData();
+    }, [invoiceId]);
 
-// Handle payment form changes
-const handlePaymentChange = (e) => {
-    const { name, value } = e.target;
-    setPaymentData({ ...paymentData, [name]: value });
-};
-
-// Log payment (update invoice)
-const handleLogPayment = () => {
-    const updatedInvoiceData = {
-    ...invoice,
-    payment_method: paymentData.payment_method,
-    last_four_payment_method: paymentData.last_four_payment_method,
-    total_paid: paymentData.total_paid,
-    date_paid: paymentData.date_paid,
-    status: "Paid",
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        }).format(amount);
     };
 
-    updateInvoice(invoiceId, updatedInvoiceData).then((updatedInvoice) => {
-    setInvoice(updatedInvoice);
-    setIsLoggingPayment(false);
-    });
-};
+    const calculateFinancials = () => {
+        const subtotal = services.reduce(
+          (sum, s) => sum + s.price_per_unit * s.quantity * (1 - (s.discount_percent || 0)),
+            0
+        );
+        const discountAmount = services.reduce(
+            (sum, s) => sum + s.price_per_unit * s.quantity * (s.discount_percent || 0),
+            0
+        );
+        const taxAmount = subtotal * (invoice.tax_rate || 0);
+        const total = subtotal + taxAmount;
+        return {
+            discountAmount,
+            taxAmount,
+            total,
+        };
+    };
 
-// Delete invoice
-const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this invoice?")) {
-    deleteInvoice(invoiceId).then(() => navigate(`/accounts/details/${invoice.account_id}`));
+    const handleEditService = (index) => {
+    setEditingIndex(index);
+    };
+
+    const handleSaveEdit = (index) => {
+        const updatedService = services[index];
+        if (updatedService.service_id) {
+            updateService(updatedService.service_id, updatedService);
+        }
+        setEditingIndex(null);
+        updateInvoice(invoiceId, { services });
+        };
+    
+    const handleServiceFieldChange = (index, field, value) => {
+        const updatedServices = [...services];
+    
+    if (field === "discount_percent") {
+        const parsed = parseFloat(value);
+        updatedServices[index][field] = isNaN(parsed) ? 0 : parsed / 100;
+    } else if (field === "quantity" || field === "price_per_unit") {
+        const parsed = parseFloat(value);
+        updatedServices[index][field] = isNaN(parsed) ? 0 : parsed;
+    } else {
+        updatedServices[index][field] = value;
     }
-};
+    
+    const s = updatedServices[index];
+    s.total_price = s.quantity * s.price_per_unit * (1 - (s.discount_percent || 0));
+    setServices(updatedServices);
+    };
+        
 
-// Refresh notes
-const refreshNotes = async () => {
-    try {
-    const updatedNotes = await fetchNotesByInvoice(invoiceId);
-    setNotes(updatedNotes);
-    } catch (error) {
-    console.error("Error refreshing notes:", error);
-    }
-};
+    const handleDeleteService = (index) => {
+        setDeletedServiceIndex(index);
+        const timeoutId = setTimeout(() => {
+            setServices((prev) => prev.filter((_, i) => i !== index));
+            setDeletedServiceIndex(null);
+        }, 5000);
+        setUndoTimeoutId(timeoutId);
+        };
 
-// Format currency values
-const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    }).format(amount);
-};
+    const undoDelete = () => {
+        clearTimeout(undoTimeoutId);
+        setDeletedServiceIndex(null);
+        setUndoTimeoutId(null);
+        };
+    
+        const handleAddServiceRow = () => {
+        setAddingService(true);
+        };
 
-// Automatically update status if due date has passed
-useEffect(() => {
-    if (invoice && new Date(invoice.due_date) < new Date() && invoice.status === "Pending") {
-    setFormData((prev) => ({ ...prev, status: "Unpaid" }));
-    }
-}, [invoice]);
+        const handleAddServiceSave = async () => {
+            let newEntry = { ...newServiceRow };
+            if (newEntry.isNew && newEntry.service_name && newEntry.price_per_unit) {
+            const created = await createService({
+                service_name: newEntry.service_name,
+                price_per_unit: parseFloat(newEntry.price_per_unit),
+            });
+            newEntry.service_id = created.service_id;
+            } else {
+            const match = allServiceOptions.find(
+                (s) => s.service_name === newEntry.service_name
+            );
+            if (match)
+                newEntry = {
+                    ...match,
+                    quantity: newEntry.quantity,
+                    price_per_unit: match.price_per_unit,
+                    discount_percent: newEntry.discount_percent || 0,
+                };
+            }
+            newEntry.total_price =
+                newEntry.price_per_unit * newEntry.quantity * (1 - (newEntry.discount_percent || 0));
+            setServices((prev) => [...prev, newEntry]);
+            setNewServiceRow({
+                service_name: "",
+                price_per_unit: "",
+                quantity: 1,
+                discount_percent: 0,
+                isNew: false,
+            });
+            updateInvoice(invoiceId, { services: [...services, newEntry] });
+        };
 
-if (!invoice) return <p className="text-center text-gray-600">Loading invoice details...</p>;
+    if (!invoice)
+        return <p className="text-center text-gray-600">Loading invoice details...</p>;
 
-return (
-    <div className="flex">
-    <Sidebar user={user} />
-    <div className="flex-1 p-6 ml-64">
-        {/* Header with Back, Invoice #, and Edit buttons */}
-        <div className="flex items-center justify-between mb-6">
-        <button 
-            onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-            Back to Account Details
-        </button>
-        <h1 className="text-3xl font-bold text-blue-700">
-            Invoice #{invoice.invoice_id}
-        </h1>
-        <button 
-            onClick={() => navigate(`/invoice/${invoice.invoice_id}/edit`)}
-            className="bg-yellow-500 text-white px-4 py-2 rounded"
-        >
-            Edit Invoice
-        </button>
-        </div>
-
-        {/* Business Information Block */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-blue-700 mb-4 text-left">Business Information</h2>
-        <div className="space-y-2 text-left">
-            <p><strong>Business Name:</strong> {invoice.business_name || "N/A"}</p>
-            <p><strong>Address:</strong> {invoice.address || "N/A"}</p>
-            <p><strong>City, State, Zip Code:</strong> {invoice.city || "N/A"}, {invoice.state || "N/A"} {invoice.zip_code || "N/A"}</p>
-            <p><strong>Phone Number:</strong> {invoice.phone_number || "N/A"}</p>
-        </div>
-        </div>
-
-        {/* Sales Representative Block */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-blue-700 mb-4 text-left">Sales Representative</h2>
-        <div className="space-y-2 text-left">
-            <p><strong>Name:</strong> {invoice.sales_rep ? `${invoice.sales_rep.first_name} ${invoice.sales_rep.last_name}` : "N/A"}</p>
-            <p><strong>Email:</strong> {invoice.sales_rep?.email || "N/A"}</p>
-            <p><strong>Phone:</strong> {invoice.sales_rep?.phone_number || "N/A"}</p>
-        </div>
-        </div>
-
-        {/* Service Details Block */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-blue-700 mb-4 text-left">Service Details</h2>
-        <div className="space-y-2 text-left">
-            <p><strong>Service:</strong> {invoice.service || "N/A"}</p>
-            <p><strong>Price:</strong> {formatCurrency(invoice.amount)}</p>
-            <p><strong>Discount:</strong> {formatCurrency(invoice.discount_amount)}</p>
-            <p><strong>Discount Percent:</strong> {invoice.discount_percent ? (invoice.discount_percent * 100).toFixed(2) : "0.00"}%</p>
-        </div>
-        </div>
-
-        {/* Financial Details Block */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-blue-700 mb-4 text-left">Financial Details</h2>
-        <div className="space-y-2 text-left">
-            <p><strong>Tax Rate:</strong> {invoice.tax_rate ? (invoice.tax_rate * 100).toFixed(2) : "0.00"}%</p>
-            <p><strong>Tax Amount:</strong> {formatCurrency(invoice.tax_amount)}</p>
-            <p><strong>Final Total:</strong> {formatCurrency(invoice.final_total)}</p>
-        </div>
-        </div>
-
-        {/* Commissions Block */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-semibold text-blue-700 mb-4 text-left">Commissions</h2>
-        <div className="space-y-2 text-left">
-            <p><strong>Sales Representative:</strong> {invoice.sales_rep ? `${invoice.sales_rep.first_name} ${invoice.sales_rep.last_name}` : "N/A"}</p>
-            <p><strong>Commission Amount:</strong> {formatCurrency(invoice.commission_amount)}</p>
-        </div>
-        </div>
-
-        {/* Log Payment Block */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6 border-2 border-blue-500">
-        {/* Header: label on left, button on right */}
-        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-blue-700">Log Payment</h2>
-            {!isLoggingPayment && (
+    return (
+        <div className="flex">
+        <Sidebar user={user} />
+        <div className="flex-1 p-6 ml-64">
+        <div className="flex justify-between mb-4">
             <button
-                onClick={() => setIsLoggingPayment(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
+                className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
             >
-                Log Payment
+            ← Back to Account
             </button>
-            )}
         </div>
-        {/* Payment Form: Only show when logging payment */}
-        {isLoggingPayment && (
-            <div className="space-y-4 text-left">
-            <label className="block">
-                Payment Method:
-                <select
-                name="payment_method"
-                value={paymentData.payment_method}
-                onChange={handlePaymentChange}
-                className="border p-2 w-full rounded"
-                >
-                <option value="">Select Payment Method</option>
-                {paymentMethods.map((method) => (
-                    <option key={method.method_id} value={method.method_name}>
-                    {method.method_name}
-                    </option>
-                ))}
-                </select>
-            </label>
-            {["Credit Card", "Check", "Bank Account"].includes(paymentData.payment_method) && (
-                <label className="block">
-                Last Four Digits:
-                <input
-                    type="text"
-                    name="last_four_payment_method"
-                    value={paymentData.last_four_payment_method}
-                    onChange={handlePaymentChange}
-                    placeholder={`Enter the last four digits of the ${paymentData.payment_method} used`}
-                    className="border p-2 w-full rounded"
-                />
-                </label>
-            )}
-            <label className="block">
-                Total Paid:
-                <input
-                type="number"
-                name="total_paid"
-                value={paymentData.total_paid}
-                onChange={handlePaymentChange}
-                className="border p-2 w-full rounded"
-                />
-            </label>
-            <label className="block">
-                Date Paid:
-                <input
-                type="date"
-                name="date_paid"
-                value={paymentData.date_paid}
-                onChange={handlePaymentChange}
-                className="border p-2 w-full rounded"
-                />
-            </label>
-            <div className="flex space-x-2">
-                <button
-                onClick={handleLogPayment}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
-                >
-                Log Payment
-                </button>
-                <button
-                onClick={() => setIsLoggingPayment(false)}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-                >
-                Cancel
-                </button>
+            <div className="flex justify-between items-start mb-4">
+            <h1 className="text-3xl font-bold text-left">{invoice.business_name}</h1>
+            <h1 className="text-3xl font-bold text-right">Invoice #{invoice.invoice_id}</h1>
+            </div>
+
+            <div className="flex justify-between mb-6">
+            <div className="text-left">
+                <p className="text-lg font-semibold">{invoice.business_name}</p>
+                <p>{invoice.address}, {invoice.city}, {invoice.state} {invoice.zip_code}</p>
+                {/* <p>{invoice.email}</p> */}
+                <p>{invoice.phone_number}</p>
+            </div>
+            <div className="text-right">
+                <p><strong>Sales Representative:</strong></p>
+                <p className="text-lg font-semibold">{invoice.branch_name}</p>
+                <p>{invoice.sales_rep_name}</p>
+                <p>{invoice.sales_rep_email}</p>
+                <p>{invoice.sales_rep_phone}</p>
+                {user?.id === invoice.sales_rep_id && (
+                <p><strong>Commission:</strong> {formatCurrency(invoice.commission_amount)} ({(invoice.commission_amount / invoice.final_total * 100).toFixed(2)}%)</p>
+                )}
             </div>
             </div>
-        )}
+            {/* SERVICES TABLE */}
+            <section className="mb-6 border p-4 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-semibold text-left">Services</h2>
+                <button
+                onClick={handleAddServiceRow}
+                className="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700"
+                >Add Service</button>
+            </div>
+            <div className="overflow-y-auto max-h-64 border rounded-lg">
+                <table className="w-full">
+                <thead className="sticky top-0 bg-white shadow-sm">
+                    <tr>
+                    <th className="font-bold p-2 border-b border-r text-left">Service</th>
+                    <th className="font-bold p-2 border-b border-r text-right">Price / Unit</th>
+                    <th className="font-bold p-2 border-b border-r text-right">Quantity</th>
+                    <th className="font-bold p-2 border-b border-r text-right">Discount %</th>
+                    <th className="font-bold p-2 border-b border-r text-right">Discount</th>
+                    <th className="font-bold p-2 border-b border-r text-right">Final</th>
+                    <th className="font-bold p-2 border-b text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {services.map((s, index) => (
+                        <tr key={index} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
+                        <td className="p-2 border-b border-r text-left">
+                            {editingIndex === index ? (
+                            <select
+                                className="w-full p-1 border rounded"
+                                value={s.service_name}
+                                onChange={(e) => {
+                                const selected = allServiceOptions.find(
+                                    (opt) => opt.service_name === e.target.value
+                                );
+                                handleServiceFieldChange(index, "service_name", selected.service_name);
+                                handleServiceFieldChange(index, "price_per_unit", selected.price_per_unit);
+                                }}
+                            >
+                                <option value="">-- Select a service --</option>
+                                {allServiceOptions.map((opt) => (
+                                <option key={opt.service_id} value={opt.service_name}>
+                                    {opt.service_name}
+                                </option>
+                                ))}
+                            </select>
+                            ) : (
+                            s.service_name
+                            )}
+                        </td>
+
+                        <td className="p-2 border-b border-r text-right">
+                            {editingIndex === index ? (
+                            <input
+                                className="w-full p-1 border rounded text-right"
+                                type="number"
+                                value={s.price_per_unit}
+                                readOnly
+                            />
+                            ) : (
+                            formatCurrency(s.price_per_unit)
+                            )}
+                        </td>
+
+                        <td className="p-2 border-b border-r text-right">
+                            {editingIndex === index ? (
+                            <input
+                                className="w-full p-1 border rounded text-right"
+                                type="number"
+                                value={s.quantity}
+                                onChange={(e) =>
+                                handleServiceFieldChange(index, "quantity", e.target.value)}
+                                onFocus={(e) => e.target.select()}
+                            />
+                            ) : (
+                            s.quantity
+                            )}
+                        </td>
+
+                        <td className="p-2 border-b border-r text-right">
+                            {editingIndex === index ? (
+                            <input
+                                className="w-full p-1 border rounded text-right"
+                                type="number"
+                                value={(s.discount_percent || 0) * 100}
+                                onChange={(e) =>
+                                handleServiceFieldChange(index, "discount_percent", e.target.value)
+                                }
+                                onFocus={(e) => e.target.select()}
+                            />
+                            ) : (
+                            `${((s.discount_percent || 0) * 100).toFixed(2)}%`
+                            )}
+                        </td>
+
+                        <td className="p-2 border-b border-r text-right">
+                            {formatCurrency(
+                            s.price_per_unit * s.quantity * (s.discount_percent || 0)
+                            )}
+                        </td>
+
+                        <td className="p-2 border-b border-r text-right">
+                            {formatCurrency(s.total_price)}
+                        </td>
+
+                        <td className="p-2 border-b text-center space-x-2">
+                            {deletedServiceIndex === index ? (
+                            <button
+                                onClick={undoDelete}
+                                className="bg-yellow-500 text-white px-2 py-1 rounded"
+                            >
+                                Undo
+                            </button>
+                            ) : editingIndex === index ? (
+                            <>
+                                <button
+                                onClick={() => handleSaveEdit(index)}
+                                className="bg-green-500 text-white px-2 py-1 rounded"
+                                >
+                                Save
+                                </button>
+                                <button
+                                onClick={() => setEditingIndex(null)}
+                                className="bg-gray-500 text-white px-2 py-1 rounded"
+                                >
+                                Cancel
+                                </button>
+                            </>
+                            ) : (
+                            <>
+                                <button
+                                onClick={() => handleEditService(index)}
+                                className="bg-blue-500 text-white px-2 py-1 rounded"
+                                >
+                                Edit
+                                </button>
+                                <button
+                                onClick={() => handleDeleteService(index)}
+                                className="bg-red-500 text-white px-2 py-1 rounded"
+                                >
+                                Delete
+                                </button>
+                            </>
+                            )}
+                        </td>
+                        </tr>
+                    ))}
+                    {/* ✅ Add New Row at the Bottom if Adding */}
+                    {editingIndex === null && addingService && (
+                        <tr className="bg-green-50">
+                        <td className="p-2 border-b border-r text-left">
+                            <select
+                            className="w-full p-1 border rounded"
+                            value={newServiceRow.service_name}
+                            onChange={(e) => {
+                                const selected = allServiceOptions.find(
+                                (opt) => opt.service_name === e.target.value
+                                );
+                                setNewServiceRow((prev) => ({
+                                ...prev,
+                                service_name: selected.service_name,
+                                price_per_unit: selected.price_per_unit,
+                                }));
+                            }}
+                            >
+                            <option value="">-- Select a service --</option>
+                            {allServiceOptions.map((opt) => (
+                                <option key={opt.service_id} value={opt.service_name}>
+                                {opt.service_name}
+                                </option>
+                            ))}
+                            </select>
+                        </td>
+                        <td className="p-2 border-b border-r text-right">
+                            <input
+                            className="w-full p-1 border rounded text-right"
+                            type="number"
+                            value={newServiceRow.price_per_unit}
+                            readOnly
+                            />
+                        </td>
+                        <td className="p-2 border-b border-r text-right">
+                            <input
+                            className="w-full p-1 border rounded text-right"
+                            type="number"
+                            value={newServiceRow.quantity}
+                            onChange={(e) =>
+                                setNewServiceRow((prev) => ({
+                                ...prev,
+                                quantity: parseInt(e.target.value),
+                                }))
+                            }
+                            />
+                        </td>
+                        <td className="p-2 border-b border-r text-right">
+                            <input
+                            className="w-full p-1 border rounded text-right"
+                            type="number"
+                            value={(newServiceRow.discount_percent || 0) * 100}
+                            onChange={(e) =>
+                                setNewServiceRow((prev) => ({
+                                ...prev,
+                                discount_percent: parseFloat(e.target.value) / 100,
+                                }))
+                            }
+                            />
+                        </td>
+                        <td className="p-2 border-b border-r text-right">
+                            {formatCurrency(
+                            newServiceRow.price_per_unit *
+                                newServiceRow.quantity *
+                                (newServiceRow.discount_percent || 0)
+                            )}
+                        </td>
+                        <td className="p-2 border-b border-r text-right">
+                            {formatCurrency(
+                            newServiceRow.price_per_unit *
+                                newServiceRow.quantity *
+                                (1 - (newServiceRow.discount_percent || 0))
+                            )}
+                        </td>
+                        <td className="p-2 border-b text-center space-x-2">
+                            <button
+                            onClick={handleAddServiceSave}
+                            className="bg-green-600 text-white px-2 py-1 rounded"
+                            >
+                            Save
+                            </button>
+                            <button
+                            onClick={() => setAddingService(false)}
+                            className="bg-gray-500 text-white px-2 py-1 rounded"
+                            >
+                            Cancel
+                            </button>
+                        </td>
+                        </tr>
+                    )}
+                    </tbody>
+
+                </table>
+            </div>
+            </section>
+
+            <section className="mb-6 text-left">
+            <h2 className="text-xl font-semibold">Financial Summary</h2>
+            <p><strong>Discount:</strong> {formatCurrency(calculateFinancials().discountAmount)} ({(invoice.discount_percent * 100).toFixed(2)}%)</p>
+            <p><strong>Tax:</strong> {formatCurrency(calculateFinancials().taxAmount)} ({(invoice.tax_rate * 100).toFixed(2)}%)</p>
+            <p><strong>Total:</strong> {formatCurrency(calculateFinancials().total)}</p>
+            </section>
+            {/* LOG PAYMENT */}
+            <section className="mb-6 text-left">
+                <h2 className="text-xl font-semibold mb-2">Log Payment</h2>
+                    <p className="text-gray-500 italic">
+                        [Coming soon] Form will appear here to log and view payments.
+                    </p>
+            </section>
+            {/* NOTES TABLE */}
+            <NotesSection
+                notes={notes}
+                accountId={invoice.account_id}
+                userId={user.id}
+                setNotes={setNotes}
+                refreshNotes={async () => {
+                    const updated = await fetchNotesByInvoice(invoiceId);
+                    setNotes(updated);
+            }}
+            invoiceId={invoiceId}
+            />
+
+            <div className="flex justify-end mt-6">
+            <button
+                onClick={() => deleteInvoice(invoiceId).then(() => navigate(`/accounts/details/${invoice.account_id}`))}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            >
+                Delete Invoice
+            </button>
+            </div>
         </div>
-
-        {/* Notes Section */}
-        <NotesSection
-        notes={notes}
-        accountId={invoice.account_id}
-        userId={user.id}
-        setNotes={setNotes}
-        refreshNotes={refreshNotes}
-        invoiceId={invoiceId}
-        />
-
-        {/* Delete Invoice Button */}
-        <div className="flex justify-end mt-6">
-        <button
-            onClick={handleDelete}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-        >
-            Delete Invoice
-        </button>
         </div>
-    </div>
-    </div>
-);
-};
+    );
+    };
 
-InvoiceDetailsPage.propTypes = {
-user: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    username: PropTypes.string,
-}).isRequired,
-};
+    InvoiceDetailsPage.propTypes = {
+    user: PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        username: PropTypes.string,
+    }).isRequired,
+    };
 
-export default InvoiceDetailsPage;
+    export default InvoiceDetailsPage;

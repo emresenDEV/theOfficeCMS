@@ -19,6 +19,7 @@ from routes.sales_routes import sales_bp
 from routes.task_routes import task_bp
 from routes.user_routes import user_bp
 from routes.user_role_routes import user_role_bp
+from routes.services_route import service_bp
 
 
 app = Flask(__name__)
@@ -71,6 +72,7 @@ app.register_blueprint(industry_bp, url_prefix="/industries")
 app.register_blueprint(invoice_bp, url_prefix="/invoices")
 app.register_blueprint(notes_bp, url_prefix="/notes")
 app.register_blueprint(sales_bp, url_prefix="/sales")
+app.register_blueprint(service_bp, url_prefix="/services")
 app.register_blueprint(task_bp, url_prefix="/tasks")
 app.register_blueprint(user_bp, url_prefix="/users")
 app.register_blueprint(user_role_bp, url_prefix="/roles")
