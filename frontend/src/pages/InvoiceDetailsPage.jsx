@@ -5,6 +5,7 @@ import {
     updateInvoice,
     deleteInvoice,
     fetchPaymentMethods,
+    logInvoicePayment
 } from "../services/invoiceService";
 import {
 fetchServices,
@@ -25,6 +26,13 @@ const [salesReps, setSalesReps] = useState([]);
 const [invoice, setInvoice] = useState(null);
 const [notes, setNotes] = useState([]);
 const [paymentMethods, setPaymentMethods] = useState([]);
+const [showPaymentForm, setShowPaymentForm] = useState(false);
+const [paymentForm, setPaymentForm] = useState({
+    payment_method: "",
+    last_four_payment_method: "",
+    total_paid: 0,
+});
+const [loggedPayment, setLoggedPayment] = useState(null);
 const [services, setServices] = useState([]);
 const [allServiceOptions, setAllServiceOptions] = useState([]);
 const [addingService, setAddingService] = useState(false);
@@ -52,6 +60,11 @@ useEffect(() => {
         const data = await fetchInvoiceById(invoiceId);
         if (!data) throw new Error("Invoice not found");
         setInvoice(data);
+        setPaymentForm((prev) => ({
+            ...prev,
+            total_paid: parseFloat(data.final_total) || 0,
+            }));
+    
         setInvoiceForm({
             discount_percent: data.discount_percent || 0,
             tax_rate: data.tax_rate || 0,
@@ -123,46 +136,46 @@ const formatCurrency = (amount) => {
     //     };
     // };
 
-    const calculateFinancials = () => {
-        const subtotalBeforeInvoiceDiscount = services.reduce(
-            (sum, s) => sum + s.price_per_unit * s.quantity * (1 - (s.discount_percent || 0)),
-        0
-        );
-    
-        const perServiceDiscountTotal = services.reduce(
-            (sum, s) => sum + s.price_per_unit * s.quantity * (s.discount_percent || 0),
-        0
-        );
-    
-        const invoiceLevelDiscountAmount = subtotalBeforeInvoiceDiscount * (invoice.discount_percent || 0);
-    
-        const taxAmount = (subtotalBeforeInvoiceDiscount - invoiceLevelDiscountAmount) * (invoice.tax_rate || 0);
-        const total = subtotalBeforeInvoiceDiscount - invoiceLevelDiscountAmount + taxAmount;
-    
-        return {
-            perServiceDiscountTotal,
-            invoiceLevelDiscountAmount,
-            taxAmount,
-            total,
-        };
+const calculateFinancials = () => {
+    const subtotalBeforeInvoiceDiscount = services.reduce(
+        (sum, s) => sum + s.price_per_unit * s.quantity * (1 - (s.discount_percent || 0)),
+    0
+    );
+
+    const perServiceDiscountTotal = services.reduce(
+        (sum, s) => sum + s.price_per_unit * s.quantity * (s.discount_percent || 0),
+    0
+    );
+
+    const invoiceLevelDiscountAmount = subtotalBeforeInvoiceDiscount * (invoice.discount_percent || 0);
+
+    const taxAmount = (subtotalBeforeInvoiceDiscount - invoiceLevelDiscountAmount) * (invoice.tax_rate || 0);
+    const total = subtotalBeforeInvoiceDiscount - invoiceLevelDiscountAmount + taxAmount;
+
+    return {
+        perServiceDiscountTotal,
+        invoiceLevelDiscountAmount,
+        taxAmount,
+        total,
     };
-    
-    const handleEditService = (index) => {
-    setEditingIndex(index);
+};
+
+const handleEditService = (index) => {
+setEditingIndex(index);
+};
+
+const handleSaveEdit = (index) => {
+    const updatedService = services[index];
+    if (updatedService.service_id) {
+        updateService(updatedService.service_id, updatedService);
+    }
+    setEditingIndex(null);
+    updateInvoice(invoiceId, { services });
     };
 
-    const handleSaveEdit = (index) => {
-        const updatedService = services[index];
-        if (updatedService.service_id) {
-            updateService(updatedService.service_id, updatedService);
-        }
-        setEditingIndex(null);
-        updateInvoice(invoiceId, { services });
-        };
-    
-    const handleServiceFieldChange = (index, field, value) => {
-        const updatedServices = [...services];
-    
+const handleServiceFieldChange = (index, field, value) => {
+    const updatedServices = [...services];
+
     if (field === "discount_percent") {
         const parsed = parseFloat(value);
         updatedServices[index][field] = isNaN(parsed) ? 0 : parsed / 100;
@@ -172,77 +185,101 @@ const formatCurrency = (amount) => {
     } else {
         updatedServices[index][field] = value;
     }
-    
+
     const s = updatedServices[index];
     s.total_price = s.quantity * s.price_per_unit * (1 - (s.discount_percent || 0));
     setServices(updatedServices);
     };
-        
 
-    const handleDeleteService = (index) => {
-        setDeletedServiceIndex(index);
-        const timeoutId = setTimeout(() => {
-            setServices((prev) => prev.filter((_, i) => i !== index));
-            setDeletedServiceIndex(null);
-        }, 5000);
-        setUndoTimeoutId(timeoutId);
-        };
-
-    const undoDelete = () => {
-        clearTimeout(undoTimeoutId);
-        setDeletedServiceIndex(null);
-        setUndoTimeoutId(null);
+const handleLogPayment = async () => {
+    try {
+        const payload = {
+        account_id: invoice.account_id,
+        sales_rep_id: invoice.sales_rep_id,
+        logged_by: user.id,
+        payment_method: paymentForm.payment_method,
+        last_four_payment_method: paymentForm.last_four_payment_method || null,
+        total_paid: parseFloat(paymentForm.total_paid),
         };
     
-        const handleAddServiceRow = () => {
-        setAddingService(true);
+        const response = await logInvoicePayment(invoiceId, payload);
+        if (response && response.payment_id) {
+        const updatedInvoice = await fetchInvoiceById(invoiceId);
+        setInvoice(updatedInvoice);
+        const paymentInfo = updatedInvoice.payments?.[0]; // we assume only 1 for now
+        setLoggedPayment(paymentInfo);
+        setShowPaymentForm(false);
+        }
+    } catch (error) {
+        console.error("Payment logging failed:", error);
+        alert("Error logging payment.");
+    }
+    };
+
+const handleDeleteService = (index) => {
+    setDeletedServiceIndex(index);
+    const timeoutId = setTimeout(() => {
+        setServices((prev) => prev.filter((_, i) => i !== index));
+        setDeletedServiceIndex(null);
+    }, 5000);
+    setUndoTimeoutId(timeoutId);
+    };
+
+const undoDelete = () => {
+    clearTimeout(undoTimeoutId);
+    setDeletedServiceIndex(null);
+    setUndoTimeoutId(null);
+    };
+
+    const handleAddServiceRow = () => {
+    setAddingService(true);
+    };
+
+const handleAddServiceSave = async () => {
+    let newEntry = { ...newServiceRow };
+    if (newEntry.isNew && newEntry.service_name && newEntry.price_per_unit) {
+    const created = await createService({
+        service_name: newEntry.service_name,
+        price_per_unit: parseFloat(newEntry.price_per_unit),
+    });
+    newEntry.service_id = created.service_id;
+    } else {
+    const match = allServiceOptions.find(
+        (s) => s.service_name === newEntry.service_name
+    );
+    if (match)
+        newEntry = {
+            ...match,
+            quantity: newEntry.quantity,
+            price_per_unit: match.price_per_unit,
+            discount_percent: newEntry.discount_percent || 0,
         };
+    }
+    if (newEntry.quantity <= 0) {
+        alert("Quantity must be greater than 0.");
+        return;
+    }              
+    newEntry.total_price =
+        newEntry.price_per_unit * newEntry.quantity * (1 - (newEntry.discount_percent || 0));
+    setServices((prev) => [...prev, newEntry]);
+    await updateInvoice(invoiceId, { services: [...services, newEntry] });
+    const updated = await fetchInvoiceById(invoiceId);
+    setInvoice(updated);
+    setServices(updated.services);
 
-        const handleAddServiceSave = async () => {
-            let newEntry = { ...newServiceRow };
-            if (newEntry.isNew && newEntry.service_name && newEntry.price_per_unit) {
-            const created = await createService({
-                service_name: newEntry.service_name,
-                price_per_unit: parseFloat(newEntry.price_per_unit),
-            });
-            newEntry.service_id = created.service_id;
-            } else {
-            const match = allServiceOptions.find(
-                (s) => s.service_name === newEntry.service_name
-            );
-            if (match)
-                newEntry = {
-                    ...match,
-                    quantity: newEntry.quantity,
-                    price_per_unit: match.price_per_unit,
-                    discount_percent: newEntry.discount_percent || 0,
-                };
-            }
-            if (newEntry.quantity <= 0) {
-                alert("Quantity must be greater than 0.");
-                return;
-            }              
-            newEntry.total_price =
-                newEntry.price_per_unit * newEntry.quantity * (1 - (newEntry.discount_percent || 0));
-            setServices((prev) => [...prev, newEntry]);
-            await updateInvoice(invoiceId, { services: [...services, newEntry] });
-            const updated = await fetchInvoiceById(invoiceId);
-            setInvoice(updated);
-            setServices(updated.services);
+    setNewServiceRow({
+        service_name: "",
+        price_per_unit: "",
+        quantity: 1,
+        discount_percent: 0,
+        isNew: false,
+    });
 
-            setNewServiceRow({
-                service_name: "",
-                price_per_unit: "",
-                quantity: 1,
-                discount_percent: 0,
-                isNew: false,
-            });
+    setAddingService(false);
+};
 
-            setAddingService(false);
-        };
-
-    if (!invoice)
-        return <p className="text-center text-gray-600">Loading invoice details...</p>;
+if (!invoice)
+    return <p className="text-center text-gray-600">Loading invoice details...</p>;
 
     return (
         <div className="flex">
@@ -262,19 +299,12 @@ const formatCurrency = (amount) => {
             </div>
             {/* Date Created and Updated */}
             <div className="flex justify-between items-start mb-4">
-            <p className="text-sm text-gray-600 font-bold text-left">
-                Created: {new Date(invoice.date_created).toLocaleDateString()}</p>
+            <p>Created: {new Date(invoice.date_created).toLocaleDateString()}</p>
+            <p>Updated: {new Date(invoice.date_updated).toLocaleString("en-US", {
+            month: "2-digit", day: "2-digit", year: "numeric",
+            hour: "2-digit", minute: "2-digit", hour12: true
+            })}</p>
 
-            <p className="text-sm text-gray-600 font-bold text-left">
-                Updated: {new Date(invoice.date_updated).toLocaleString("en-US", {
-                    month: "2-digit",
-                    day: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true
-            })}
-            </p>
             </div>
             <div className="flex justify-between mb-6">
             <div className="text-left">
@@ -633,11 +663,122 @@ const formatCurrency = (amount) => {
             </section>
             {/* LOG PAYMENT */}
             <section className="mb-6 text-left">
-                <h2 className="text-xl font-semibold mb-2">Log Payment</h2>
-                    <p className="text-gray-500 italic">
-                        [Coming soon] Form will appear here to log and view payments.
-                    </p>
+            <h2 className="text-xl font-semibold mb-2">Log Payment</h2>
+
+            {loggedPayment ? (
+                <div className="bg-green-50 p-4 rounded border">
+                <p><strong>Confirmation #:</strong> {loggedPayment.payment_id}</p>
+                <p><strong>Logged by:</strong> {user.username}</p>
+                <p><strong>Payment Method:</strong> {paymentMethods.find(pm => pm.method_id === loggedPayment.method_id)?.method_name || "N/A"}</p>
+                <p><strong>Last Four:</strong> {loggedPayment.last_four || "N/A"}</p>
+                <p><strong>Total Paid:</strong> {formatCurrency(loggedPayment.total_paid)}</p>
+                <p><strong>Date Paid:</strong> {new Date(loggedPayment.date_paid).toLocaleString("en-US", {
+                    month: "2-digit", day: "2-digit", year: "numeric",
+                    hour: "2-digit", minute: "2-digit", hour12: true
+                })}</p>
+                </div>
+            ) : (
+                <>
+                {!showPaymentForm ? (
+                    <button
+                    className="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700"
+                    onClick={() => setShowPaymentForm(true)}
+                    >
+                    Log Payment
+                    </button>
+                ) : (
+                    <div className="bg-gray-100 p-4 rounded border">
+                    <div className="mb-2">
+                        <label className="block text-sm">Payment Method</label>
+                        <select
+                        className="w-full p-2 border rounded"
+                        value={paymentForm.payment_method}
+                        onChange={(e) =>
+                            setPaymentForm((prev) => ({
+                            ...prev,
+                            payment_method: parseInt(e.target.value),
+                            }))
+                        }
+                        >
+                        <option value="">-- Select a Method --</option>
+                        {paymentMethods.map((pm) => (
+                            <option key={pm.method_id} value={pm.method_id}>
+                            {pm.method_name}
+                            </option>
+                        ))}
+                        </select>
+                    </div>
+
+                    <div className="mb-2">
+                        <label className="block text-sm">Last Four (optional)</label>
+                        <input
+                        className="w-full p-2 border rounded"
+                        value={paymentForm.last_four_payment_method}
+                        onChange={(e) =>
+                            setPaymentForm((prev) => ({
+                            ...prev,
+                            last_four_payment_method: e.target.value,
+                            }))
+                        }
+                        placeholder="1234"
+                        maxLength={4}
+                        />
+                    </div>
+
+                    <div className="mb-2">
+                        <label className="block text-sm">Total Paid</label>
+                        <input
+                        type="number"
+                        className="w-full p-2 border rounded"
+                        value={paymentForm.total_paid}
+                        onChange={(e) =>
+                            setPaymentForm((prev) => ({
+                            ...prev,
+                            total_paid: parseFloat(e.target.value) || 0,
+                            }))
+                        }
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-4">
+                        <button
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        onClick={handleLogPayment}
+                        >
+                        Log Payment
+                        </button>
+                        <button
+                        className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                        onClick={() => setShowPaymentForm(false)}
+                        >
+                        Cancel
+                        </button>
+                    </div>
+                    </div>
+                )}
+                </>
+            )}
             </section>
+            {/* SHARE INVOICE PDF */}
+            <div className="flex justify-end mt-4 space-x-4">
+            {invoice.payments && invoice.payments.length > 0 ? (
+                <button
+                onClick={() => alert("📤 Coming soon: Receipt PDF download")}
+                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                >
+                Send Receipt
+                </button>
+            ) : (
+                <button
+                onClick={() => alert("🧾 Coming soon: Invoice PDF download")}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                Share Invoice
+                </button>
+            )}
+            </div>
+
+
             {/* NOTES TABLE */}
             <NotesSection
                 notes={notes}
