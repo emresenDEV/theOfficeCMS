@@ -98,6 +98,8 @@ def get_invoice_by_id(invoice_id):
             "total_paid": total_paid,
             "commission_amount": float(commission or 0),
             "date_paid": last_paid.strftime("%Y-%m-%d") if last_paid else None,
+            "date_created": invoice.date_created.strftime("%Y-%m-%d %H:%M:%S"),
+            "date_updated": invoice.date_updated.strftime("%Y-%m-%d %H:%M:%S"),
             "due_date": invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date else None,
             "services": service_list,
             "payments": [
@@ -111,7 +113,7 @@ def get_invoice_by_id(invoice_id):
                 } for p in payments
             ],
 
-            # ✅ Added account info
+            # Added account info
             "business_name": account.business_name if account else None,
             "address": account.address if account else None,
             "city": account.city if account else None,
@@ -119,7 +121,7 @@ def get_invoice_by_id(invoice_id):
             "zip_code": account.zip_code if account else None,
             "phone_number": account.phone_number if account else None,
 
-            # ✅ Added sales rep info
+            # Added sales rep info
             "sales_rep_name": f"{sales_rep.first_name} {sales_rep.last_name}" if sales_rep else None,
             "sales_rep_email": sales_rep.email if sales_rep else None,
             "sales_rep_phone": sales_rep.phone_number if sales_rep else None,
@@ -244,7 +246,17 @@ def update_invoice(invoice_id):
     invoice.discount_amount = data.get("discount_amount", invoice.discount_amount)
     invoice.final_total = data.get("final_total", invoice.final_total)
     invoice.sales_rep_id = data.get("sales_rep_id", invoice.sales_rep_id)
-    invoice.due_date = datetime.strptime(data["due_date"], "%Y-%m-%d") if "due_date" in data else invoice.due_date
+    due_date = data.get("due_date")
+    if due_date:
+        try:
+            invoice.due_date = datetime.strptime(due_date, "%Y-%m-%d")
+        except ValueError:
+            print("🔄 Invoice Update Payload:", data) # debugging
+            print("✅ Updated Invoice Fields:") # debugging
+            print(" - Sales Rep ID:", invoice.sales_rep_id) # debugging
+            print(" - Discount %:", invoice.discount_percent) # debugging
+            print(" - Tax Rate:", invoice.tax_rate) # debugging
+            pass  # Or log warning
     invoice.date_updated = datetime.utcnow()
 
     if "services" in data:

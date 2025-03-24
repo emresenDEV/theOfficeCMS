@@ -14,10 +14,14 @@ updateService,
 } from "../services/servicesService";
 import { fetchNotesByInvoice } from "../services/notesService";
 import { fetchSalesReps } from "../services/userService";
+
 import Sidebar from "../components/Sidebar";
 import NotesSection from "../components/NotesSection";
+import InvoiceActions from "../components/InvoiceActions";
+import { fetchAccountDetails } from "../services/accountService";
+import { format } from "date-fns";
 import PropTypes from "prop-types";
-// import { format } from "date-fns";
+
 
 const InvoiceDetailsPage = ({ user }) => {
 const { invoiceId } = useParams();
@@ -43,16 +47,20 @@ const [newServiceRow, setNewServiceRow] = useState({
     discount_percent: 0,
     isNew: false,
     });
-
+const [showEditInvoiceForm, setShowEditInvoiceForm] = useState(false);
 const [invoiceForm, setInvoiceForm] = useState({
     discount_percent: 0,
     tax_rate: 0,
     sales_rep_id: null,
+    due_date: null,
     });
 
 const [deletedServiceIndex, setDeletedServiceIndex] = useState(null);
 const [undoTimeoutId, setUndoTimeoutId] = useState(null);
 const [editingIndex, setEditingIndex] = useState(null);
+
+const [accountDetails, setAccountDetails] = useState(null);
+const [branch, setBranch] = useState(null);
 
 useEffect(() => {
     async function loadData() {
@@ -60,6 +68,10 @@ useEffect(() => {
         const data = await fetchInvoiceById(invoiceId);
         if (!data) throw new Error("Invoice not found");
         setInvoice(data);
+
+        const account = await fetchAccountDetails(data.account_id);
+        setAccountDetails(account);
+
         setPaymentForm((prev) => ({
             ...prev,
             total_paid: parseFloat(data.final_total) || 0,
@@ -69,6 +81,7 @@ useEffect(() => {
             discount_percent: data.discount_percent || 0,
             tax_rate: data.tax_rate || 0,
             sales_rep_id: data.sales_rep_id || null,
+            due_date: data.due_date,
             });
         
         setServices(data.services);
@@ -111,6 +124,23 @@ useEffect(() => {
     loadData();
 }, [invoiceId]);
 
+useEffect(() => {
+    async function loadAccountBranch() {
+        if (!invoice?.account_id) return;
+    
+        try {
+            const accountData = await fetchAccountDetails(invoice.account_id);
+            console.log("✅ Account Data:", accountData);
+            setAccountDetails(accountData);
+            setBranch(accountData.branch); 
+        } catch (err) {
+            console.error("❌ Failed to load account/branch:", err); // debugging
+        }
+        }
+    
+        loadAccountBranch();
+    }, [invoice?.account_id]);
+
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -118,23 +148,15 @@ const formatCurrency = (amount) => {
     }).format(amount);
 };
 
-    // const calculateFinancials = () => {
-    //     const subtotal = services.reduce(
-    //       (sum, s) => sum + s.price_per_unit * s.quantity * (1 - (s.discount_percent || 0)),
-    //         0
-    //     );
-    //     const discountAmount = services.reduce(
-    //         (sum, s) => sum + s.price_per_unit * s.quantity * (s.discount_percent || 0),
-    //         0
-    //     );
-    //     const taxAmount = subtotal * (invoice.tax_rate || 0);
-    //     const total = subtotal + taxAmount;
-    //     return {
-    //         discountAmount,
-    //         taxAmount,
-    //         total,
-    //     };
-    // };
+const formatDate = (rawDate) => {
+    if (!rawDate) return "N/A";
+    try {
+        return format(new Date(rawDate), "MM/dd/yyyy");
+        } catch (e) {
+        console.error("❌ formatDate error:", rawDate, e);
+        return "Invalid Date";
+    }
+};
 
 const calculateFinancials = () => {
     const subtotalBeforeInvoiceDiscount = services.reduce(
@@ -299,11 +321,8 @@ if (!invoice)
             </div>
             {/* Date Created and Updated */}
             <div className="flex justify-between items-start mb-4">
-            <p>Created: {new Date(invoice.date_created).toLocaleDateString()}</p>
-            <p>Updated: {new Date(invoice.date_updated).toLocaleString("en-US", {
-            month: "2-digit", day: "2-digit", year: "numeric",
-            hour: "2-digit", minute: "2-digit", hour12: true
-            })}</p>
+            <p>Created: {formatDate(invoice.date_created)}</p>
+            <p>Updated: {formatDate(invoice.date_updated)}</p>
 
             </div>
             <div className="flex justify-between mb-6">
@@ -326,82 +345,129 @@ if (!invoice)
             </div>
             {/* Edit Invoice Form */}
             <section className="mb-6 border p-4 rounded-lg">
-                <h2 className="text-xl font-semibold mb-2 text-left">Invoice Settings</h2>
-                <div className="flex gap-6 items-end">
-                    {/* Discount Percent */}
-                    <div className="flex flex-col">
-                    <label className="text-sm font-medium">Invoice Discount %</label>
-                    <input
-                        type="number"
-                        value={(invoiceForm.discount_percent * 100).toFixed(0)}
-                        onChange={(e) =>
-                        setInvoiceForm((prev) => ({
-                            ...prev,
-                            discount_percent: parseFloat(e.target.value) / 100 || 0,
-                        }))
-                        }
-                        className="border p-2 rounded w-28 text-right"
-                    />
+                <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-xl font-semibold text-left">Edit Invoice</h2>
+                    {!showEditInvoiceForm && (
+                    <button
+                        onClick={() => setShowEditInvoiceForm(true)}
+                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    >
+                        Edit Invoice
+                    </button>
+                    )}
+                </div>
+
+                {showEditInvoiceForm && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end mt-4">
+                    {/* Invoice Discount */}
+                    <div>
+                        <label className="block font-bold text-sm mb-1">Invoice Discount</label>
+                        <div className="relative">
+                        <input
+                            type="number"
+                            value={(invoiceForm.discount_percent * 100).toFixed(0)}
+                            onChange={(e) =>
+                            setInvoiceForm((prev) => ({
+                                ...prev,
+                                discount_percent: parseFloat(e.target.value) / 100 || 0,
+                            }))
+                            }
+                            className="w-full border p-2 pr-6 rounded text-right"
+                        />
+                        <span className="absolute right-2 top-2 text-gray-400 font-bold">%</span>
+                        </div>
                     </div>
 
                     {/* Tax Rate */}
-                    <div className="flex flex-col">
-                    <label className="text-sm font-medium">Tax Rate %</label>
-                    <input
-                        type="number"
-                        value={(invoiceForm.tax_rate * 100).toFixed(2)}
-                        onChange={(e) =>
-                        setInvoiceForm((prev) => ({
-                            ...prev,
-                            tax_rate: parseFloat(e.target.value) / 100 || 0,
-                        }))
-                        }
-                        className="border p-2 rounded w-28 text-right"
-                    />
-                    </div>
-
-                    {/* Sales Rep ID */}
-                    <div className="flex flex-col">
-                    <label className="text-sm font-medium">Sales Representative</label>
-                    <select
-                        className="w-full border p-2 rounded text-left"
-                        value={invoice.sales_rep_id}
-                        onChange={(e) => setInvoice({ ...invoice, sales_rep_id: parseInt(e.target.value) })}
-                    >
-                        <option value="">-- Select a Sales Rep --</option>
-                        {salesReps.map((rep) => (
-                        <option key={rep.user_id} value={rep.user_id}>
-                            {rep.first_name} {rep.last_name}
-                        </option>
-                        ))}
-                    </select>
-                    </div>
-
-                    {/* Due Date Picker */}
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 text-left mb-1">Due Date</label>
+                    <div>
+                        <label className="block font-bold text-sm mb-1">Tax Rate</label>
+                        <div className="relative">
                         <input
-                            type="date"
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-                            value={invoice.due_date || ""}
-                            onChange={(e) => setInvoice((prev) => ({ ...prev, due_date: e.target.value }))
+                            type="number"
+                            value={(invoiceForm.tax_rate * 100).toFixed(2)}
+                            onChange={(e) =>
+                            setInvoiceForm((prev) => ({
+                                ...prev,
+                                tax_rate: parseFloat(e.target.value) / 100 || 0,
+                            }))
+                            }
+                            className="w-full border p-2 pr-6 rounded text-right"
+                        />
+                        <span className="absolute right-2 top-2 text-gray-400 font-bold">%</span>
+                        </div>
+                    </div>
+
+                    {/* Sales Rep Dropdown */}
+                    <div>
+                        <label className="block font-bold text-sm mb-1">Sales Representative</label>
+                        <select
+                        className="w-full border p-2 rounded text-left"
+                        value={invoice.sales_rep_id || ""}
+                        onChange={(e) =>
+                            setInvoiceForm((prev) => ({
+                                ...prev,
+                                sales_rep_id: parseInt(e.target.value),
+                            }))
+                            }
+                        >
+                        <option value="">-- Select --</option>
+                        {salesReps.map((rep) => (
+                            <option key={rep.user_id} value={rep.user_id}>
+                            {rep.first_name} {rep.last_name}
+                            </option>
+                        ))}
+                        </select>
+                    </div>
+
+                    {/* Due Date */}
+                    <div>
+                        <label className="block font-bold text-sm mb-1">Due Date</label>
+                        <input
+                        type="date"
+                        className="w-full border p-2 rounded"
+                        value={invoiceForm.due_date || ""}
+                        onChange={(e) =>
+                            setInvoiceForm((prev) => ({ ...prev, due_date: e.target.value }))
                         }
                         />
-                        </div>
-
-                    {/* Save Button */}
-                    <div className="flex justify-end mt-6">
-                        <button
-                            onClick={() => updateInvoice(invoiceId, invoice)}
-                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                        >
-                            Save Update
-                        </button>
                     </div>
+                    </div>
+                )}
 
-
-                </div>
+                {showEditInvoiceForm && (
+                    <div className="flex justify-end gap-3 mt-6">
+                    <button
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        onClick={async () => {
+                            try {
+                                await updateInvoice(invoiceId, {
+                                    discount_percent: invoiceForm.discount_percent,
+                                    tax_rate: invoiceForm.tax_rate,
+                                    sales_rep_id: invoiceForm.sales_rep_id,
+                                    due_date: invoiceForm.due_date, 
+                                });
+                            
+                                const updated = await fetchInvoiceById(invoiceId);
+                                setInvoice(updated);
+                                setShowEditInvoiceForm(false);
+                                } catch (error) {
+                                console.error("❌ Failed to update invoice:", error);
+                                alert("There was a problem saving the invoice. Try again.");
+                                }
+                            }}
+                    >
+                        Save Update
+                    </button>
+                    <button
+                        className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                        onClick={() => setShowEditInvoiceForm(false)}
+                    >
+                        Cancel
+                    </button>
+                    </div>
+                )}
                 </section>
+
 
             {/* SERVICES TABLE */}
             <section className="mb-6 border p-4 rounded-lg">
@@ -645,25 +711,46 @@ if (!invoice)
             </section>
 
             {/* FInancial Summary */}
-            <section className="mb-6 text-left">
-                
-            <h2 className="text-xl font-semibold">Financial Summary</h2>
-                <p className="text-sm text-gray-600 mb-2">
-                    Discounts are applied in two ways:
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-1">
-                        <li><strong>Service Discount</strong> — applied per service and reduces the price for the specific service.</li>
-                        <li><strong>Invoice Discount</strong> — applied once across the subtotal before tax.</li>
-                    </ul>
-                </p>
-                <p><strong>Service Discounts:</strong> {formatCurrency(calculateFinancials().perServiceDiscountTotal)}</p>
-                <p><strong>Invoice Discount:</strong> {formatCurrency(calculateFinancials().invoiceLevelDiscountAmount)} ({(invoice.discount_percent * 100).toFixed(2)}%)</p>
-                <p><strong>Tax:</strong> {formatCurrency(calculateFinancials().taxAmount)} ({(invoice.tax_rate * 100).toFixed(2)}%)</p>
-                <p><strong>Total:</strong> {formatCurrency(calculateFinancials().total)}</p>
+            <section className="mb-6 border p-4 rounded-lg text-left">
+            <h2 className="text-xl font-semibold mb-2">Financial Summary</h2>
+            <p className="text-sm text-gray-600 mb-4">
+                Discounts are applied in two ways:
+                <ul className="list-disc list-inside mt-1">
+                <li><strong>Service Discount</strong> — applied per service.</li>
+                <li><strong>Invoice Discount</strong> — applied on the subtotal before tax.</li>
+                </ul>
+            </p>
 
+            <div className="space-y-1 text-left">
+                <p><strong>Service Total:</strong> {formatCurrency(
+                services.reduce((sum, s) => sum + s.price_per_unit * s.quantity, 0)
+                )}</p>
+
+                <p><strong>Service Discount:</strong> {formatCurrency(calculateFinancials().perServiceDiscountTotal)}</p>
+
+                <p><strong>Invoice Discount:</strong> {formatCurrency(calculateFinancials().invoiceLevelDiscountAmount)} ({(invoice.discount_percent * 100).toFixed(0)}%)</p>
+
+                <p><strong>Tax:</strong> {formatCurrency(calculateFinancials().taxAmount)} ({(invoice.tax_rate * 100).toFixed(2)}%)</p>
+
+                <p className="font-bold text-lg"><strong>Total:</strong> {formatCurrency(calculateFinancials().total)}</p>
+
+                <p><strong>Due Date:</strong> {formatDate(invoice.due_date)}</p>
+            </div>
             </section>
+
             {/* LOG PAYMENT */}
-            <section className="mb-6 text-left">
-            <h2 className="text-xl font-semibold mb-2">Log Payment</h2>
+            <section className="mb-6 border p-4 rounded-lg text-left">
+            <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-semibold">Log Payment</h2>
+                {!loggedPayment && !showPaymentForm && (
+                <button
+                    className="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700"
+                    onClick={() => setShowPaymentForm(true)}
+                >
+                    Log Payment
+                </button>
+                )}
+            </div>
 
             {loggedPayment ? (
                 <div className="bg-green-50 p-4 rounded border">
@@ -677,107 +764,102 @@ if (!invoice)
                     hour: "2-digit", minute: "2-digit", hour12: true
                 })}</p>
                 </div>
-            ) : (
-                <>
-                {!showPaymentForm ? (
+            ) : showPaymentForm ? (
+                <div className="bg-gray-100 p-4 rounded border">
+                <div className="mb-2">
+                    <label className="block text-sm font-medium">Payment Method</label>
+                    <select
+                    className="w-full p-2 border rounded"
+                    value={paymentForm.payment_method}
+                    onChange={(e) =>
+                        setPaymentForm((prev) => ({
+                        ...prev,
+                        payment_method: parseInt(e.target.value),
+                        }))
+                    }
+                    >
+                    <option value="">-- Select a Method --</option>
+                    {paymentMethods.map((pm) => (
+                        <option key={pm.method_id} value={pm.method_id}>
+                        {pm.method_name}
+                        </option>
+                    ))}
+                    </select>
+                </div>
+
+                <div className="mb-2">
+                    <label className="block text-sm font-medium">Last Four (optional)</label>
+                    <input
+                    className="w-full p-2 border rounded"
+                    value={paymentForm.last_four_payment_method}
+                    onChange={(e) =>
+                        setPaymentForm((prev) => ({
+                        ...prev,
+                        last_four_payment_method: e.target.value,
+                        }))
+                    }
+                    placeholder="1234"
+                    maxLength={4}
+                    />
+                </div>
+
+                <div className="mb-2">
+                    <label className="block text-sm font-medium">Total Paid</label>
+                    <input
+                    type="number"
+                    className="w-full p-2 border rounded"
+                    value={paymentForm.total_paid}
+                    onChange={(e) =>
+                        setPaymentForm((prev) => ({
+                        ...prev,
+                        total_paid: parseFloat(e.target.value) || 0,
+                        }))
+                    }
+                    />
+                </div>
+
+                <div className="flex justify-end gap-2 mt-4">
                     <button
-                    className="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700"
-                    onClick={() => setShowPaymentForm(true)}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    onClick={handleLogPayment}
                     >
                     Log Payment
                     </button>
-                ) : (
-                    <div className="bg-gray-100 p-4 rounded border">
-                    <div className="mb-2">
-                        <label className="block text-sm">Payment Method</label>
-                        <select
-                        className="w-full p-2 border rounded"
-                        value={paymentForm.payment_method}
-                        onChange={(e) =>
-                            setPaymentForm((prev) => ({
-                            ...prev,
-                            payment_method: parseInt(e.target.value),
-                            }))
-                        }
-                        >
-                        <option value="">-- Select a Method --</option>
-                        {paymentMethods.map((pm) => (
-                            <option key={pm.method_id} value={pm.method_id}>
-                            {pm.method_name}
-                            </option>
-                        ))}
-                        </select>
-                    </div>
-
-                    <div className="mb-2">
-                        <label className="block text-sm">Last Four (optional)</label>
-                        <input
-                        className="w-full p-2 border rounded"
-                        value={paymentForm.last_four_payment_method}
-                        onChange={(e) =>
-                            setPaymentForm((prev) => ({
-                            ...prev,
-                            last_four_payment_method: e.target.value,
-                            }))
-                        }
-                        placeholder="1234"
-                        maxLength={4}
-                        />
-                    </div>
-
-                    <div className="mb-2">
-                        <label className="block text-sm">Total Paid</label>
-                        <input
-                        type="number"
-                        className="w-full p-2 border rounded"
-                        value={paymentForm.total_paid}
-                        onChange={(e) =>
-                            setPaymentForm((prev) => ({
-                            ...prev,
-                            total_paid: parseFloat(e.target.value) || 0,
-                            }))
-                        }
-                        />
-                    </div>
-
-                    <div className="flex justify-end gap-2 mt-4">
-                        <button
-                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                        onClick={handleLogPayment}
-                        >
-                        Log Payment
-                        </button>
-                        <button
-                        className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                        onClick={() => setShowPaymentForm(false)}
-                        >
-                        Cancel
-                        </button>
-                    </div>
-                    </div>
-                )}
-                </>
-            )}
+                    <button
+                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                    onClick={() => setShowPaymentForm(false)}
+                    >
+                    Cancel
+                    </button>
+                </div>
+                </div>
+            ) : null}
             </section>
-            {/* SHARE INVOICE PDF */}
-            <div className="flex justify-end mt-4 space-x-4">
-            {invoice.payments && invoice.payments.length > 0 ? (
-                <button
-                onClick={() => alert("📤 Coming soon: Receipt PDF download")}
-                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-                >
-                Send Receipt
-                </button>
-            ) : (
-                <button
-                onClick={() => alert("🧾 Coming soon: Invoice PDF download")}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                Share Invoice
-                </button>
-            )}
-            </div>
 
+            {/* SHARE INVOICE PDF */}
+            <section className="mb-6 border p-4 rounded-lg text-left">
+            <h2 className="text-xl font-semibold mb-2">Share Invoice</h2>
+            <p className="text-sm text-gray-600 mb-4">
+                (Your default email client cannot attach files automatically. Please download the PDF and attach it manually. 
+                The Email button will generate an email template to expedite the process.)
+            </p>
+            <div className="flex justify-end gap-4">
+                <InvoiceActions
+                invoice={invoice}
+                services={services}
+                salesRep={{
+                    first_name: invoice.sales_rep_name?.split(" ")[0] || "",
+                    last_name: invoice.sales_rep_name?.split(" ")[1] || "",
+                    email: invoice.sales_rep_email,
+                    phone_number: invoice.sales_rep_phone,
+                }}
+                branch={branch}
+                accountDetails={accountDetails}
+                payment={invoice.payments?.[0] || null}
+                user={user}
+                />
+            </div>
+            </section>
 
             {/* NOTES TABLE */}
             <NotesSection

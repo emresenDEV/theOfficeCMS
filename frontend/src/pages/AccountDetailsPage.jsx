@@ -82,20 +82,15 @@ const AccountDetailsPage = ({ user }) => {
         async function loadData() {
             try {
                 setLoading(true);
-                setAccount(await fetchAccountDetails(accountId));  // ✅ Fetch account details
+                setAccount(await fetchAccountDetails(accountId));  
 
                 const fetchedInvoices = await fetchInvoiceByAccount(accountId);
                 console.log("Invoices fetched for account:", fetchedInvoices); //debugging
-                setInvoices(fetchedInvoices);  // ✅ Fetch invoices
-                // setInvoices(await fetchInvoiceByAccount(accountId));  // ✅ Fetch invoices
-                await refreshNotes();  // ✅ Fetch updated notes
-                setTasks(await fetchTasksByAccount(accountId)); // ✅ Fetch tasks
+                setInvoices(fetchedInvoices);  
+                await refreshNotes(); 
+                setTasks(await fetchTasksByAccount(accountId)); 
                 
-                // ✅ Fetch users (duplicate fetch?)
-                // const fetchedUsers = await fetchUsers();
-                // console.log("Second fetchUsers in loadData returned:", fetchedUsers); //debugging
-                // const usersWithUsernames = fetchedUsers.filter((user) => user.username);
-                // setUsers(usersWithUsernames);
+                
             } catch (error) {
                 console.error("❌ Error loading account details:", error);
                 console.error("🔍 Full Error Object:", error?.response || error);
@@ -120,7 +115,7 @@ const AccountDetailsPage = ({ user }) => {
 
     return (
         <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-lg ml-64">
-            {/* ✅ Header Section */}
+            {/* Header Section */}
             <div className="flex justify-between items-start">
                 <div className="w-1/2">
                     <h1 className="text-3xl font-bold text-blue-700 text-left">{account.business_name}</h1>
@@ -153,7 +148,7 @@ const AccountDetailsPage = ({ user }) => {
                 </div>
             </div>
 
-            {/* ✅ Sections */}
+            {/* Sections */}
             <InvoicesSection 
                 invoices={invoices || []} 
                 onCreateInvoice={() => navigate("/create-invoice")}
