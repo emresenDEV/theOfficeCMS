@@ -23,16 +23,16 @@ const AccountDetailsPage = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
     const [userRole, setUserRole] = useState("");
-    // REFRESH Components
-    // const refreshNotes = async () => {
-    //     const updatedNotes = await fetchNotesByAccount(accountId);
-    //     console.log("🔄 Updated Notes from Backend:", updatedNotes);
-    //     setNotes(updatedNotes);
-    // };
+
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         return format(new Date(dateString), "MM/dd/yyyy");
     };
+
+    const refreshInvoices = useCallback(async (status = null) => {
+        const fetched = await fetchInvoiceByAccount(accountId, status);
+        setInvoices(fetched);
+    }, [accountId]);
 
     const refreshNotes = useCallback(async () => {
         const updatedNotes = await fetchNotesByAccount(accountId);
@@ -82,12 +82,13 @@ const AccountDetailsPage = ({ user }) => {
         async function loadData() {
             try {
                 setLoading(true);
-                setAccount(await fetchAccountDetails(accountId));  
-
-                const fetchedInvoices = await fetchInvoiceByAccount(accountId);
-                console.log("Invoices fetched for account:", fetchedInvoices); //debugging
-                setInvoices(fetchedInvoices);  
-                await refreshNotes(); 
+                setAccount(await fetchAccountDetails(accountId));
+                await refreshInvoices();
+                await refreshNotes();
+                // await refreshTasks();
+                
+                // setInvoices(fetchedInvoices);  
+                
                 setTasks(await fetchTasksByAccount(accountId)); 
                 
                 
@@ -102,7 +103,7 @@ const AccountDetailsPage = ({ user }) => {
         if (accountId) {
             loadData();
         }
-    }, [accountId, refreshNotes]);
+    }, [accountId, refreshNotes, refreshInvoices]);
 // debugging useEffect to verify whenever the users prop updates debugging
     useEffect(() => {
         console.log("TasksSection: users prop updated:", users);
@@ -152,6 +153,7 @@ const AccountDetailsPage = ({ user }) => {
             <InvoicesSection 
                 invoices={invoices || []} 
                 onCreateInvoice={() => navigate("/create-invoice")}
+                refreshInvoices={refreshInvoices}
             />
 
             <NotesSection 

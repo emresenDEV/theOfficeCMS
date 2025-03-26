@@ -1,10 +1,9 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
-import { updateInvoiceStatus } from "../services/invoiceService";
 import { format } from "date-fns";
 
-const InvoicesSection = ({ invoices, onCreateInvoice }) => {
+const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
     const navigate = useNavigate();
     const [searchInvoices, setSearchInvoices] = useState("");
     const [invoiceFilter, setInvoiceFilter] = useState("all");
@@ -25,31 +24,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
         }).format(amount);
     };
 
-    // ✅ Handle Status Updates (Paid / Past Due)
-    const handleStatusUpdate = async (newStatus) => {
-        console.log(`✅ Updating all invoices to status: ${newStatus}`);
-
-        try {
-            const updatedInvoices = invoices
-                .filter(inv => (newStatus === "Past Due" ? new Date(inv.due_date) < new Date() && inv.status !== "Paid" : inv.status !== newStatus))
-                .map(inv => inv.invoice_id);
-
-            if (updatedInvoices.length === 0) {
-                console.warn("⚠️ No invoices to update.");
-                return;
-            }
-
-            // Send update requests for each invoice
-            await Promise.all(updatedInvoices.map(invoiceId => updateInvoiceStatus(invoiceId, newStatus)));
-
-            console.log(`✅ Successfully updated invoices to ${newStatus}`);
-            setInvoiceFilter(newStatus); // ✅ Update UI to show filtered invoices
-        } catch (error) {
-            console.error(`❌ Error updating invoices to ${newStatus}:`, error);
-        }
-    };
-
-    // ✅ Filter invoices based on search input and selected status filter
+    // Filter invoices based on search input and selected status filter
     const filteredInvoices = invoices.filter((inv) => {
         const invoiceDueDate = new Date(inv.due_date);
         const today = new Date();
@@ -77,7 +52,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
         <div className="mt-6 border p-4 rounded-lg">
             <h2 className="text-xl font-semibold">Invoices</h2>
             
-            {/* ✅ Search and Filter Controls */}
+            {/* Search and Filter Controls */}
             <div className="flex justify-between items-center mb-3">
                 <input 
                     type="text" 
@@ -89,7 +64,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
                 <div>
                     <button 
                         onClick={() => {
-                            handleStatusUpdate("Paid")}
+                            refreshInvoices("Paid")}
                         }
                         className="bg-green-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-green-600 transition-colors"
                     >
@@ -97,24 +72,29 @@ const InvoicesSection = ({ invoices, onCreateInvoice }) => {
                     </button>
                     <button 
                         onClick={() => {
-                            handleStatusUpdate("Past Due")}                            
+                            refreshInvoices("Past Due")}                            
                         }
                         className="bg-red-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-red-600 transition-colors"
                     >
                         Past Due
                     </button>
                     <button 
-                        onClick={() => setInvoiceFilter("Pending")} 
+                        onClick={() => refreshInvoices("Pending")} 
                         className="bg-yellow-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-yellow-600 transition-colors"
                     >
                         Pending
                     </button>
                     <button 
-                        onClick={clearFilters} 
+                        onClick={() => {
+                            setInvoiceFilter("all");
+                            setSearchInvoices("");
+                            refreshInvoices(); // fetch all invoices, no status filter
+                        }} 
                         className="bg-gray-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-gray-600 transition-colors"
-                    >
+                        >
                         Clear
                     </button>
+
                     <button 
                         onClick={onCreateInvoice} 
                         className="bg-blue-600 text-white px-3 py-2 ml-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
@@ -207,6 +187,7 @@ InvoicesSection.propTypes = {
         })
     ).isRequired,
     onCreateInvoice: PropTypes.func.isRequired,
+    refreshInvoices: PropTypes.func.isRequired,
 };
 
 export default InvoicesSection;

@@ -15,6 +15,7 @@ from routes.employee_routes import employee_bp
 from routes.industry_routes import industry_bp
 from routes.invoice_routes import invoice_bp
 from routes.notes_routes import notes_bp
+from routes.payment_routes import payment_bp
 from routes.sales_routes import sales_bp 
 from routes.task_routes import task_bp
 from routes.user_routes import user_bp
@@ -71,6 +72,7 @@ app.register_blueprint(employee_bp, url_prefix="/employees")
 app.register_blueprint(industry_bp, url_prefix="/industries")
 app.register_blueprint(invoice_bp, url_prefix="/invoices")
 app.register_blueprint(notes_bp, url_prefix="/notes")
+app.register_blueprint(payment_bp, url_prefix="/payment")
 app.register_blueprint(sales_bp, url_prefix="/sales")
 app.register_blueprint(service_bp, url_prefix="/services")
 app.register_blueprint(task_bp, url_prefix="/tasks")

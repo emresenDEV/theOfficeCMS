@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
 from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users
 from flask_cors import cross_origin
+from pytz import timezone
 from database import db
 from datetime import datetime
 from sqlalchemy.sql import func
 
 
 invoice_bp = Blueprint("invoice", __name__, url_prefix="/invoices")
+central = timezone('America/Chicago')
 
 # ✅ Update Invoice Status (Pending to Paid, Past Due, etc.)
 @invoice_bp.route("/invoices/<int:invoice_id>/update_status", methods=["PUT", "OPTIONS"])
@@ -75,7 +77,7 @@ def get_invoice_by_id(invoice_id):
                 "service_id": service.service_id,
                 "service_name": service.service_name,
                 "quantity": invoice_service.quantity,
-                "price_per_unit": float(invoice_service.price_per_unit),  # <-- renamed
+                "price_per_unit": float(invoice_service.price_per_unit), 
                 "total_price": float(invoice_service.total_price)
             }
             for invoice_service, service in services
@@ -105,13 +107,18 @@ def get_invoice_by_id(invoice_id):
             "payments": [
                 {
                     "payment_id": p.payment_id,
-                    "method_id": p.payment_method,
+                    "payment_method": p.payment_method,
+                    "method_name": PaymentMethods.query.get(p.payment_method).method_name if p.payment_method else None,
                     "logged_by": p.logged_by,
-                    "last_four": p.last_four_payment_method,
+                    "logged_by_username": Users.query.get(p.logged_by).username if p.logged_by else None,
+                    "logged_by_first_name": Users.query.get(p.logged_by).first_name if p.logged_by else None,
+                    "logged_by_last_name": Users.query.get(p.logged_by).last_name if p.logged_by else None,
+                    "last_four_payment_method": p.last_four_payment_method,
                     "total_paid": float(p.total_paid),
                     "date_paid": p.date_paid.strftime("%Y-%m-%d %H:%M:%S")
                 } for p in payments
             ],
+
 
             # Added account info
             "business_name": account.business_name if account else None,
@@ -137,7 +144,7 @@ def get_invoice_status(invoice):
     payments = Payment.query.filter_by(invoice_id=invoice.invoice_id).count()
     if payments:
         return "Paid"
-    if invoice.due_date and invoice.due_date < datetime.utcnow().date():
+    if invoice.due_date and invoice.due_date < datetime.now(central).date():
         return "Past Due"
     return "Unpaid"
 
@@ -146,7 +153,9 @@ def get_invoice_status(invoice):
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def get_invoices_by_account(account_id):
     try:
-        invoices = (
+        status_filter = request.args.get("status")  # optional query param
+
+        query = (
             db.session.query(
                 Invoice.invoice_id,
                 Invoice.account_id,
@@ -164,7 +173,13 @@ def get_invoices_by_account(account_id):
             )
             .outerjoin(Commissions, Commissions.invoice_id == Invoice.invoice_id)
             .filter(Invoice.account_id == account_id)
-            .group_by(
+        )
+
+        if status_filter:
+            query = query.filter(Invoice.status == status_filter)
+
+        invoices = (
+            query.group_by(
                 Invoice.invoice_id,
                 Invoice.account_id,
                 Invoice.sales_rep_id,
@@ -206,6 +221,7 @@ def get_invoices_by_account(account_id):
         return jsonify({"error": "Failed to fetch invoices", "details": str(e)}), 500
 
 
+
 # Validate Invoice Belongs to Account
 @invoice_bp.route('/validate/<int:account_id>/<int:invoice_id>', methods=["GET"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
@@ -225,8 +241,6 @@ def validate_invoice_for_account(account_id, invoice_id):
 
 
 # Update Invoice (SINGLE) API
-# @invoice_bp.route("/invoices/invoice/<int:invoice_id>", methods=["PUT", "OPTIONS"])
-# @invoice_bp.route("/invoices/<int:invoice_id>", methods=["PUT", "OPTIONS"])
 @invoice_bp.route("/<int:invoice_id>", methods=["PUT", "OPTIONS"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def update_invoice(invoice_id):
@@ -243,36 +257,103 @@ def update_invoice(invoice_id):
 
     invoice.tax_rate = data.get("tax_rate", invoice.tax_rate)
     invoice.discount_percent = data.get("discount_percent", invoice.discount_percent)
-    invoice.discount_amount = data.get("discount_amount", invoice.discount_amount)
-    invoice.final_total = data.get("final_total", invoice.final_total)
     invoice.sales_rep_id = data.get("sales_rep_id", invoice.sales_rep_id)
+    invoice.date_updated = datetime.now(central)
+
     due_date = data.get("due_date")
     if due_date:
         try:
             invoice.due_date = datetime.strptime(due_date, "%Y-%m-%d")
         except ValueError:
-            print("🔄 Invoice Update Payload:", data) # debugging
-            print("✅ Updated Invoice Fields:") # debugging
-            print(" - Sales Rep ID:", invoice.sales_rep_id) # debugging
-            print(" - Discount %:", invoice.discount_percent) # debugging
-            print(" - Tax Rate:", invoice.tax_rate) # debugging
-            pass  # Or log warning
-    invoice.date_updated = datetime.utcnow()
+            print("⚠️ Invalid due date format")
 
-    if "services" in data:
-        InvoiceServices.query.filter_by(invoice_id=invoice_id).delete()
-        for s in data["services"]:
+    services_data = data.get("services", [])
+    existing_services = {s.invoice_service_id: s for s in invoice.invoice_services}
+    received_service_ids = set()
+
+    service_total = 0
+    service_discount_total = 0
+
+    for s in services_data:
+        quantity = s["quantity"]
+        price_per_unit = float(s["price_per_unit"])
+        discount_percent = float(s.get("discount_percent") or 0)
+        discount_total = price_per_unit * quantity * discount_percent
+        total_price = price_per_unit * quantity - discount_total
+
+        service_total += price_per_unit * quantity
+        service_discount_total += discount_total
+
+        invoice_service_id = s.get("invoice_service_id")
+        if invoice_service_id and invoice_service_id in existing_services:
+            received_service_ids.add(invoice_service_id)
+            existing = existing_services[invoice_service_id]
+            existing.quantity = quantity
+            existing.price_per_unit = price_per_unit
+            existing.discount_percent = discount_percent
+            existing.discount_total = discount_total
+            existing.total_price = total_price
+        else:
             new_service = InvoiceServices(
                 invoice_id=invoice_id,
                 service_id=s["service_id"],
-                quantity=s["quantity"],
-                price_per_unit=s["price_per_unit"],
-                total_price=s["total_price"]
+                quantity=quantity,
+                price_per_unit=price_per_unit,
+                discount_percent=discount_percent,
+                discount_total=discount_total,
+                total_price=total_price,
             )
             db.session.add(new_service)
 
+    to_delete_ids = set(existing_services.keys()) - received_service_ids
+    print("🗑️ Deleting InvoiceService IDs:", to_delete_ids)
+    for invoice_service_id in to_delete_ids:
+        to_delete = existing_services[invoice_service_id]
+        db.session.delete(to_delete)
+
+    invoice_discount_amount = (service_total - service_discount_total) * float(invoice.discount_percent or 0)
+    subtotal_after_discounts = service_total - service_discount_total - invoice_discount_amount
+    tax_amount = subtotal_after_discounts * float(invoice.tax_rate or 0)
+    final_total = subtotal_after_discounts + tax_amount
+
+    invoice.discount_amount = invoice_discount_amount
+    invoice.tax_amount = tax_amount
+    invoice.final_total = final_total
+
+    total_paid = sum(p.total_paid for p in invoice.payments)
+    today = datetime.now(central).date()
+    due = invoice.due_date if invoice.due_date else None
+
+    if total_paid >= final_total:
+        invoice.status = "Paid"
+    elif total_paid == 0:
+        invoice.status = "Pending"
+    elif due and today > due:
+        invoice.status = "Past Due"
+    else:
+        invoice.status = "Partial"
+
     db.session.commit()
-    return jsonify({"message": "Invoice updated successfully"}), 200
+    return jsonify({
+        "message": "Invoice updated successfully",
+        "final_total": float(final_total),
+        "status": invoice.status
+    }), 200
+
+
+# DELETE invoice service
+@invoice_bp.route("/invoice_services/<int:invoice_service_id>", methods=["DELETE"])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+def delete_invoice_service(invoice_service_id):
+    service = InvoiceServices.query.get(invoice_service_id)
+    if not service:
+        return jsonify({"error": "Invoice service not found"}), 404
+
+    print(f"🧼 Deleting InvoiceService #{invoice_service_id}")  # Debug logging
+    db.session.delete(service)
+    db.session.commit()
+    return jsonify({"message": "Invoice service deleted successfully"}), 200
+
 
 # Delete Invoice (SINGLE) API
 # @invoice_bp.route("/invoices/<int:invoice_id>", methods=["DELETE"])
@@ -289,78 +370,78 @@ def delete_invoice(invoice_id):
 
 
 # GET Paid Invoices API
-@invoice_bp.route("/invoices/paid", methods=["GET"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
-def get_paid_invoices():
-    sales_rep_id = request.args.get("user_id", type=int)
+# @invoice_bp.route("/invoices/paid", methods=["GET"])
+# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
+# def get_paid_invoices():
+#     sales_rep_id = request.args.get("user_id", type=int)
     
-    if not sales_rep_id:
-        return jsonify({"error": "User ID is required"}), 400
+#     if not sales_rep_id:
+#         return jsonify({"error": "User ID is required"}), 400
 
-    paid_invoices = Invoice.query.filter(
-        Invoice.sales_rep_id == sales_rep_id,
-        Invoice.status == "Paid"
-    ).all()
+#     paid_invoices = Invoice.query.filter(
+#         Invoice.sales_rep_id == sales_rep_id,
+#         Invoice.status == "Paid"
+#     ).all()
 
-    return jsonify([
-        {
-            "invoice_id": inv.invoice_id,
-            "account_id": inv.account_id,
-            "amount": float(inv.amount),
-            "date_paid": inv.date_paid.strftime('%Y-%m-%d') if inv.date_paid else "N/A"
-        } for inv in paid_invoices
-    ]), 200
+#     return jsonify([
+#         {
+#             "invoice_id": inv.invoice_id,
+#             "account_id": inv.account_id,
+#             "amount": float(inv.amount),
+#             "date_paid": inv.date_paid.strftime('%Y-%m-%d') if inv.date_paid else "N/A"
+#         } for inv in paid_invoices
+#     ]), 200
 
 
 # GET Unpaid Invoices API
-@invoice_bp.route("/invoices/unpaid", methods=["GET"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
-def get_unpaid_invoices():
-    sales_rep_id = request.args.get("user_id")
-    if not sales_rep_id:
-        return jsonify({"error": "User ID is required"}), 400
+# @invoice_bp.route("/invoices/unpaid", methods=["GET"])
+# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
+# def get_unpaid_invoices():
+#     sales_rep_id = request.args.get("user_id")
+#     if not sales_rep_id:
+#         return jsonify({"error": "User ID is required"}), 400
 
-    unpaid_invoices = (
-        db.session.query(Invoice, Account.business_name)
-        .join(Account, Invoice.account_id == Account.account_id)
-        .filter(Invoice.user_id == sales_rep_id, Invoice.status == "Unpaid")
-        .all()
-)
+#     unpaid_invoices = (
+#         db.session.query(Invoice, Account.business_name)
+#         .join(Account, Invoice.account_id == Account.account_id)
+#         .filter(Invoice.user_id == sales_rep_id, Invoice.status == "Unpaid")
+#         .all()
+# )
 
-    return jsonify([
-        {
-            "invoice_id": inv.invoice_id,
-            "account_id": inv.account_id,
-            "account_name": account_name,
-            "amount": float(inv.amount),
-            "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else "N/A",
-        } for inv, account_name in unpaid_invoices
-    ])
+#     return jsonify([
+#         {
+#             "invoice_id": inv.invoice_id,
+#             "account_id": inv.account_id,
+#             "account_name": account_name,
+#             "amount": float(inv.amount),
+#             "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else "N/A",
+#         } for inv, account_name in unpaid_invoices
+    # ])
 
 # GET Past Due Invoices API
-@invoice_bp.route("/invoices/past_due", methods=["GET"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
-def get_past_due_invoices():
-    sales_rep_id = request.args.get("sales_rep_id")
-    if not sales_rep_id:
-        return jsonify({"error": "User ID is required"}), 400
+# @invoice_bp.route("/invoices/past_due", methods=["GET"])
+# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
+# def get_past_due_invoices():
+#     sales_rep_id = request.args.get("sales_rep_id")
+#     if not sales_rep_id:
+#         return jsonify({"error": "User ID is required"}), 400
 
-    today = datetime.utcnow().date()
-    past_due_invoices = db.session.query(Invoice, Account.business_name).join(Account, Invoice.account_id == Account.account_id).filter(
-        Invoice.sales_rep_id == sales_rep_id,
-        Invoice.due_date < today,
-        Invoice.status != "Paid"
-    ).all()
+#     today = datetime.now(central).date()
+#     past_due_invoices = db.session.query(Invoice, Account.business_name).join(Account, Invoice.account_id == Account.account_id).filter(
+#         Invoice.sales_rep_id == sales_rep_id,
+#         Invoice.due_date < today,
+#         Invoice.status != "Paid"
+#     ).all()
 
-    return jsonify([
-        {
-            "invoice_id": inv.invoice_id,
-            "account_id": inv.account_id,
-            "account_name": account_name,
-            "amount": float(inv.amount),
-            "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else "N/A",
-        } for inv, account_name in past_due_invoices
-    ])
+#     return jsonify([
+#         {
+#             "invoice_id": inv.invoice_id,
+#             "account_id": inv.account_id,
+#             "account_name": account_name,
+#             "amount": float(inv.amount),
+#             "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else "N/A",
+#         } for inv, account_name in past_due_invoices
+#     ])
 
 # Create Invoices API
 # @invoice_bp.route("/invoices", methods=["POST"])
@@ -374,8 +455,8 @@ def create_invoice():
         tax_rate=data.get("tax_rate", 0),
         discount_percent=data.get("discount_percent", 0),
         due_date=datetime.strptime(data["due_date"], "%Y-%m-%d"),
-        date_created=datetime.utcnow(),
-        date_updated=datetime.utcnow(),
+        date_created=datetime.now(central),
+        date_updated=datetime.now(central),
     )
     db.session.add(new_invoice)
     db.session.flush()
@@ -444,12 +525,26 @@ def log_payment(invoice_id):
             payment_method=data["payment_method"],
             last_four_payment_method=data.get("last_four_payment_method"),
             total_paid=data["total_paid"],
-            date_paid=datetime.utcnow(),
+            date_paid=datetime.now(central),
         )
         db.session.add(payment)
         db.session.commit()
-        return jsonify({"message": "Payment logged", "payment_id": payment.payment_id}), 201
+
+        # ✅ Fetch username of the logged_by user
+        user = Users.query.get(payment.logged_by)
+
+        return jsonify({
+            "message": "Payment logged",
+            "payment_id": payment.payment_id,
+            "payment_method": payment.payment_method,
+            "last_four_payment_method": payment.last_four_payment_method,
+            "total_paid": payment.total_paid,
+            "date_paid": payment.date_paid,
+            "logged_by": payment.logged_by,
+            "logged_by_username": user.username if user else None
+        }), 201
+
     except Exception as e:
         print("❌ Error saving payment:", e)
         return jsonify({"error": str(e)}), 500
-    
+

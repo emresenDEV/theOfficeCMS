@@ -8,7 +8,7 @@ const InvoiceActions = ({
 invoice,
 services,
 salesRep,
-payment,
+payments,
 user,
 accountDetails
 }) => {
@@ -39,7 +39,7 @@ const handleEmailClick = async () => {
         invoice={invoice}
         services={services}
         salesRep={salesRep}
-        payment={payment}
+        payments={payments}
         accountDetails={accountDetails}
     />
     ).toBlob();
@@ -54,7 +54,8 @@ const handleEmailClick = async () => {
     setTimeout(() => URL.revokeObjectURL(url), 10000);
 };
 
-const isPaid = !!payment;
+const isPaid = payments && payments.length > 0;
+
 
 return (
     <div className="mt-4 flex flex-col md:flex-row gap-3 items-start md:items-center">
@@ -64,7 +65,7 @@ return (
             invoice={invoice}
             services={services}
             salesRep={salesRep}
-            payment={payment}
+            payments={invoice.payments}
             accountDetails={accountDetails}
         />
         }
@@ -88,7 +89,20 @@ InvoiceActions.propTypes = {
 invoice: PropTypes.object.isRequired,
 services: PropTypes.array.isRequired,
 salesRep: PropTypes.object.isRequired,
-payment: PropTypes.object,
+payments: PropTypes.arrayOf(
+    PropTypes.shape({
+        payment_id: PropTypes.number.isRequired,
+        method_id: PropTypes.number,
+        method_name: PropTypes.string, // added later via mapping
+        last_four_payment_method: PropTypes.string,
+        total_paid: PropTypes.number.isRequired,
+        date_paid: PropTypes.string.isRequired,
+        logged_by: PropTypes.number.isRequired, // user_id
+        logged_by_username: PropTypes.string, // added after mapping
+        logged_by_first_name: PropTypes.string, // added after mapping
+        logged_by_last_name: PropTypes.string,  // added after mapping
+        })
+    ),
 accountDetails: PropTypes.shape({
     account_id: PropTypes.number.isRequired,
     contact_name: PropTypes.string,

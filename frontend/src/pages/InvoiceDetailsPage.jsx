@@ -5,7 +5,8 @@ import {
     updateInvoice,
     deleteInvoice,
     fetchPaymentMethods,
-    logInvoicePayment
+    logInvoicePayment,
+    deleteInvoiceService
 } from "../services/invoiceService";
 import {
 fetchServices,
@@ -14,10 +15,11 @@ updateService,
 } from "../services/servicesService";
 import { fetchNotesByInvoice } from "../services/notesService";
 import { fetchSalesReps } from "../services/userService";
-
+import { updatePayment, deletePayment } from "../services/paymentService";
 import Sidebar from "../components/Sidebar";
 import NotesSection from "../components/NotesSection";
 import InvoiceActions from "../components/InvoiceActions";
+import PaidBox from "../components/PaidBox";
 import { fetchAccountDetails } from "../services/accountService";
 import { format } from "date-fns";
 import PropTypes from "prop-types";
@@ -37,6 +39,7 @@ const [paymentForm, setPaymentForm] = useState({
     total_paid: 0,
 });
 const [loggedPayment, setLoggedPayment] = useState(null);
+const [payments, setPayments] = useState([]);
 const [services, setServices] = useState([]);
 const [allServiceOptions, setAllServiceOptions] = useState([]);
 const [addingService, setAddingService] = useState(false);
@@ -47,6 +50,7 @@ const [newServiceRow, setNewServiceRow] = useState({
     discount_percent: 0,
     isNew: false,
     });
+const [servicesToDelete, setServicesToDelete] = useState([]);
 const [showEditInvoiceForm, setShowEditInvoiceForm] = useState(false);
 const [invoiceForm, setInvoiceForm] = useState({
     discount_percent: 0,
@@ -68,6 +72,7 @@ useEffect(() => {
         const data = await fetchInvoiceById(invoiceId);
         if (!data) throw new Error("Invoice not found");
         setInvoice(data);
+        setPayments(data.payments || []);
 
         const account = await fetchAccountDetails(data.account_id);
         setAccountDetails(account);
@@ -216,36 +221,70 @@ const handleServiceFieldChange = (index, field, value) => {
 const handleLogPayment = async () => {
     try {
         const payload = {
-        account_id: invoice.account_id,
-        sales_rep_id: invoice.sales_rep_id,
-        logged_by: user.id,
-        payment_method: paymentForm.payment_method,
-        last_four_payment_method: paymentForm.last_four_payment_method || null,
-        total_paid: parseFloat(paymentForm.total_paid),
+            account_id: invoice.account_id,
+            sales_rep_id: invoice.sales_rep_id,
+            logged_by: user.id,
+            payment_method: paymentForm.payment_method,
+            last_four_payment_method: paymentForm.last_four_payment_method || null,
+            total_paid: parseFloat(paymentForm.total_paid),
         };
     
         const response = await logInvoicePayment(invoiceId, payload);
         if (response && response.payment_id) {
-        const updatedInvoice = await fetchInvoiceById(invoiceId);
-        setInvoice(updatedInvoice);
-        const paymentInfo = updatedInvoice.payments?.[0]; // we assume only 1 for now
-        setLoggedPayment(paymentInfo);
-        setShowPaymentForm(false);
+            const updatedInvoice = await fetchInvoiceById(invoiceId);
+            setInvoice(updatedInvoice);
+            setPayments(updatedInvoice.payments || []);
+    
+            // Reset form and close
+            setShowPaymentForm(false);
+            setPaymentForm({
+            payment_method: "",
+            last_four_payment_method: "",
+            total_paid: parseFloat(updatedInvoice.final_total || 0),
+            });
         }
-    } catch (error) {
-        console.error("Payment logging failed:", error);
+        } catch (error) {
+        console.error("❌ Payment logging failed:", error);
         alert("Error logging payment.");
-    }
+        }
     };
+const handleDeleteService = async (index) => {
+    const serviceToDelete = services[index];
 
-const handleDeleteService = (index) => {
-    setDeletedServiceIndex(index);
-    const timeoutId = setTimeout(() => {
+    if (!serviceToDelete.invoice_service_id) {
         setServices((prev) => prev.filter((_, i) => i !== index));
-        setDeletedServiceIndex(null);
-    }, 5000);
-    setUndoTimeoutId(timeoutId);
-    };
+        return;
+    }
+
+    const confirmed = window.confirm(`Are you sure you want to remove "${serviceToDelete.service_name}" from the invoice?`);
+    if (!confirmed) return;
+
+    try {
+        await deleteInvoiceService(serviceToDelete.invoice_service_id);
+
+        // Remove from UI
+        const updatedServices = services.filter((_, i) => i !== index);
+        setServices(updatedServices);
+
+        // 🧠 Recalculate invoice on backend (to sync discounts, totals, status)
+        await updateInvoice(invoiceId, {
+            services: updatedServices,
+            discount_percent: invoiceForm.discount_percent,
+            tax_rate: invoiceForm.tax_rate,
+            sales_rep_id: invoiceForm.sales_rep_id,
+            due_date: invoiceForm.due_date,
+        });
+
+        // 🧼 Refresh invoice data from DB
+        const updated = await fetchInvoiceById(invoiceId);
+        setInvoice(updated);
+        setServices(updated.services || []);
+    } catch (error) {
+        console.error("❌ Failed to delete invoice service:", error);
+        alert("Error deleting service.");
+    }
+};
+
 
 const undoDelete = () => {
     clearTimeout(undoTimeoutId);
@@ -284,7 +323,14 @@ const handleAddServiceSave = async () => {
     newEntry.total_price =
         newEntry.price_per_unit * newEntry.quantity * (1 - (newEntry.discount_percent || 0));
     setServices((prev) => [...prev, newEntry]);
-    await updateInvoice(invoiceId, { services: [...services, newEntry] });
+    await updateInvoice(invoiceId, {
+        services: [...services, newEntry],
+        discount_percent: invoiceForm.discount_percent,
+        tax_rate: invoiceForm.tax_rate,
+        sales_rep_id: invoiceForm.sales_rep_id,
+        due_date: invoiceForm.due_date,
+    });
+    
     const updated = await fetchInvoiceById(invoiceId);
     setInvoice(updated);
     setServices(updated.services);
@@ -742,7 +788,7 @@ if (!invoice)
             <section className="mb-6 border p-4 rounded-lg text-left">
             <div className="flex justify-between items-center mb-2">
                 <h2 className="text-xl font-semibold">Log Payment</h2>
-                {!loggedPayment && !showPaymentForm && (
+                {!showPaymentForm && (
                 <button
                     className="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700"
                     onClick={() => setShowPaymentForm(true)}
@@ -752,19 +798,7 @@ if (!invoice)
                 )}
             </div>
 
-            {loggedPayment ? (
-                <div className="bg-green-50 p-4 rounded border">
-                <p><strong>Confirmation #:</strong> {loggedPayment.payment_id}</p>
-                <p><strong>Logged by:</strong> {user.username}</p>
-                <p><strong>Payment Method:</strong> {paymentMethods.find(pm => pm.method_id === loggedPayment.method_id)?.method_name || "N/A"}</p>
-                <p><strong>Last Four:</strong> {loggedPayment.last_four || "N/A"}</p>
-                <p><strong>Total Paid:</strong> {formatCurrency(loggedPayment.total_paid)}</p>
-                <p><strong>Date Paid:</strong> {new Date(loggedPayment.date_paid).toLocaleString("en-US", {
-                    month: "2-digit", day: "2-digit", year: "numeric",
-                    hour: "2-digit", minute: "2-digit", hour12: true
-                })}</p>
-                </div>
-            ) : showPaymentForm ? (
+            {showPaymentForm && (
                 <div className="bg-gray-100 p-4 rounded border">
                 <div className="mb-2">
                     <label className="block text-sm font-medium">Payment Method</label>
@@ -833,31 +867,73 @@ if (!invoice)
                     </button>
                 </div>
                 </div>
-            ) : null}
+            )}
             </section>
+
+            {/* PAYMENT RECORDS */}
+            {payments.length > 0 && (
+            <section className="mb-6 border p-4 rounded-lg text-left">
+                <h2 className="text-xl font-semibold mb-3">Payment Records</h2>
+                {payments.map((payment, idx) => (
+                <PaidBox
+                    key={payment.payment_id}
+                    payment={payment}
+                    paymentMethods={paymentMethods}
+                    invoiceTotal={invoice.final_total}
+                    totalPaidSoFar={payments.reduce((sum, p) => sum + parseFloat(p.total_paid || 0), 0)}
+                    loggedInUsername={user.username}
+                    onUpdate={async (updatedPayment) => {
+                        const res = await updatePayment(payment.payment_id, updatedPayment);
+                        if (res) {
+                            const updatedPayments = [...payments];
+                            updatedPayments[idx] = res;
+                            setPayments(updatedPayments);
+                        }
+                    }}
+                    
+                    onDelete={async (paymentId) => {
+                        const res = await deletePayment(paymentId);
+                        if (res) {
+                            const updated = payments.filter(p => p.payment_id !== paymentId);
+                            setPayments(updated);
+                        }
+                    }}
+                    
+                />
+                ))}
+            </section>
+            )}
 
             {/* SHARE INVOICE PDF */}
             <section className="mb-6 border p-4 rounded-lg text-left">
             <h2 className="text-xl font-semibold mb-2">Share Invoice</h2>
-            <p className="text-sm text-gray-600 mb-4">
-                (Your default email client cannot attach files automatically. Please download the PDF and attach it manually. 
-                The Email button will generate an email template to expedite the process.)
-            </p>
+            <div className="text-sm text-gray-600 mb-4">
+            <p>Discounts are applied in two ways:</p>
+                <ul className="list-disc list-inside mt-1">
+                    <li><strong>Service Discount</strong> — applied per service.</li>
+                    <li><strong>Invoice Discount</strong> — applied on the subtotal before tax.</li>
+                </ul>
+            </div>
+
             <div className="flex justify-end gap-4">
+            {accountDetails ? (
                 <InvoiceActions
-                invoice={invoice}
-                services={services}
-                salesRep={{
+                    invoice={invoice}
+                    services={services}
+                    salesRep={{
                     first_name: invoice.sales_rep_name?.split(" ")[0] || "",
                     last_name: invoice.sales_rep_name?.split(" ")[1] || "",
                     email: invoice.sales_rep_email,
                     phone_number: invoice.sales_rep_phone,
-                }}
-                branch={branch}
-                accountDetails={accountDetails}
-                payment={invoice.payments?.[0] || null}
-                user={user}
+                    }}
+                    branch={branch}
+                    accountDetails={accountDetails}
+                    payment={invoice.payments?.[0] || null}
+                    user={user}
                 />
+                ) : (
+                <p>Loading account details...</p>
+                )}
             </div>
             </section>
 
