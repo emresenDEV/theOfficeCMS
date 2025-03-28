@@ -350,17 +350,35 @@ if (!invoice)
     return <p className="text-center text-gray-600">Loading invoice details...</p>;
 
     return (
-        <div className="flex">
-        <Sidebar user={user} />
-        <div className="flex-1 p-6 ml-64">
-        <div className="flex justify-between mb-4">
-            <button
-                onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
-                className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
-            >
-            ← Back to Account
-            </button>
-        </div>
+        <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-lg ml-64">
+            <div className="flex justify-between items-center mb-4">
+                <button
+                    onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
+                    className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+                >
+                    ← Back to Account
+                </button>
+
+                {/* Status Icon Badge on Right Side */}
+                <div>
+                    {invoice.status === "Paid" && (
+                    <p className="text-green-700 bg-green-100 border border-green-300 px-3 py-1 rounded-full text-sm font-semibold">
+                        ✅ Paid in Full
+                    </p>
+                    )}
+                    {invoice.status === "Partial" && (
+                    <p className="text-yellow-800 bg-yellow-100 border border-yellow-300 px-3 py-1 rounded-full text-sm font-semibold">
+                        ⚠️ Partial Payment
+                    </p>
+                    )}
+                    {invoice.status === "Past Due" && (
+                    <p className="text-red-700 bg-red-100 border border-red-300 px-3 py-1 rounded-full text-sm font-semibold">
+                        ❗ Past Due
+                    </p>
+                    )}
+                </div>
+            </div>
+
             <div className="flex justify-between items-start mb-4">
             <h1 className="text-3xl font-bold text-left">{invoice.business_name}</h1>
             <h1 className="text-3xl font-bold text-right">Invoice #{invoice.invoice_id}</h1>
@@ -369,25 +387,25 @@ if (!invoice)
             <div className="flex justify-between items-start mb-4">
             <p>Created: {formatDate(invoice.date_created)}</p>
             <p>Updated: {formatDate(invoice.date_updated)}</p>
+            </div>
 
-            </div>
             <div className="flex justify-between mb-6">
-            <div className="text-left">
-                <p className="text-lg font-semibold">{invoice.business_name}</p>
-                <p>{invoice.address}, {invoice.city}, {invoice.state} {invoice.zip_code}</p>
-                {/* <p>{invoice.email}</p> */}
-                <p>{invoice.phone_number}</p>
-            </div>
-            <div className="text-right">
-                <p><strong>Sales Representative:</strong></p>
-                <p className="text-lg font-semibold">{invoice.branch_name}</p>
-                <p>{invoice.sales_rep_name}</p>
-                <p>{invoice.sales_rep_email}</p>
-                <p>{invoice.sales_rep_phone}</p>
-                {user?.id === invoice.sales_rep_id && (
-                <p><strong>Commission:</strong> {formatCurrency(invoice.commission_amount)} ({(invoice.commission_amount / invoice.final_total * 100).toFixed(2)}%)</p>
-                )}
-            </div>
+                <div className="text-left">
+                    <p className="text-lg font-semibold">{invoice.business_name}</p>
+                    <p>{invoice.address}, {invoice.city}, {invoice.state} {invoice.zip_code}</p>
+                    <p className="text-blue-600 font-medium">{invoice.email}</p>
+                    <p>{invoice.phone_number}</p>              
+                </div>
+                <div className="text-right">
+                    <p><strong>Sales Representative:</strong></p>
+                    <p className="text-lg font-semibold">{invoice.branch_name}</p>
+                    <p>{invoice.sales_rep_name}</p>
+                    <p>{invoice.sales_rep_email}</p>
+                    <p>{invoice.sales_rep_phone}</p>
+                    {user?.id === invoice.sales_rep_id && (
+                    <p><strong>Commission:</strong> {formatCurrency(invoice.commission_amount)} ({(invoice.commission_amount / invoice.final_total * 100).toFixed(2)}%)</p>
+                    )}
+                </div>
             </div>
             {/* Edit Invoice Form */}
             <section className="mb-6 border p-4 rounded-lg">
@@ -958,7 +976,6 @@ if (!invoice)
                 Delete Invoice
             </button>
             </div>
-        </div>
         </div>
     );
     };

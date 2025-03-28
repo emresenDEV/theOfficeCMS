@@ -60,7 +60,22 @@ def get_invoice_by_id(invoice_id):
     try:
         invoice = Invoice.query.get_or_404(invoice_id)
 
-        # Fetch related data
+        # Payments and dynamic status
+        payments = Payment.query.filter_by(invoice_id=invoice.invoice_id).all()
+        paid_total = sum(float(p.total_paid or 0) for p in payments)
+        today = datetime.now(central).date()
+        due = invoice.due_date if invoice.due_date else None
+        final_total = invoice.final_total or 0
+
+        if paid_total >= final_total:
+            current_status = "Paid"
+        elif paid_total == 0:
+            current_status = "Past Due" if due and today > due else "Pending"
+        elif due and today > due:
+            current_status = "Past Due"
+        else:
+            current_status = "Partial"
+
         account = Account.query.get(invoice.account_id)
         sales_rep = Users.query.get(invoice.sales_rep_id)
         commission = db.session.query(func.sum(Commissions.commission_amount)).filter(Commissions.invoice_id == invoice_id).scalar()
@@ -74,64 +89,59 @@ def get_invoice_by_id(invoice_id):
 
         service_list = [
             {
-                "service_id": service.service_id,
-                "service_name": service.service_name,
-                "quantity": invoice_service.quantity,
-                "price_per_unit": float(invoice_service.price_per_unit), 
-                "total_price": float(invoice_service.total_price)
+                "service_id": s.service_id,
+                "service_name": s.service_name,
+                "quantity": i.quantity,
+                "price_per_unit": float(i.price_per_unit),
+                "total_price": float(i.total_price)
             }
-            for invoice_service, service in services
+            for i, s in services
         ]
 
-        payments = Payment.query.filter_by(invoice_id=invoice_id).all()
-        total_paid = sum(float(p.total_paid) for p in payments)
-        last_paid = max((payment.date_paid for payment in payments), default=None)
+        payment_list = [
+            {
+                "payment_id": p.payment_id,
+                "payment_method": p.payment_method,
+                "method_name": PaymentMethods.query.get(p.payment_method).method_name if p.payment_method else None,
+                "logged_by": p.logged_by,
+                "logged_by_username": Users.query.get(p.logged_by).username if p.logged_by else None,
+                "logged_by_first_name": Users.query.get(p.logged_by).first_name if p.logged_by else None,
+                "logged_by_last_name": Users.query.get(p.logged_by).last_name if p.logged_by else None,
+                "last_four_payment_method": p.last_four_payment_method,
+                "total_paid": float(p.total_paid),
+                "date_paid": p.date_paid.strftime("%Y-%m-%d %H:%M:%S")
+            } for p in payments
+        ]
 
-        method = PaymentMethods.query.get(p.payment_method)
-        
         return jsonify({
             "invoice_id": invoice.invoice_id,
             "account_id": invoice.account_id,
             "sales_rep_id": invoice.sales_rep_id,
-            "status": get_invoice_status(invoice),
+            "status": current_status,
             "tax_rate": float(invoice.tax_rate or 0),
             "tax_amount": float(invoice.tax_amount or 0),
             "discount_percent": float(invoice.discount_percent or 0),
             "discount_amount": float(invoice.discount_amount or 0),
             "final_total": float(invoice.final_total or 0),
-            "total_paid": total_paid,
+            "total_paid": paid_total,
             "commission_amount": float(commission or 0),
-            "date_paid": last_paid.strftime("%Y-%m-%d") if last_paid else None,
+            "date_paid": max((p.date_paid for p in payments), default=None).strftime("%Y-%m-%d") if payments else None,
             "date_created": invoice.date_created.strftime("%Y-%m-%d %H:%M:%S"),
             "date_updated": invoice.date_updated.strftime("%Y-%m-%d %H:%M:%S"),
             "due_date": invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date else None,
             "services": service_list,
-            "payments": [
-                {
-                    "payment_id": p.payment_id,
-                    "payment_method": p.payment_method,
-                    "method_name": PaymentMethods.query.get(p.payment_method).method_name if p.payment_method else None,
-                    "method_name": method.method_name if method else None,
-                    "logged_by": p.logged_by,
-                    "logged_by_username": Users.query.get(p.logged_by).username if p.logged_by else None,
-                    "logged_by_first_name": Users.query.get(p.logged_by).first_name if p.logged_by else None,
-                    "logged_by_last_name": Users.query.get(p.logged_by).last_name if p.logged_by else None,
-                    "last_four_payment_method": p.last_four_payment_method,
-                    "total_paid": float(p.total_paid),
-                    "date_paid": p.date_paid.strftime("%Y-%m-%d %H:%M:%S")
-                } for p in payments
-            ],
+            "payments": payment_list,
 
-
-            # Added account info
+            # Account details
             "business_name": account.business_name if account else None,
             "address": account.address if account else None,
             "city": account.city if account else None,
             "state": account.state if account else None,
             "zip_code": account.zip_code if account else None,
             "phone_number": account.phone_number if account else None,
+            "email": account.email if account else None,
 
-            # Added sales rep info
+            # Sales rep details
             "sales_rep_name": f"{sales_rep.first_name} {sales_rep.last_name}" if sales_rep else None,
             "sales_rep_email": sales_rep.email if sales_rep else None,
             "sales_rep_phone": sales_rep.phone_number if sales_rep else None,
@@ -140,7 +150,6 @@ def get_invoice_by_id(invoice_id):
     except Exception as e:
         print(f"❌ Error in get_invoice_by_id: {e}")
         return jsonify({"error": "Failed to fetch invoice", "details": str(e)}), 500
-
 
 # Helper: Determine Invoice Status
 def get_invoice_status(invoice):

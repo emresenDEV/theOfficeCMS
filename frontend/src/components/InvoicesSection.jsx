@@ -8,13 +8,13 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
     const [searchInvoices, setSearchInvoices] = useState("");
     const [invoiceFilter, setInvoiceFilter] = useState("all");
 
-    // ✅ Format Due Date (MM/DD/YYYY)
+    // Format Due Date (MM/DD/YYYY)
     const formatDueDate = (dateString) => {
         if (!dateString) return "N/A";
         return format(new Date(dateString), "MM/dd/yyyy");
     };
 
-    // ✅ Format Total Amount ($00,000.00)
+    // Format Total Amount ($00,000.00)
     const formatTotalAmount = (amount) => {
         if (typeof amount !== "number") return "$0.00";
         return new Intl.NumberFormat("en-US", {
@@ -23,6 +23,23 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
             minimumFractionDigits: 2,
         }).format(amount);
     };
+
+        // Get status badge styling
+        const getStatusBadge = (status) => {
+            switch (status) {
+                case "Paid":
+                    return "bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                case "Partial":
+                    return "bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                case "Past Due":
+                    return "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                case "Pending":
+                    return "bg-gray-400 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                default:
+                    return "bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs font-semibold";
+            }
+        };
+    
 
     // Filter invoices based on search input and selected status filter
     const filteredInvoices = invoices.filter((inv) => {
@@ -159,7 +176,10 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                                     <td className="p-2 border-b border-r text-left">{formatDueDate(inv.date_created)}</td>
                                     <td className="p-2 border-b border-r text-left">{formatDueDate(inv.due_date)}</td>
                                     <td className="p-2 border-b border-r text-left">{formatTotalAmount(inv.final_total)}</td>
-                                    <td className="p-2 border-b border-r text-left">{inv.status}</td>
+                                    {/* 🏷️ Invoice Status Badge */}
+                                    <td className="p-2 border-b border-r text-left">
+                                        <span className={getStatusBadge(inv.status)}>{inv.status}</span>
+                                    </td>
                                     <td className="p-2 border-b text-center">
                                         <button
                                             onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
