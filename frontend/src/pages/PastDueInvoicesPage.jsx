@@ -1,20 +1,33 @@
 import { useEffect, useState } from "react";
-import { fetchPastDueInvoices } from "../services/invoiceService";
+import { fetchInvoicesByStatus } from "../services/invoiceService";
+import { fetchAccountById } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
 
 const PastDueInvoicesPage = ({ user }) => {
     const [invoices, setInvoices] = useState([]);
+    const [accountNames, setAccountNames] = useState({});
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (user) {  // ✅ Ensures user is set before fetching
-            fetchPastDueInvoices(user.id)
-                .then(setInvoices)
-                .catch(error => console.error("Error fetching past due invoices:", error));
+        if (user?.id) {
+            fetchInvoicesByStatus("Past Due").then((filtered) => {
+                setInvoices(filtered);
+                filtered.forEach((inv) => {
+                    if (!accountNames[inv.account_id]) {
+                        fetchAccountById(inv.account_id).then(account => {
+                            setAccountNames(prev => ({
+                                ...prev,
+                                [inv.account_id]: account.business_name
+                            }));
+                        });
+                    }
+                });
+            });
         }
-    }, [user]); // ✅ Fix dependency array
+    }, [user?.id, accountNames]);
+    
 
     return (
         <div className="flex">
@@ -29,7 +42,7 @@ const PastDueInvoicesPage = ({ user }) => {
                                 <th className="p-2 border">Invoice #</th>
                                 <th className="p-2 border">Account</th>
                                 <th className="p-2 border">Amount</th>
-                                <th className="p-2 border">Due Date</th> {/* ✅ Fixed Header */}
+                                <th className="p-2 border">Due Date</th>
                                 <th className="p-2 border">Payment Method</th>
                                 <th className="p-2 border">Actions</th>
                             </tr>
@@ -42,7 +55,7 @@ const PastDueInvoicesPage = ({ user }) => {
                                     <td className="p-2">${(inv.amount ?? 0).toFixed(2)}</td> {/* ✅ Prevent `toFixed` error */}
                                     <td className="p-2">
                                         {inv.due_date ? new Date(inv.due_date).toLocaleDateString() : "N/A"}
-                                    </td> {/* ✅ Fixed Date Check */}
+                                    </td> 
                                     <td className="p-2">{inv.payment_method || "N/A"}</td>
                                     <td className="p-2">
                                         <button 

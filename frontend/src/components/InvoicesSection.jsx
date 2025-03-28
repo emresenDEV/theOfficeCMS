@@ -38,7 +38,8 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
             (invoiceFilter === "all" ||
                 (invoiceFilter === "Paid" && inv.status === "Paid") ||
                 (invoiceFilter === "Pending" && inv.status === "Pending") ||
-                (invoiceFilter === "Past Due" && isPastDue)) // ✅ Past Due condition
+                (invoiceFilter === "Past Due" && isPastDue) ||
+                (invoiceFilter === "Partial" && inv.status === "Partial"))
         );
     });
     
@@ -84,6 +85,13 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                     >
                         Pending
                     </button>
+                    <button 
+                        onClick={() => setInvoiceFilter("Partial")} 
+                        className="bg-purple-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-purple-600"
+                    >
+                        Partial
+                    </button>
+
                     <button 
                         onClick={() => {
                             setInvoiceFilter("all");

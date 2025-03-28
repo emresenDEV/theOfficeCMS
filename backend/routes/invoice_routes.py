@@ -85,8 +85,10 @@ def get_invoice_by_id(invoice_id):
 
         payments = Payment.query.filter_by(invoice_id=invoice_id).all()
         total_paid = sum(float(p.total_paid) for p in payments)
-        last_paid = max([p.date_paid for p in payments], default=None)
+        last_paid = max((payment.date_paid for payment in payments), default=None)
 
+        method = PaymentMethods.query.get(p.payment_method)
+        
         return jsonify({
             "invoice_id": invoice.invoice_id,
             "account_id": invoice.account_id,
@@ -109,6 +111,7 @@ def get_invoice_by_id(invoice_id):
                     "payment_id": p.payment_id,
                     "payment_method": p.payment_method,
                     "method_name": PaymentMethods.query.get(p.payment_method).method_name if p.payment_method else None,
+                    "method_name": method.method_name if method else None,
                     "logged_by": p.logged_by,
                     "logged_by_username": Users.query.get(p.logged_by).username if p.logged_by else None,
                     "logged_by_first_name": Users.query.get(p.logged_by).first_name if p.logged_by else None,
@@ -219,7 +222,26 @@ def get_invoices_by_account(account_id):
     except Exception as e:
         print(f"❌ Error fetching invoices by account: {e}")
         return jsonify({"error": "Failed to fetch invoices", "details": str(e)}), 500
-
+    
+# Fetch invoice by status
+@invoice_bp.route("/status/<string:status>", methods=["GET"])
+@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+def get_invoices_by_status(status):
+    try:
+        invoices = Invoice.query.filter(Invoice.status == status).all()
+        return jsonify([
+            {
+                "invoice_id": inv.invoice_id,
+                "account_id": inv.account_id,
+                "final_total": float(inv.final_total or 0),
+                "status": inv.status,
+                "sales_rep_id": inv.sales_rep_id,
+                "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else None
+            } for inv in invoices
+        ]), 200
+    except Exception as e:
+        print(f"❌ Error fetching invoices by status: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # Validate Invoice Belongs to Account
@@ -320,13 +342,15 @@ def update_invoice(invoice_id):
     invoice.tax_amount = tax_amount
     invoice.final_total = final_total
 
-    total_paid = sum(p.total_paid for p in invoice.payments)
+    # 🔁 Recalculate status using payment records
+    payments = Payment.query.filter_by(invoice_id=invoice.invoice_id).all()
+    paid_total = sum(p.total_paid for p in payments)
     today = datetime.now(central).date()
     due = invoice.due_date if invoice.due_date else None
 
-    if total_paid >= final_total:
+    if paid_total >= final_total:
         invoice.status = "Paid"
-    elif total_paid == 0:
+    elif paid_total == 0:
         invoice.status = "Pending"
     elif due and today > due:
         invoice.status = "Past Due"
@@ -339,6 +363,7 @@ def update_invoice(invoice_id):
         "final_total": float(final_total),
         "status": invoice.status
     }), 200
+
 
 
 # DELETE invoice service
@@ -368,80 +393,6 @@ def delete_invoice(invoice_id):
     db.session.commit()
     return jsonify({"message": "Invoice deleted successfully"}), 200
 
-
-# GET Paid Invoices API
-# @invoice_bp.route("/invoices/paid", methods=["GET"])
-# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
-# def get_paid_invoices():
-#     sales_rep_id = request.args.get("user_id", type=int)
-    
-#     if not sales_rep_id:
-#         return jsonify({"error": "User ID is required"}), 400
-
-#     paid_invoices = Invoice.query.filter(
-#         Invoice.sales_rep_id == sales_rep_id,
-#         Invoice.status == "Paid"
-#     ).all()
-
-#     return jsonify([
-#         {
-#             "invoice_id": inv.invoice_id,
-#             "account_id": inv.account_id,
-#             "amount": float(inv.amount),
-#             "date_paid": inv.date_paid.strftime('%Y-%m-%d') if inv.date_paid else "N/A"
-#         } for inv in paid_invoices
-#     ]), 200
-
-
-# GET Unpaid Invoices API
-# @invoice_bp.route("/invoices/unpaid", methods=["GET"])
-# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
-# def get_unpaid_invoices():
-#     sales_rep_id = request.args.get("user_id")
-#     if not sales_rep_id:
-#         return jsonify({"error": "User ID is required"}), 400
-
-#     unpaid_invoices = (
-#         db.session.query(Invoice, Account.business_name)
-#         .join(Account, Invoice.account_id == Account.account_id)
-#         .filter(Invoice.user_id == sales_rep_id, Invoice.status == "Unpaid")
-#         .all()
-# )
-
-#     return jsonify([
-#         {
-#             "invoice_id": inv.invoice_id,
-#             "account_id": inv.account_id,
-#             "account_name": account_name,
-#             "amount": float(inv.amount),
-#             "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else "N/A",
-#         } for inv, account_name in unpaid_invoices
-    # ])
-
-# GET Past Due Invoices API
-# @invoice_bp.route("/invoices/past_due", methods=["GET"])
-# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
-# def get_past_due_invoices():
-#     sales_rep_id = request.args.get("sales_rep_id")
-#     if not sales_rep_id:
-#         return jsonify({"error": "User ID is required"}), 400
-
-#     today = datetime.now(central).date()
-#     past_due_invoices = db.session.query(Invoice, Account.business_name).join(Account, Invoice.account_id == Account.account_id).filter(
-#         Invoice.sales_rep_id == sales_rep_id,
-#         Invoice.due_date < today,
-#         Invoice.status != "Paid"
-#     ).all()
-
-#     return jsonify([
-#         {
-#             "invoice_id": inv.invoice_id,
-#             "account_id": inv.account_id,
-#             "account_name": account_name,
-#             "amount": float(inv.amount),
-#             "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else "N/A",
-#         } for inv, account_name in past_due_invoices
-#     ])
 
 # Create Invoices API
 # @invoice_bp.route("/invoices", methods=["POST"])
@@ -528,9 +479,27 @@ def log_payment(invoice_id):
             date_paid=datetime.now(central),
         )
         db.session.add(payment)
+        db.session.flush()
+
+        # 🧠 Automatically update invoice status
+        invoice = Invoice.query.get(invoice_id)
+        payments = Payment.query.filter_by(invoice_id=invoice_id).all()
+        total_paid = sum(p.total_paid for p in payments)
+        final_total = invoice.final_total or 0
+        today = datetime.now(central).date()
+        due = invoice.due_date if invoice.due_date else None
+
+        if total_paid >= final_total:
+            invoice.status = "Paid"
+        elif total_paid == 0:
+            invoice.status = "Pending"
+        elif due and today > due:
+            invoice.status = "Past Due"
+        else:
+            invoice.status = "Partial"
+
         db.session.commit()
 
-        # ✅ Fetch username of the logged_by user
         user = Users.query.get(payment.logged_by)
 
         return jsonify({
@@ -547,4 +516,3 @@ def log_payment(invoice_id):
     except Exception as e:
         print("❌ Error saving payment:", e)
         return jsonify({"error": str(e)}), 500
-

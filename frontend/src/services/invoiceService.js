@@ -51,6 +51,18 @@ export const updateInvoice = async (invoiceId, updatedData) => {
     }
 };
 
+// Fetch Invoices by Status
+export async function fetchInvoicesByStatus(status) {
+    try {
+        const response = await api.get(`/invoices/status/${status}`);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Error fetching invoices with status ${status}:`, error);
+        throw error;
+    }
+}
+
+
 // Invoice Status API Call
 export const updateInvoiceStatus = async (invoiceId, status) => {
     if (!invoiceId) {
