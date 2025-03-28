@@ -79,6 +79,7 @@ def get_invoice_by_id(invoice_id):
         account = Account.query.get(invoice.account_id)
         sales_rep = Users.query.get(invoice.sales_rep_id)
         commission = db.session.query(func.sum(Commissions.commission_amount)).filter(Commissions.invoice_id == invoice_id).scalar()
+        # user = Users.query.filter_by(username=p.logged_by).first()
 
         services = (
             db.session.query(InvoiceServices, Service)
@@ -98,20 +99,22 @@ def get_invoice_by_id(invoice_id):
             for i, s in services
         ]
 
-        payment_list = [
-            {
+        payment_list = []
+        for p in payments:
+            user = Users.query.filter_by(username=p.logged_by).first()
+            payment_list.append({
                 "payment_id": p.payment_id,
                 "payment_method": p.payment_method,
                 "method_name": PaymentMethods.query.get(p.payment_method).method_name if p.payment_method else None,
                 "logged_by": p.logged_by,
-                "logged_by_username": Users.query.get(p.logged_by).username if p.logged_by else None,
-                "logged_by_first_name": Users.query.get(p.logged_by).first_name if p.logged_by else None,
-                "logged_by_last_name": Users.query.get(p.logged_by).last_name if p.logged_by else None,
+                "logged_by_username": user.username if user else None,
+                "logged_by_first_name": user.first_name if user else None,
+                "logged_by_last_name": user.last_name if user else None,
                 "last_four_payment_method": p.last_four_payment_method,
                 "total_paid": float(p.total_paid),
                 "date_paid": p.date_paid.strftime("%Y-%m-%d %H:%M:%S")
-            } for p in payments
-        ]
+            })
+
 
         return jsonify({
             "invoice_id": invoice.invoice_id,
@@ -142,9 +145,10 @@ def get_invoice_by_id(invoice_id):
             "email": account.email if account else None,
 
             # Sales rep details
-            "sales_rep_name": f"{sales_rep.first_name} {sales_rep.last_name}" if sales_rep else None,
-            "sales_rep_email": sales_rep.email if sales_rep else None,
-            "sales_rep_phone": sales_rep.phone_number if sales_rep else None,
+            "sales_rep_name": f"{getattr(sales_rep, 'first_name', '')} {getattr(sales_rep, 'last_name', '')}".strip() if sales_rep else None,
+            "sales_rep_email": getattr(sales_rep, 'email', None),
+            "sales_rep_phone": getattr(sales_rep, 'phone_number', None),
+
         }), 200
 
     except Exception as e:
@@ -497,6 +501,7 @@ def log_payment(invoice_id):
         final_total = invoice.final_total or 0
         today = datetime.now(central).date()
         due = invoice.due_date if invoice.due_date else None
+        user = Users.query.filter_by(username=p.logged_by).first()
 
         if total_paid >= final_total:
             invoice.status = "Paid"

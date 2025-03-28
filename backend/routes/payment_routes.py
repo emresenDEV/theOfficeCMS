@@ -42,8 +42,7 @@ def update_payment(payment_id):
 
         db.session.commit()
 
-        # ✅ Fetch user to include username
-        user = Users.query.get(payment.logged_by)
+        user = Users.query.filter_by(username=p.logged_by).first()
 
         return jsonify({
             "message": "Payment updated successfully",
@@ -52,8 +51,8 @@ def update_payment(payment_id):
             "last_four_payment_method": payment.last_four_payment_method,
             "total_paid": payment.total_paid,
             "date_paid": payment.date_paid,
-            "logged_by": payment.logged_by,
-            "logged_by_username": user.username if user else None
+            "logged_by_username": user.username if user else None,
+
         }), 200
 
     except Exception as e:
