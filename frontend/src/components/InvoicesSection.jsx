@@ -143,29 +143,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             <th className="font-bold p-2 border-b text-center">Action</th>
                         </tr>
                     </thead>
-                    {/* <tbody>
-                        {filteredInvoices.map((inv, index) => (
-                            <tr 
-                                key={inv.invoice_id} 
-                                className={`hover:bg-gray-50 ${index % 2 === 0 ? "bg-blue-50" : "bg-white"}`}
-                            >
-                                <td className="p-2 border-b border-r text-left">{inv.invoice_id}</td>
-                                <td className="p-2 border-b border-r text-left">{inv.date_created}</td>
-                                <td className="p-2 border-b border-r text-left">{formatDueDate(inv.due_date)}</td>
-                                <td className="p-2 border-b border-r text-left">{formatTotalAmount(inv.final_total)}</td>
-                                <td className="p-2 border-b border-r text-left">{inv.status}</td>
-                                <td className="p-2 border-b text-center">
-                                    <button 
-                                        onClick={() => navigate(`/invoice/${inv.invoice_id}`)} 
-                                        className="bg-blue-600 text-white px-3 py-1 rounded shadow-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        View
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody> */}
-<tbody>
+                    <tbody>
                         {filteredInvoices.length > 0 ? (
                             filteredInvoices.map((inv, index) => (
                                 <tr
@@ -211,7 +189,7 @@ InvoicesSection.propTypes = {
             date_updated: PropTypes.string,
             due_date: PropTypes.string,
             final_total: PropTypes.number,
-            status: PropTypes.string.isRequired,
+            status: PropTypes.string,
         })
     ).isRequired,
     onCreateInvoice: PropTypes.func.isRequired,

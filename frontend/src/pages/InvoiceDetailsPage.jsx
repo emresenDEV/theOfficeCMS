@@ -376,6 +376,17 @@ if (!invoice)
                         ❗ Past Due
                     </p>
                     )}
+                    {invoice.status === "Pending" && (
+                    <p className="text-blue-700 bg-blue-100 border border-blue-300 px-3 py-1 rounded-full text-sm font-semibold">
+                        ⏳ Pending
+                    </p>
+                    )}
+                    {!invoice.status && (
+                    <p className="text-gray-700 bg-gray-100 border border-gray-300 px-3 py-1 rounded-full text-sm font-semibold">
+                        Unknown Status
+                    </p>
+                    )}
+
                 </div>
             </div>
 

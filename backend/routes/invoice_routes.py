@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify
 from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users
 from flask_cors import cross_origin
-from pytz import timezone
 from database import db
 from datetime import datetime
+import pytz
+from pytz import timezone
 from decimal import Decimal
 from sqlalchemy.sql import func
 
@@ -443,11 +444,18 @@ def delete_invoice(invoice_id):
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def create_invoice():
     data = request.json
+    central = pytz.timezone("US/Central")
+
+    # Extract invoice-level data
+    tax_rate = Decimal(str(data.get("tax_rate", 0)))
+    invoice_discount_percent = Decimal(str(data.get("discount_percent", 0)))
+
+    # Create invoice (initially without totals)
     new_invoice = Invoice(
         account_id=data["account_id"],
         sales_rep_id=data["sales_rep_id"],
-        tax_rate=data.get("tax_rate", 0),
-        discount_percent=data.get("discount_percent", 0),
+        tax_rate=tax_rate,
+        discount_percent=invoice_discount_percent,
         due_date=datetime.strptime(data["due_date"], "%Y-%m-%d"),
         date_created=datetime.now(central),
         date_updated=datetime.now(central),
@@ -455,12 +463,20 @@ def create_invoice():
     db.session.add(new_invoice)
     db.session.flush()
 
+    # Totals we’ll calculate from services
+    subtotal = Decimal("0.00")
+    service_discount_total = Decimal("0.00")
+
+    # Add services to invoice
     for s in data["services"]:
         price = Decimal(str(s["price_per_unit"]))
         discount_percent = Decimal(str(s.get("discount_percent", 0)))
-        quantity = s["quantity"]
+        quantity = int(s["quantity"])
         discount_total = price * quantity * discount_percent
         total_price = price * quantity - discount_total
+
+        subtotal += price * quantity
+        service_discount_total += discount_total
 
         invoice_service = InvoiceServices(
             invoice_id=new_invoice.invoice_id,
@@ -473,8 +489,25 @@ def create_invoice():
         )
         db.session.add(invoice_service)
 
+    # 🔢 Calculate totals
+    invoice_discount_amount = (subtotal - service_discount_total) * invoice_discount_percent
+    taxable_amount = subtotal - service_discount_total - invoice_discount_amount
+    tax_amount = taxable_amount * tax_rate
+    final_total = taxable_amount + tax_amount
+
+    # 🏷️ Set default status
+    status = "Pending" if final_total > 0 else "Paid"
+
+    # 🔄 Update invoice fields now that we have totals
+    new_invoice.tax_amount = round(tax_amount, 2)
+    new_invoice.discount_amount = round(invoice_discount_amount, 2)
+    new_invoice.final_total = round(final_total, 2)
+    new_invoice.status = status
+
     db.session.commit()
+
     return jsonify({"success": True, "invoice_id": new_invoice.invoice_id}), 201
+
 
 
 # Get Payment Methods
