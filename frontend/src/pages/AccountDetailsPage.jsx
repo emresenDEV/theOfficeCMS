@@ -151,10 +151,11 @@ const AccountDetailsPage = ({ user }) => {
 
             {/* Sections */}
             <InvoicesSection 
-                invoices={invoices || []} 
-                onCreateInvoice={() => navigate("/create-invoice")}
-                refreshInvoices={refreshInvoices}
+            invoices={invoices || []} 
+            onCreateInvoice={() => navigate(`/create-invoice/${account.account_id}`)}
+            refreshInvoices={refreshInvoices}
             />
+
 
             <NotesSection 
                 notes={notes}

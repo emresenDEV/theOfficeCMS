@@ -97,21 +97,30 @@ export const updateInvoiceStatus = async (invoiceId, status) => {
 };
 
 // Create Invoice
-export const createInvoice = async (invoiceData) => {
+export const createInvoice = async (data) => {
     try {
-        const response = await fetch("http://127.0.0.1:5001/invoices", {
+        const res = await fetch(`http://127.0.0.1:5001/invoices`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(invoiceData),
+            headers: {
+            "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(data),
         });
-
-        if (!response.ok) throw new Error("Failed to create invoice.");
-        return await response.json();
-    } catch (error) {
-        console.error("Error creating invoice:", error);
+    
+        if (!res.ok) {
+            console.error("❌ Server returned:", res.status);
+            const errorDetails = await res.json();
+            throw new Error(errorDetails?.error || "Failed to create invoice");
+        }
+    
+        return await res.json();
+        } catch (err) {
+        console.error("Error creating invoice:", err);
         return { success: false };
-    }
-};
+        }
+    };
+    
 
 
 // ✅ Delete Invoice

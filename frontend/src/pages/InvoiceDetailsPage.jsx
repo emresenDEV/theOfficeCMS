@@ -16,7 +16,7 @@ updateService,
 import { fetchNotesByInvoice } from "../services/notesService";
 import { fetchSalesReps } from "../services/userService";
 import { updatePayment, deletePayment } from "../services/paymentService";
-import Sidebar from "../components/Sidebar";
+// import Sidebar from "../components/Sidebar";
 import NotesSection from "../components/NotesSection";
 import InvoiceActions from "../components/InvoiceActions";
 import PaidBox from "../components/PaidBox";

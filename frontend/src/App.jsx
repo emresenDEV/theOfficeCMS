@@ -139,37 +139,37 @@ function App() {
           <>
       
           {/* ✅ Protected Routes */}
-          <Route path="/" element={<ProtectedRoute user={user}><Dashboard user={user} /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute user={user} loading={loading}><Dashboard user={user} /></ProtectedRoute>} />
 
-          <Route path="/settings" element={<ProtectedRoute user={user}><SettingsPage user={user} /></ProtectedRoute>} />
-          <Route path="/employees" element={<ProtectedRoute user={user}><EmployeesPage user={user} /></ProtectedRoute>} />
-          <Route path="/tasks" element={<ProtectedRoute user={user}><TasksPage user={user} /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute user={user} loading={loading}><SettingsPage user={user} /></ProtectedRoute>} />
+          <Route path="/employees" element={<ProtectedRoute user={user} loading={loading}><EmployeesPage user={user} /></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute user={user} loading={loading}><TasksPage user={user} /></ProtectedRoute>} />
 
           {/* ✅ Calendar Routes */}
-          <Route path="/calendar" element={<ProtectedRoute user={user}><CalendarPage user={user} /></ProtectedRoute>} />
-          <Route path="/calendar/create" element={<ProtectedRoute user={user}><CreateCalendarEvent userId={user.id} /></ProtectedRoute>} />
-          <Route path="/calendar/edit/:eventId" element={<ProtectedRoute user={user}><EditCalendarEvent user={user} /></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute user={user} loading={loading}><CalendarPage user={user} /></ProtectedRoute>} />
+          <Route path="/calendar/create" element={<ProtectedRoute user={user} loading={loading}><CreateCalendarEvent userId={user.id} /></ProtectedRoute>} />
+          <Route path="/calendar/edit/:eventId" element={<ProtectedRoute user={user} loading={loading}><EditCalendarEvent user={user} /></ProtectedRoute>} />
 
 
           {/* ✅ Invoice Routes */}
-          <Route path="/invoices" element={<ProtectedRoute user={user}><InvoicesPage user={user} /></ProtectedRoute>} />
-          <Route path="/invoice/:invoiceId" element={<ProtectedRoute user={user}><InvoiceDetailsPage user={user} /></ProtectedRoute>} />
-          <Route path="/invoice/:invoiceId/edit" element={<ProtectedRoute user={user}><EditInvoicePage user={user} /></ProtectedRoute>} />
-          <Route path="/create-invoice" element={<ProtectedRoute user={user}><CreateInvoicePage user={user} /></ProtectedRoute>} />
-          <Route path="/invoices/paid" element={<ProtectedRoute user={user}><PaidInvoicesPage user={user} /></ProtectedRoute>} />
-          <Route path="/invoices/unpaid" element={<ProtectedRoute user={user}><UnpaidInvoicesPage user={user} /></ProtectedRoute>} />
-          <Route path="/invoices/past_due" element={<ProtectedRoute user={user}><PastDueInvoicesPage user={user} /></ProtectedRoute>} />
+          <Route path="/invoices" element={<ProtectedRoute user={user} loading={loading}><InvoicesPage user={user} /></ProtectedRoute>} />
+          <Route path="/invoice/:invoiceId" element={<ProtectedRoute user={user} loading={loading}><InvoiceDetailsPage user={user} /></ProtectedRoute>} />
+          <Route path="/invoices/invoice/:invoiceId/edit" element={<ProtectedRoute user={user} loading={loading}><EditInvoicePage user={user} /></ProtectedRoute>} />
+          <Route path="/create-invoice/:accountId" element={<ProtectedRoute user={user} loading={loading}><CreateInvoicePage user={user} setUser={setUser}/></ProtectedRoute>} />
+          <Route path="/invoices/paid" element={<ProtectedRoute user={user} loading={loading}><PaidInvoicesPage user={user} /></ProtectedRoute>} />
+          <Route path="/invoices/unpaid" element={<ProtectedRoute user={user} loading={loading}><UnpaidInvoicesPage user={user} /></ProtectedRoute>} />
+          <Route path="/invoices/past_due" element={<ProtectedRoute user={user} loading={loading}><PastDueInvoicesPage user={user} /></ProtectedRoute>} />
 
           {/* ✅ Accounts Routes */}
-          <Route path="/accounts" element={<ProtectedRoute user={user}><AccountsPage user={user} /></ProtectedRoute>} />
-          <Route path="/accounts/assigned" element={<ProtectedRoute user={user}><AssignedAccountsPage user={user} /></ProtectedRoute>} />
-          <Route path="/accounts/new" element={<ProtectedRoute user={user}><CreateNewAccountPage user={user} /></ProtectedRoute>} />
-          <Route path="/accounts/details/:accountId" element={<ProtectedRoute user={user}><AccountDetailsPage user={user} /></ProtectedRoute>} />
-          <Route path="/accounts/update/:accountId" element={<ProtectedRoute user={user}><UpdateAccountPage /></ProtectedRoute>} />
-          <Route path="/accounts/create" element={<ProtectedRoute user={user}><CreateNewAccountPage /></ProtectedRoute>} />
+          <Route path="/accounts" element={<ProtectedRoute user={user} loading={loading}><AccountsPage user={user} /></ProtectedRoute>} />
+          <Route path="/accounts/assigned" element={<ProtectedRoute user={user} loading={loading}><AssignedAccountsPage user={user} /></ProtectedRoute>} />
+          <Route path="/accounts/new" element={<ProtectedRoute user={user} loading={loading}><CreateNewAccountPage user={user} /></ProtectedRoute>} />
+          <Route path="/accounts/details/:accountId" element={<ProtectedRoute user={user} loading={loading}><AccountDetailsPage user={user} /></ProtectedRoute>} />
+          <Route path="/accounts/update/:accountId" element={<ProtectedRoute user={user} loading={loading}><UpdateAccountPage /></ProtectedRoute>} />
+          <Route path="/accounts/create" element={<ProtectedRoute user={user} loading={loading}><CreateNewAccountPage /></ProtectedRoute>} />
 
           {/* ✅ Commissions */}
-          <Route path="/commissions" element={<ProtectedRoute user={user}><CommissionsPage user={user} /></ProtectedRoute>} />
+          <Route path="/commissions" element={<ProtectedRoute user={user} loading={loading}><CommissionsPage user={user} /></ProtectedRoute>} />
         
         {/* ✅ Redirect all unknown paths to Login */}
         <Route path="*" element={<Navigate to="/login" />} />

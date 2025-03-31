@@ -4,6 +4,7 @@ from flask_cors import cross_origin
 from pytz import timezone
 from database import db
 from datetime import datetime
+from decimal import Decimal
 from sqlalchemy.sql import func
 
 
@@ -409,7 +410,36 @@ def delete_invoice(invoice_id):
 
 # Create Invoices API
 # @invoice_bp.route("/invoices", methods=["POST"])
-@invoice_bp.route("/", methods=["POST"])
+# @invoice_bp.route("/", methods=["POST", "OPTIONS"])
+# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
+# def create_invoice():
+#     data = request.json
+#     new_invoice = Invoice(
+#         account_id=data["account_id"],
+#         sales_rep_id=data["sales_rep_id"],
+#         tax_rate=data.get("tax_rate", 0),
+#         discount_percent=data.get("discount_percent", 0),
+#         due_date=datetime.strptime(data["due_date"], "%Y-%m-%d"),
+#         date_created=datetime.now(central),
+#         date_updated=datetime.now(central),
+#     )
+#     db.session.add(new_invoice)
+#     db.session.flush()
+
+#     for s in data["services"]:
+#         invoice_service = InvoiceServices(
+#             invoice_id=new_invoice.invoice_id,
+#             service_id=s["service_id"],
+#             quantity=s["quantity"],
+#             price=s["price"],
+#             total_price=s["quantity"] * s["price"]
+#         )
+#         db.session.add(invoice_service)
+
+#     db.session.commit()
+#     return jsonify({"success": True, "invoice_id": new_invoice.invoice_id}), 201
+
+@invoice_bp.route("", methods=["POST", "OPTIONS"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def create_invoice():
     data = request.json
@@ -426,17 +456,26 @@ def create_invoice():
     db.session.flush()
 
     for s in data["services"]:
+        price = Decimal(str(s["price_per_unit"]))
+        discount_percent = Decimal(str(s.get("discount_percent", 0)))
+        quantity = s["quantity"]
+        discount_total = price * quantity * discount_percent
+        total_price = price * quantity - discount_total
+
         invoice_service = InvoiceServices(
             invoice_id=new_invoice.invoice_id,
             service_id=s["service_id"],
-            quantity=s["quantity"],
-            price=s["price"],
-            total_price=s["quantity"] * s["price"]
+            quantity=quantity,
+            price_per_unit=price,
+            discount_percent=discount_percent,
+            discount_total=discount_total,
+            total_price=total_price,
         )
         db.session.add(invoice_service)
 
     db.session.commit()
     return jsonify({"success": True, "invoice_id": new_invoice.invoice_id}), 201
+
 
 # Get Payment Methods
 @invoice_bp.route("/payment_methods", methods=["GET"])

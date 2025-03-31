@@ -136,8 +136,8 @@ class Invoice(db.Model):
 class InvoiceServices(db.Model):
     __tablename__ = 'invoice_services'
     invoice_service_id = db.Column(db.Integer, primary_key=True)
-    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
-    service_id = db.Column(db.Integer, db.ForeignKey('services.service_id'))
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=False)
+    service_id = db.Column(db.Integer, db.ForeignKey('services.service_id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     price_per_unit = db.Column(db.Numeric, nullable=False)
     total_price = db.Column(db.Numeric, nullable=False) #subtotal after discount
