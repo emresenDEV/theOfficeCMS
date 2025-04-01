@@ -565,15 +565,44 @@ def log_payment(invoice_id):
         )
         db.session.add(payment)
         db.session.flush()
+        
+        #  Create Commission Record After Payment is Flushed
+        rep = Users.query.get(payment.sales_rep_id)
+        if rep and rep.receives_commission:
+            commission_rate = Decimal(str(rep.commission_rate or 0))
+            commission_amount = Decimal(str(payment.total_paid)) * commission_rate
 
+            # Check for existing commission for this rep and invoice
+            existing_commission = Commissions.query.filter_by(
+                invoice_id=invoice_id,
+                sales_rep_id=rep.user_id
+            ).first()
+
+            if existing_commission:
+                # Accumulate new amount to previous commission
+                existing_commission.commission_amount += Decimal(str(commission_amount))
+                existing_commission.date_paid = payment.date_paid  # use latest payment date
+            else:
+                # Create new commission record
+                new_commission = Commissions(
+                    sales_rep_id=rep.user_id,
+                    invoice_id=invoice_id,
+                    commission_rate=commission_rate,
+                    commission_amount=commission_amount,
+                    date_paid=payment.date_paid,
+                )
+                db.session.add(new_commission)
+                
         # 🧠 Automatically update invoice status
         invoice = Invoice.query.get(invoice_id)
         payments = Payment.query.filter_by(invoice_id=invoice_id).all()
-        total_paid = sum(p.total_paid for p in payments)
-        final_total = invoice.final_total or 0
+
+        # Convert all total_paid to Decimal before summing
+        total_paid = sum(Decimal(str(p.total_paid)) for p in payments)
+        final_total = Decimal(str(invoice.final_total or 0))
+
         today = datetime.now(central).date()
         due = invoice.due_date if invoice.due_date else None
-        user = Users.query.filter_by(username=p.logged_by).first()
 
         if total_paid >= final_total:
             invoice.status = "Paid"
@@ -583,6 +612,7 @@ def log_payment(invoice_id):
             invoice.status = "Past Due"
         else:
             invoice.status = "Partial"
+
 
         db.session.commit()
 

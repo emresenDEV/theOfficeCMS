@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Commissions, Invoice, Account
+from models import Commissions, Invoice, Account, Payment
 from database import db
 from sqlalchemy import func, extract
 
@@ -12,9 +12,11 @@ def get_commissions():
     if not sales_rep_id:
         return jsonify({"error": "sales_rep_id is required"}), 400
 
+    # Join Commissions → Payments → Invoices → Accounts
     commissions = (
-        db.session.query(Commissions, Invoice, Account)
-        .join(Invoice, Commissions.invoice_id == Invoice.invoice_id)
+        db.session.query(Commissions, Payment, Invoice, Account)
+        .join(Payment, Commissions.payment_id == Payment.payment_id)
+        .join(Invoice, Payment.invoice_id == Invoice.invoice_id)
         .join(Account, Invoice.account_id == Account.account_id)
         .filter(Commissions.sales_rep_id == sales_rep_id)
         .all()
@@ -24,24 +26,24 @@ def get_commissions():
         {
             "commission_id": com.commission_id,
             "sales_rep_id": com.sales_rep_id,
-            "invoice_id": com.invoice_id,
+            "payment_id": payment.payment_id,
+            "invoice_id": invoice.invoice_id,
             "commission_rate": float(com.commission_rate or 0),
-            "commission_amount": float(com.commission_amount or 0),
-            "date_paid": com.date_paid.strftime("%Y-%m-%d") if com.date_paid else None,
+            "commission_amount": float((payment.total_paid or 0) * (com.commission_rate or 0)),
+            "date_paid": payment.date_paid.strftime("%Y-%m-%d") if payment.date_paid else None,
             "invoice": {
                 "invoice_id": invoice.invoice_id,
                 "final_total": float(invoice.final_total or 0),
                 "status": invoice.status,
-                "paid": invoice.paid,
-                "date_paid": invoice.date_paid.isoformat() if invoice.date_paid else None,
+                # "paid": invoice.final_total == payment.total_paid,
+                "date_paid": payment.date_paid.isoformat() if payment.date_paid else None,
                 "account": {
                     "account_id": account.account_id,
                     "business_name": account.business_name
                 }
             }
-        } for com, invoice, account in commissions
-    ]), 200
-
+        } for com, payment, invoice, account in commissions
+    ])
 # Fetch Yearly Commissions
 @commission_bp.route("/yearly", methods=["GET"])
 def get_yearly_commissions():

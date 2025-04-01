@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
 const RelatedAccounts = ({ commissions }) => {
@@ -10,39 +10,45 @@ const RelatedAccounts = ({ commissions }) => {
         return <p className="text-center text-gray-500">No commission data available.</p>;
     }
 
-    // ✅ Group invoices by account while ensuring correct filtering
+    // ✅ Group invoices by account
     const groupedAccounts = commissions.reduce((acc, com) => {
         const account = com?.invoice?.account;
-        if (!account) return acc; // ✅ Skip if no account
+        if (!account || !com.date_paid) return acc;
 
         const accountId = account.account_id;
-
         if (!acc[accountId]) {
             acc[accountId] = {
                 accountName: account.business_name || "Unknown Account",
-                accountId: account.account_id,
+                accountId,
                 invoices: [],
+                totalCommission: 0,
             };
         }
 
-        // ✅ Ensure invoices meet selected criteria (i.e., paid invoices)
-        if (com.invoice?.paid) {
-            acc[accountId].invoices.push({
-                invoiceId: com.invoice.invoice_id ?? "N/A",
-                finalTotal: com.invoice.final_total ? Number(com.invoice.final_total).toFixed(2) : "0.00",
-                commissionAmount: com.commission_amount ? Number(com.commission_amount).toFixed(2) : "0.00",
-                datePaid: com.invoice.date_paid
-                    ? new Date(com.invoice.date_paid).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                    })
-                    : "Not Paid",
-            });
-        }
+        const commissionAmount = Number(com.commission_amount || 0);
 
+        acc[accountId].invoices.push({
+            invoiceId: com.invoice.invoice_id ?? "N/A",
+            finalTotal: com.invoice.final_total ? Number(com.invoice.final_total).toFixed(2) : "0.00",
+            commissionAmount: commissionAmount.toFixed(2),
+            datePaid: com.date_paid
+                ? new Date(com.date_paid).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                  })
+                : "Not Paid",
+            rawDate: com.date_paid,
+        });
+
+        acc[accountId].totalCommission += commissionAmount;
         return acc;
     }, {});
+
+    // ✅ Sort invoices newest first
+    Object.values(groupedAccounts).forEach(account => {
+        account.invoices.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
+    });
 
     return (
         <div className="mt-6">
@@ -50,9 +56,8 @@ const RelatedAccounts = ({ commissions }) => {
             {Object.keys(groupedAccounts).length > 0 ? (
                 Object.values(groupedAccounts).map((account, index) => (
                     <div key={index} className="border rounded-lg p-4 mb-4 bg-white shadow-lg">
-                        {/* ✅ Account Section with View Account Button */}
                         <div className="flex justify-between items-center">
-                        <h2 className="text-lg font-bold">
+                            <h2 className="text-lg font-bold">
                                 <button 
                                     onClick={() => navigate(`/accounts/details/${account.accountId}`)} 
                                     className="text-blue-600 underline"
@@ -67,9 +72,13 @@ const RelatedAccounts = ({ commissions }) => {
                                 View Account
                             </button>
                         </div>
+
+                        <p className="mt-1 text-green-700 text-sm font-semibold text-right">
+                            Total Commissions Earned: ${account.totalCommission.toFixed(2)}
+                        </p>
+
                         <hr className="my-2" />
 
-                        {/* ✅ Invoice List */}
                         <div className="mt-2">
                             {account.invoices.length > 0 ? (
                                 account.invoices.map((invoice, idx) => (
@@ -113,23 +122,24 @@ const RelatedAccounts = ({ commissions }) => {
     );
 };
 
-// ✅ Prop Validations
 RelatedAccounts.propTypes = {
     commissions: PropTypes.arrayOf(
         PropTypes.shape({
             commission_id: PropTypes.number.isRequired,
             commission_amount: PropTypes.number.isRequired,
+            date_paid: PropTypes.string,
+            payment_id: PropTypes.number,
+            invoice_id: PropTypes.number,
             invoice: PropTypes.shape({
-                invoice_id: PropTypes.number,
+                invoice_id: PropTypes.number.isRequired,
                 final_total: PropTypes.number,
                 status: PropTypes.string,
-                paid: PropTypes.bool,
                 date_paid: PropTypes.string,
                 account: PropTypes.shape({
-                    account_id: PropTypes.number,
-                    business_name: PropTypes.string,
-                }),
-            }),
+                    account_id: PropTypes.number.isRequired,
+                    business_name: PropTypes.string.isRequired,
+                }).isRequired,
+            }).isRequired,
         })
     ).isRequired,
 };

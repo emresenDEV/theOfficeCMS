@@ -7,9 +7,11 @@ import {
     fetchAllYearsCommissions,
     fetchProjectedCommissions,
     fetchMonthlyCommissions,
-    fetchWeeklyCommissions
+    fetchWeeklyCommissions,
+    fetchYearlyCommissions,
 } from "../services/commissionsService";
 import CommissionsChart from "../components/CommissionsChart";
+import CommissionsDataTable from "../components/CommissionsDataTable";
 import SummaryCards from "../components/SummaryCards";
 import Filters from "../components/Filters";
 import RelatedAccounts from "../components/RelatedAccounts";
@@ -49,6 +51,14 @@ const CommissionsPage = ({ user }) => {
     }, [user?.id, selectedYear]);
 
 
+    // useEffect(() => {
+    //     if (user?.id && viewMode === "yearly") {
+    //         fetchYearlyCommissions(user.id, fromYear, toYear).then((data) => {
+    //             setYearlyData(data || {});
+    //     });
+    //     }
+    // }, [user?.id, fromYear, toYear, viewMode]);
+
 // Fetch commissions and summary data
     useEffect(() => {
         if (!user?.id) return;
@@ -63,8 +73,9 @@ const CommissionsPage = ({ user }) => {
             fetchProjectedCommissions(user.id),
             fetchMonthlyCommissions(user.id, selectedYear),
             fetchWeeklyCommissions(user.id, selectedYear, selectedMonth),
+            fetchYearlyCommissions(user.id, fromYear, toYear),
         ])
-        .then(([detailedCommissions, currentMonth, currentYear, lastYear, projected, monthly, weekly]) => {
+        .then(([detailedCommissions, currentMonth, currentYear, lastYear, projected, monthly, weekly, yearly]) => {
             console.log("✅ API Responses Received:", { currentMonth, currentYear, lastYear, projected }); //debugging
 
             setCurrentMonthCommission(currentMonth.total_commissions || 0);
@@ -74,17 +85,20 @@ const CommissionsPage = ({ user }) => {
 
             setMonthlyData(monthly || Array(12).fill(0));
             setWeeklyData(weekly || Array(4).fill(0));
+            setYearlyData(yearly || {});
 
-            // ✅ Filter out only paid invoices within the selected time period
+            //  Filter out only paid invoices within the selected time period
             const filteredCommissions = detailedCommissions.filter(com => {
-                if (!com.invoice?.date_paid || !com.invoice.paid) return false;
+                const date = com.date_paid
+                if (!date) return false;
 
-                const invoiceYear = new Date(com.invoice.date_paid).getFullYear();
-                const invoiceMonth = new Date(com.invoice.date_paid).getMonth() + 1;
+                const paidDate = new Date(date);
+                const year = paidDate.getFullYear();
+                const month = paidDate.getMonth() + 1;
 
-                if (viewMode === "yearly") return invoiceYear >= fromYear && invoiceYear <= toYear;
-                if (viewMode === "monthly") return invoiceYear === selectedYear;
-                if (viewMode === "weekly") return invoiceYear === selectedYear && invoiceMonth === selectedMonth;
+                if (viewMode === "yearly") return year >= fromYear && year <= toYear;
+                if (viewMode === "monthly") return year === selectedYear;
+                if (viewMode === "weekly") return year === selectedYear && month === selectedMonth;
 
                 return false;
             });
@@ -93,13 +107,13 @@ const CommissionsPage = ({ user }) => {
             setCommissions(filteredCommissions);
 
             // ✅ Compute Yearly Data
-            const yearlyDataMap = {};
-            filteredCommissions.forEach(com => {
-                const year = new Date(com.invoice.date_paid).getFullYear();
-                yearlyDataMap[year] = (yearlyDataMap[year] || 0) + com.commission_amount;
-            });
+            // const yearlyDataMap = {};
+            // filteredCommissions.forEach(com => {
+            //     const year = new Date(com.invoice.date_paid).getFullYear();
+            //     yearlyDataMap[year] = (yearlyDataMap[year] || 0) + com.commission_amount;
+            // });
 
-            setYearlyData(yearlyDataMap);
+            // setYearlyData(yearlyDataMap);
         })
         .catch(error => console.error("❌ Error Fetching Commissions Data:", error));  //debugging
 
@@ -125,14 +139,46 @@ return (
                 }} />
 
                 {/* Bar Chart */}
-                <CommissionsChart {...{
-                    viewMode,
-                    pastFiveYears: yearRange.slice(-5),
-                    yearlyData,
-                    monthlyData,
-                    weeklyData,
-                    numWeeks: weeklyData.length || 4,
-                }} />
+                <CommissionsChart
+                    viewMode={viewMode}
+                    pastFiveYears={yearRange.slice(-5)}
+                    yearlyData={yearlyData}
+                    monthlyData={monthlyData}
+                    weeklyData={weeklyData}
+                    selectedYear={selectedYear}
+                    selectedMonth={selectedMonth}
+                />
+
+                <CommissionsDataTable
+                    viewMode={viewMode}
+                    data={
+                        viewMode === "yearly"
+                            ? yearlyData
+                            : viewMode === "monthly"
+                            ? monthlyData
+                            : weeklyData
+                    }
+                />
+                {/* Commission Breakdown Section */}
+                {viewMode === "yearly" && (
+                    <div className="mt-8">
+                        <h2 className="text-xl font-bold mb-4">Commission Breakdown by Year</h2>
+                        {Object.keys(yearlyData).length > 0 ? (
+                            <ul className="space-y-2">
+                                {Object.entries(yearlyData)
+                                    .sort((a, b) => a[0] - b[0])
+                                    .map(([year, amount]) => (
+                                        <li key={year} className="flex justify-between items-center p-2 bg-gray-100 rounded shadow">
+                                            <span className="text-sm font-medium">{year}</span>
+                                            <span className="text-green-600 font-semibold">${Number(amount).toFixed(2)}</span>
+                                        </li>
+                                    ))}
+                            </ul>
+                        ) : (
+                            <p className="text-gray-500">No yearly commission data available.</p>
+                        )}
+                    </div>
+                )}
 
                 {/* Related Accounts & Invoices */}
                 <RelatedAccounts commissions={commissions} />
@@ -143,37 +189,42 @@ return (
 };
 
 CommissionsPage.propTypes = {
-    user: PropTypes.shape({
-        id: PropTypes.number.isRequired,
-        username: PropTypes.string.isRequired,
-        first_name: PropTypes.string,
-        last_name: PropTypes.string,
-        commission_rate: PropTypes.number,
-        receives_commission: PropTypes.bool,
-    }).isRequired,
-    commissions: PropTypes.arrayOf(
-        PropTypes.shape({
-            commission_id: PropTypes.number.isRequired,
-            sales_rep_id: PropTypes.number.isRequired,
-            invoice_id: PropTypes.number,
-            commission_amount: PropTypes.number.isRequired,
-            date_paid: PropTypes.string.isRequired, // 🔹 Ensure this is always a string (from API)
-            invoice: PropTypes.shape({
-                invoice_id: PropTypes.number,
-                final_total: PropTypes.number,
-                status: PropTypes.string,
-                paid: PropTypes.bool,
-                date_paid: PropTypes.string,
-                account: PropTypes.shape({
-                    account_id: PropTypes.number,
-                    business_name: PropTypes.string,
-                    contact_name: PropTypes.string,
-                    email: PropTypes.string,
-                    phone_number: PropTypes.string,
-                }),
-            }),
-        })
-    ),
+user: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    username: PropTypes.string.isRequired,
+    first_name: PropTypes.string,
+    last_name: PropTypes.string,
+    commission_rate: PropTypes.number,
+    receives_commission: PropTypes.bool,
+}).isRequired,
+commissions: PropTypes.arrayOf(
+    PropTypes.shape({
+    commission_id: PropTypes.number.isRequired,
+    sales_rep_id: PropTypes.number.isRequired,
+    commission_amount: PropTypes.number.isRequired,
+    commission_rate: PropTypes.number,
+    date_paid: PropTypes.string.isRequired,
+    payment: PropTypes.shape({
+        payment_id: PropTypes.number,
+        date_paid: PropTypes.string,
+        invoice: PropTypes.shape({
+        invoice_id: PropTypes.number,
+        final_total: PropTypes.number,
+        status: PropTypes.string,
+        paid: PropTypes.bool,
+        date_paid: PropTypes.string,
+        account: PropTypes.shape({
+            account_id: PropTypes.number,
+            business_name: PropTypes.string,
+            contact_name: PropTypes.string,
+            email: PropTypes.string,
+            phone_number: PropTypes.string,
+        }),
+        }),
+    }),
+    })
+),
 };
+
 
 export default CommissionsPage;
