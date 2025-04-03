@@ -6,6 +6,7 @@ import CalendarComponent from "../components/CalendarComponent";
 import TasksComponent from "../components/TaskComponent";
 import AccountsTable from "../components/AccountsTable";
 import EventsSection from "../components/EventsSection";
+import CreateCalendarEvent from "../components/CreateCalendarEvent";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";
 import { fetchUserProfile } from "../services/userService";
@@ -16,6 +17,23 @@ const Dashboard = ({ user }) => {
     const [tasks, setTasks] = useState([]);
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+
+    const refreshDashboardData = useCallback(async (userId) => {
+        setLoading(true);
+        try {
+            const [tasksData, eventsData] = await Promise.all([
+                fetchTasks(userId),
+                fetchCalendarEvents(userId),
+            ]);
+            setTasks(tasksData);
+            setEvents(eventsData);
+        } catch (error) {
+            console.error("❌ Error refreshing dashboard data:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         if (!user || !user.id) return;
@@ -23,10 +41,10 @@ const Dashboard = ({ user }) => {
         async function loadUserProfile() {
             const profile = await fetchUserProfile(user.id);
             if (profile) {
-                console.log("✅ Full User Profile in Dashboard:", profile);
+                console.log("✅ Full User Profile in Dashboard:", profile); //debugging
 
                 if (!profile.branch_id) {
-                    console.warn("⚠️ API Response Missing `branch_id`! Check Backend Response.");
+                    console.warn("⚠️ API Response Missing `branch_id`! Check Backend Response."); //debugging
                 }
 
                 setUserData(profile);
@@ -41,7 +59,8 @@ const Dashboard = ({ user }) => {
             return;
         }
 
-        console.log("📢 Passing `userData` to `SalesChart` (before rendering):", userData);
+        console.log("📢 Passing `userData` to `SalesChart` (before rendering):", userData); //debugging
+        refreshDashboardData(userData.user_id);
 
         async function fetchData() {
             setLoading(true);
@@ -60,7 +79,7 @@ const Dashboard = ({ user }) => {
         }
 
         fetchData();
-    }, [userData]);
+    }, [userData, refreshDashboardData]);
 
     const updateEvents = useCallback((newEvents) => {
         setEvents(newEvents);
@@ -91,7 +110,7 @@ const Dashboard = ({ user }) => {
         try {
             await updateTask(task.task_id, updatedTask);
         } catch (error) {
-            console.error("❌ Error updating task:", error);
+            console.error("❌ Error updating task:", error); //debugging
         }
     };
 
@@ -122,7 +141,8 @@ const Dashboard = ({ user }) => {
                     <EventsSection 
                         events={events} 
                         user={userData} 
-                        setEvents={updateEvents} 
+                        setEvents={updateEvents}
+                        openCreateModal={() => setShowCreateModal(true)}
                     />
 
                     </div>
@@ -137,6 +157,21 @@ const Dashboard = ({ user }) => {
                 
                 <AccountsTable user={userData} />
             </div>
+            {/* MODAL FOR CREATE EVENT */}
+            {showCreateModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+                    <div className="bg-white p-6 rounded-lg w-full max-w-3xl shadow-lg">
+                        <CreateCalendarEvent
+                            userId={userData.user_id}
+                            setEvents={(newEvents) => {
+                                updateEvents(newEvents);                
+                                refreshDashboardData(userData.user_id); 
+                            }}
+                            closeForm={() => setShowCreateModal(false)}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

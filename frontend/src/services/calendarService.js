@@ -4,7 +4,7 @@ import api from "./api";
 
 // CRUD Operations for Calendar Events
 
-// ✅ Create a New Calendar Event
+// Create a New Calendar Event
 export const createCalendarEvent = async (eventData) => {
     try {
         const response = await api.post("/calendar/events", eventData);
@@ -15,23 +15,7 @@ export const createCalendarEvent = async (eventData) => {
     }
 };
 
-// ✅ Fetch Calendar Events
-// export const fetchCalendarEvents = async (userId) => {
-//     if (!userId) {
-//         console.error("❌ No user ID provided for fetching calendar events.");
-//         return [];
-//     }
-
-//     try {
-//         const response = await api.get(`/calendar/events?user_id=${userId}`);
-//         console.log("✅ Fetched Events:", response.data);
-//         return response.data;
-//     } catch (error) {
-//         console.error("❌ Error fetching calendar events:", error.response?.data || error.message);
-//         return [];
-//     }
-// };
-
+// Get Calendar Events for a Specific User
 export const fetchCalendarEvents = async (userId) => {
     try {
         if (!userId) {
@@ -40,7 +24,7 @@ export const fetchCalendarEvents = async (userId) => {
         }
 
         const response = await api.get(`/calendar/events`, {
-            params: { user_id: userId },  // ✅ Use query params
+            params: { user_id: userId },
         });
 
         console.log("✅ Fetched Events:", response.data);
@@ -52,19 +36,19 @@ export const fetchCalendarEvents = async (userId) => {
 };
 
 
-// ✅ Fetch Calendar Events (Meetings) for a User
-export const fetchMeetings = async (userId) => {
-    try {
-        const response = await api.get(`/calendar/events?user_id=${userId}`);
-        console.log("✅ Meetings Response:", response.data);  // 🔹 Debugging log
-        return response.data;
-    } catch (error) {
-        console.error("❌ Error fetching meetings:", error.response?.data || error.message);
-        return [];
-    }
-};
+// Fetch Calendar Events (Meetings) for a User
+// export const fetchMeetings = async (userId) => {
+//     try {
+//         const response = await api.get(`/calendar/events?user_id=${userId}`);
+//         console.log("✅ Meetings Response:", response.data);  // 🔹 Debugging log
+//         return response.data;
+//     } catch (error) {
+//         console.error("❌ Error fetching meetings:", error.response?.data || error.message);
+//         return [];
+//     }
+// };
 
-// ✅ Update an Existing Calendar Event
+// Update an Existing Calendar Event
 export const updateCalendarEvent = async (eventId, updatedData) => {
     try {
         const response = await api.put(`/calendar/events/${eventId}`, updatedData, {
@@ -81,7 +65,7 @@ export const updateCalendarEvent = async (eventId, updatedData) => {
 };
 
 
-// ✅ Delete a Calendar Event
+// Delete a Calendar Event
 export const deleteCalendarEvent = async (eventId) => {
     try {
         await api.delete(`/calendar/events/${eventId}`); 
@@ -98,11 +82,11 @@ export const deleteCalendarEvent = async (eventId) => {
 // Fetch all departments
 export const fetchDepartments = async () => {
     try {
-        const response = await api.get("/departments");  // ✅ Ensure this hits the correct API
+        const response = await api.get("/departments");  I
         console.log("✅ Fetched Departments:", response.data);
         return response.data.map(dept => ({
-            department_id: dept.department_id,  // ✅ Keep ID for referencing
-            department_name: dept.department_name  // ✅ Use this for UI display
+            department_id: dept.department_id,  
+            department_name: dept.department_name  
         }));
     } catch (error) {
         console.error("❌ Error fetching departments:", error.response?.data || error.message);
@@ -125,7 +109,7 @@ export const fetchRoles = async () => {
     }
 }
 
-// ✅ Fetch Employees in a Specific Department and Include Department Name
+// Fetch Employees in a Specific Department and Include Department Name
 export const fetchEmployees = async (departmentId) => {
     try {
         const response = await api.get("/employees", {
@@ -139,7 +123,7 @@ export const fetchEmployees = async (departmentId) => {
     }
 };
 
-// ✅ Fetch Users in a Specific Branch and Department and Include Department Name
+// Fetch Users in a Specific Branch and Department and Include Department Name
 export const fetchUsers = async (branchId = null, departmentId = null) => {
     try {
         const params = {};
@@ -154,79 +138,3 @@ export const fetchUsers = async (branchId = null, departmentId = null) => {
         return [];
     }
 };
-// export const fetchRoles = async () => {
-//     try {
-//         const response = await api.get("/user_roles.role_name");
-//         return response.data;
-//     } catch (error) {
-//         console.error("Error fetching roles", error);
-//         return [];
-//     }
-// }
-
-
-
-
-// // Fetch Calendar Events
-// export const fetchCalendarEvents = async (userId) => {
-//     try {
-//         const response = await fetch(`http://127.0.0.1:5001/calendar/events?user_id=${userId}`);
-//         if (!response.ok) throw new Error("Failed to fetch calendar events.");
-//         return await response.json();
-//     } catch (error) {
-//         console.error("Error fetching calendar events:", error);
-//         return [];
-//     }
-// };
-
-// // Create New Calendar Event
-// export const createCalendarEvent = async (eventData) => {
-//     try {
-//         const response = await fetch("http://127.0.0.1:5001/calendar/events", {
-//             method: "POST",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify(eventData),
-//         });
-
-//         if (!response.ok) throw new Error("Failed to create event.");
-//         return await response.json();
-//     } catch (error) {
-//         console.error("Error creating event:", error);
-//         return null;
-//     }
-// };
-
-
-
-
-// // Update Calendar Event
-// export const updateCalendarEvent = async (eventId, updatedData) => {
-//     try {
-//         const response = await fetch(`http://127.0.0.1:5001/calendar/events/${eventId}`, {
-//             method: "PUT",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify(updatedData),
-//         });
-
-//         if (!response.ok) throw new Error("Failed to update event.");
-//         return await response.json();
-//     } catch (error) {
-//         console.error("Error updating event:", error);
-//         return null;
-//     }
-// };
-
-// // Delete Calendar Event
-// export const deleteCalendarEvent = async (eventId) => {
-//     try {
-//         const response = await fetch(`http://127.0.0.1:5001/calendar/events/${eventId}`, {
-//             method: "DELETE",
-//         });
-
-//         if (!response.ok) throw new Error("Failed to delete event.");
-//         return { success: true };
-//     } catch (error) {
-//         console.error("Error deleting event:", error);
-//         return { success: false };
-//     }
-// };

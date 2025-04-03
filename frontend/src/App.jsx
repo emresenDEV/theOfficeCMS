@@ -147,7 +147,7 @@ function App() {
 
           {/* ✅ Calendar Routes */}
           <Route path="/calendar" element={<ProtectedRoute user={user} loading={loading}><CalendarPage user={user} /></ProtectedRoute>} />
-          <Route path="/calendar/create" element={<ProtectedRoute user={user} loading={loading}><CreateCalendarEvent userId={user.id} /></ProtectedRoute>} />
+          <Route path="/calendar/create" element={<ProtectedRoute user={user} loading={loading} ><CreateCalendarEvent userId={user.id} setEvents={() => {}} closeForm={() => {}}/></ProtectedRoute>} />
           <Route path="/calendar/edit/:eventId" element={<ProtectedRoute user={user} loading={loading}><EditCalendarEvent user={user} /></ProtectedRoute>} />
 
 

@@ -19,17 +19,17 @@ const CalendarComponent = ({ events }) => {
 
         {/* 🔹 Conditionally Render Content */}
         {!isCollapsed && (
-            <div> {/* ✅ Wrap everything in a single parent div */}
+            <div> {/* Wrap everything in a single parent div */}
                 <div className="bg-white shadow-md p-6 rounded-lg w-full h-[700px] flex flex-col ">
-                    {/* ✅ FullCalendar Stays Centered */}
+                    {/* FullCalendar Stays Centered */}
                     <FullCalendar
                         plugins={[dayGridPlugin]}
                         initialView="dayGridMonth"
-                        height="100%"  // ✅ Adjust calendar height
+                        height="100%"
                         contentHeight="auto"
                         aspectRatio={2.2}
                         events={events.map(event => ({
-                            title: event.event_title,
+                            title: event.event_title || "Untitled Event",
                             start: `${event.start_date}T${event.start_time}`, 
                             end: `${event.end_date}T${event.end_time}`,  
                             extendedProps: event
@@ -47,7 +47,7 @@ const CalendarComponent = ({ events }) => {
 CalendarComponent.propTypes = {
     events: PropTypes.arrayOf(
         PropTypes.shape({
-            event_title: PropTypes.string.isRequired,
+            event_title: PropTypes.string,
             start_date: PropTypes.string.isRequired,
             end_date: PropTypes.string.isRequired,
         })

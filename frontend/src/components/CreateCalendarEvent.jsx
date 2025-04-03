@@ -21,7 +21,7 @@ const addOneHour = (time) => {
     return `${newHour}:${minute} ${newPeriod}`;
 };
 
-const CreateCalendarEvent = ({ userId, setEvents, closeForm }) => {
+const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardData }) => {
     const initialStartTime = getCurrentTime();
     const initialEndTime = addOneHour(initialStartTime);
 
@@ -156,6 +156,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm }) => {
             const createdEvent = await createCalendarEvent(formattedEvent);
             if (createdEvent) {
                 setEvents(prev => [...prev, createdEvent]);
+                refreshDashboardData(userId);  
                 closeForm();
             }
         } catch (error) {
@@ -193,7 +194,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm }) => {
                     {filteredAccounts.map(account => (
                         <li
                             key={account.account_id}
-                            onClick={() => handleSelectAccount(account)}  // ✅ Now using the function!
+                            onClick={() => handleSelectAccount(account)} 
                             className="p-2 hover:bg-gray-200 cursor-pointer"
                         >
                             {account.business_name}
@@ -299,6 +300,7 @@ CreateCalendarEvent.propTypes = {
     userId: PropTypes.number.isRequired,
     setEvents: PropTypes.func.isRequired,
     closeForm: PropTypes.func.isRequired,
+    refreshDashboardData: PropTypes.func.isRequired,
 };
 
 export default CreateCalendarEvent;
