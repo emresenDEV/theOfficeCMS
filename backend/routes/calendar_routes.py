@@ -107,8 +107,8 @@ def update_calendar_event(event_id):
     # ✅ Update event fields safely
     event.event_title = data.get("event_title", event.event_title)
     event.location = data.get("location", event.location)
-    event.start_time = datetime.strptime(data["start_time"], "%H:%M").time() if "start_time" in data else event.start_time
-    event.end_time = datetime.strptime(data["end_time"], "%H:%M").time() if "end_time" in data else event.end_time
+    event.start_time = datetime.strptime(data["start_time"], "%H:%M:%S").time() if "start_time" in data else event.start_time
+    event.end_time = datetime.strptime(data["end_time"], "%H:%M:%S").time() if "end_time" in data else event.end_time
     event.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date() if "start_date" in data else event.start_date
     event.end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date() if "end_date" in data else event.end_date
     event.notes = data.get("notes", event.notes)

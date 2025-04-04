@@ -5,7 +5,7 @@ import SalesChart from "../components/SalesChart";
 import CalendarComponent from "../components/CalendarComponent";
 import TasksComponent from "../components/TaskComponent";
 import AccountsTable from "../components/AccountsTable";
-import EventsSection from "../components/EventsSection";
+// import EventsSection from "../components/EventsSection";
 import CreateCalendarEvent from "../components/CreateCalendarEvent";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";
@@ -132,12 +132,15 @@ const Dashboard = ({ user }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-screen-2xl mx-auto">
                     {/* 📅 Calendar takes 2/3 of the grid */}
-                    <div className="md:col-span-2">
-                        <CalendarComponent events={events} />
+                    <div className="md:col-span-3">
+                        <CalendarComponent 
+                            events={events}
+                            userId={userData.user_id}
+                        />
                     </div>
 
                     {/* 🗓️ Events Section takes 1/3 of the grid */}
-                    <div className="md:col-span-1">
+                    {/* <div className="md:col-span-1">
                     <EventsSection 
                         events={events} 
                         user={userData} 
@@ -145,7 +148,7 @@ const Dashboard = ({ user }) => {
                         openCreateModal={() => setShowCreateModal(true)}
                     />
 
-                    </div>
+                    </div> */}
                 </div>
 
                 <TasksComponent 

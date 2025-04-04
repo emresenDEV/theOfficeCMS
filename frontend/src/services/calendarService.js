@@ -18,19 +18,10 @@ export const createCalendarEvent = async (eventData) => {
 // Get Calendar Events for a Specific User
 export const fetchCalendarEvents = async (userId) => {
     try {
-        if (!userId) {
-            console.error("❌ No user ID provided for fetching calendar events.");
-            return [];
-        }
-
-        const response = await api.get(`/calendar/events`, {
-            params: { user_id: userId },
-        });
-
-        console.log("✅ Fetched Events:", response.data);
+        const response = await api.get(`/calendar/events?user_id=${userId}`);
         return response.data;
     } catch (error) {
-        console.error("❌ Error fetching calendar events:", error.response?.data || error.message);
+        console.error("❌ Error fetching calendar events:", error);
         return [];
     }
 };
