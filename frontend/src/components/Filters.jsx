@@ -114,7 +114,7 @@ const Filters = ({
     );
 };
 
-// ✅ Prop Validations
+// Prop Validations
 Filters.propTypes = {
     viewMode: PropTypes.string.isRequired,
     setViewMode: PropTypes.func.isRequired,

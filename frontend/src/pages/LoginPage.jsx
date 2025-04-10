@@ -13,15 +13,16 @@ const LoginPage = ({ setUser }) => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setError(null); // Clear previous errors
+        setError(null); 
     
         try {
             const userData = await loginUser(username, password);
             console.log("Login Successful: ", userData); 
     
             localStorage.setItem("user", JSON.stringify(userData.user)); // Store user in localStorage
-            setUser(userData.user); // Set user state
-            navigate("/"); // Redirect to Dashboard
+            setUser(userData.user); 
+            navigate("/"); 
+            
         } catch (error) {
             setError(`Invalid username or password: ${error.message}`);
         }
@@ -70,7 +71,7 @@ const LoginPage = ({ setUser }) => {
 };
 
 LoginPage.propTypes = {
-    setUser: PropTypes.func.isRequired, // Ensures setUser is a function and required
+    setUser: PropTypes.func.isRequired, 
 };
 
 export default LoginPage;

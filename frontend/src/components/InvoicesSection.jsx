@@ -180,7 +180,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
     );
 };
 
-// ✅ PropTypes Validation
+// PropTypes Validation
 InvoicesSection.propTypes = {
     invoices: PropTypes.arrayOf(
         PropTypes.shape({

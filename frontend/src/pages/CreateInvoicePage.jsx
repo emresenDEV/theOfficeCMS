@@ -129,7 +129,7 @@ const handleSubmit = async (e) => {
                 const parsed = JSON.parse(storedUser);
                 setUser(parsed);
             
-                // ⏱️ Delay navigation until setUser is processed
+                // Delay navigation until setUser is processed
                 setTimeout(() => {
                     navigate(`/invoice/${res.invoice_id}`);
                 }, 100);

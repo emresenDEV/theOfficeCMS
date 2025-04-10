@@ -21,7 +21,7 @@ const CommissionsChart = ({
     selectedMonth
 }) => {
 
-    // ✅ Dynamically calculate the number of weeks in the month
+    // Dynamically calculate the number of weeks in the month
     function getWeeksInMonth(year, month) {
         const firstDay = new Date(year, month - 1, 1);
         const lastDay = new Date(year, month, 0);
@@ -32,7 +32,7 @@ const CommissionsChart = ({
     const weeksInMonth = Math.min(getWeeksInMonth(selectedYear, selectedMonth), 5);
     const weekLabels = Array.from({ length: weeksInMonth }, (_, i) => `Week ${i + 1}`);
 
-    // 🎯 CHART DATA SETUP
+    // CHART DATA SETUP
     const yearlyChartData = {
         labels: pastFiveYears,
         datasets: [

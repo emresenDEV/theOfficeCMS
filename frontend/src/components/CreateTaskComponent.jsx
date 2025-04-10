@@ -27,7 +27,7 @@ const [filteredAccounts, setFilteredAccounts] = useState([]);
 const [departments, setDepartments] = useState([]);
 const [employees, setEmployees] = useState([]);
 
-// ✅ Dynamic account search
+// Dynamic account search
 useEffect(() => {
     if (accountSearch.trim() === "") {
     setFilteredAccounts([]); // Clear results if search is empty
@@ -41,7 +41,7 @@ useEffect(() => {
     setFilteredAccounts(matches);
 }, [accountSearch, accounts]);
 
-// ✅ Automatically set branch, department, and employee when "Assigned to Me" is checked
+// Automatically set branch, department, and employee when "Assigned to Me" is checked
 useEffect(() => {
     if (assignedToMe) {
     setUseMyBranch(true);
@@ -52,21 +52,21 @@ useEffect(() => {
     }
 }, [assignedToMe, user]);
 
-// ✅ Automatically set branch when "My Branch" is checked
+// Automatically set branch when "My Branch" is checked
 useEffect(() => {
     if (useMyBranch) {
         setSelectedBranch(user.branch_id);
     }
 }, [useMyBranch, user]);
 
-// ✅ Automatically set department when "My Department" is checked
+// Automatically set department when "My Department" is checked
 useEffect(() => {
     if (useMyDepartment) {
         setSelectedDepartment(user.department_id);
     }
 }, [useMyDepartment, user]);
 
-// ✅ Fetch departments when selectedBranch changes
+// Fetch departments when selectedBranch changes
 useEffect(() => {
     if (selectedBranch) {
         fetchDepartments(selectedBranch).then((data) => {
@@ -78,7 +78,7 @@ useEffect(() => {
     }
     }, [selectedBranch]);
 
-// ✅ Fetch employees when selectedDepartment changes
+// Fetch employees when selectedDepartment changes
 useEffect(() => {
     if (selectedDepartment) {
         fetchEmployees(selectedDepartment).then((data) => {
@@ -236,7 +236,7 @@ return (
             <option value="">Select Department</option>
             {departments.map(dept => (
                 <option key={dept.department_id} value={dept.department_id}>
-                    {dept.department_name} {/* ✅ Show department name */}
+                    {dept.department_name} {/* Show department name */}
                 </option>
             ))}
         </select>
@@ -245,13 +245,13 @@ return (
         <select 
             value={assignedToMe ? user.id : selectedEmployee} 
             onChange={(e) => setSelectedEmployee(e.target.value)} 
-            disabled={assignedToMe} // ✅ Disabled when "Assigned to Me" is checked
+            disabled={assignedToMe} // Disabled when "Assigned to Me" is checked
             className="border p-2 rounded w-full"
         >
             <option value="">Select Employee</option>
             {employees.map(emp => (
                 <option key={emp.user_id} value={emp.user_id}>
-                    {emp.first_name} {emp.last_name} ({emp.department_name}) {/* ✅ Show department name */}
+                    {emp.first_name} {emp.last_name} ({emp.department_name}) {/* Show department name */}
                 </option>
             ))}
         </select>
@@ -290,7 +290,6 @@ departments: PropTypes.arrayOf(
     PropTypes.shape({
     department_id: PropTypes.number.isRequired,
     department_name: PropTypes.string.isRequired,
-    // branch_id: PropTypes.number.isRequired, //departments table doesnt have branch_id column
     })
 ).isRequired,
 

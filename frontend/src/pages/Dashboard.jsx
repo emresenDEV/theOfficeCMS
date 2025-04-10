@@ -5,7 +5,6 @@ import SalesChart from "../components/SalesChart";
 import CalendarComponent from "../components/CalendarComponent";
 import TasksComponent from "../components/TaskComponent";
 import AccountsTable from "../components/AccountsTable";
-// import EventsSection from "../components/EventsSection";
 import CreateCalendarEvent from "../components/CreateCalendarEvent";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";

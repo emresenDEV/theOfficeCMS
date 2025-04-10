@@ -143,7 +143,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
     );
 };
 
-// ✅ Prop validation for CustomTimePicker
+// Prop validation for CustomTimePicker
 CustomTimePicker.propTypes = {
     value: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,

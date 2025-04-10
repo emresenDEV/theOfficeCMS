@@ -33,10 +33,10 @@ const RelatedAccounts = ({ commissions }) => {
             commissionAmount: commissionAmount.toFixed(2),
             datePaid: com.date_paid
                 ? new Date(com.date_paid).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                  })
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                    })
                 : "Not Paid",
             rawDate: com.date_paid,
         });
@@ -45,7 +45,7 @@ const RelatedAccounts = ({ commissions }) => {
         return acc;
     }, {});
 
-    // ✅ Sort invoices newest first
+    // Sort invoices newest first
     Object.values(groupedAccounts).forEach(account => {
         account.invoices.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
     });

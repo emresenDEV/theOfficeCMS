@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import AccountsPage from "./pages/AccountsPage";
 import AccountDetailsPage from "./pages/AccountDetailsPage";
@@ -10,7 +10,6 @@ import CreateNewAccountPage from "./pages/CreateNewAccount";
 import CommissionsPage from "./pages/CommissionsPage";
 import CreateInvoicePage from "./pages/CreateInvoicePage";
 import Dashboard from "./pages/Dashboard";
-import EditCalendarEvent from "./components/EditCalendarEvent";
 import EditInvoicePage from "./pages/EditInvoicePage";
 import EmployeesPage from "./pages/EmployeesPage";
 import InvoicesPage from "./pages/InvoicesPage";
@@ -24,6 +23,8 @@ import UnpaidInvoicesPage from "./pages/UnpaidInvoicesPage";
 import UpdateAccountPage from "./pages/UpdateAccountPage";
 import Sidebar from "./components/Sidebar";
 import { fetchUserSession } from "./services/authService";
+import api from "./services/api";
+import PropTypes from "prop-types";
 
 import "./App.css";
 
@@ -33,55 +34,35 @@ function App() {
   const [loading, setLoading] = useState(true);
 
 
-  // useEffect(() => {
-  //   async function checkSession() {
-  //       try {
-  //           const sessionUser = await fetchUserSession();
-  //           if (sessionUser) {
-  //               setUser({
-  //                   id: sessionUser.id || sessionUser.user_id,
-  //                   username: sessionUser.username,
-  //                   firstName: sessionUser.first_name || "",
-  //                   lastName: sessionUser.last_name || "",
-  //                   role: sessionUser.role_name || "",
-  //               });
-  //           }
-  //       } catch (error) {
-  //           console.error("Session Check Failed:", error);
-  //       } finally {
-  //           setLoading(false);
-  //       }
-  //   }
-  //   checkSession();
-  // }, []);
-
   useEffect(() => {
     async function checkSession() {
-        try {
-            const storedUser = localStorage.getItem("user"); // 🔹 Check local storage
-            if (storedUser) {
-                setUser(JSON.parse(storedUser)); // ✅ Restore session from local storage
-            } else {
-                const sessionUser = await fetchUserSession();
-                if (sessionUser) {
-                    setUser({
-                        id: sessionUser.id || sessionUser.user_id,
-                        username: sessionUser.username,
-                        firstName: sessionUser.first_name || "",
-                        lastName: sessionUser.last_name || "",
-                        role: sessionUser.role_name || "",
-                    });
-                    localStorage.setItem("user", JSON.stringify(sessionUser)); 
-                }
-            }
-        } catch (error) {
-            console.error("Session Check Failed:", error);
-        } finally {
-            setLoading(false);
+      try {
+        // Get session from backend (not from localStorage)
+        const sessionUser = await fetchUserSession();
+        const userId = sessionUser?.user_id || sessionUser?.id;
+  
+        if (!userId) {
+          console.warn("⚠️ No valid session user ID found.");
+          return;
         }
+  
+        // Fetch full user profile from backend
+        const response = await api.get(`/users/details/${userId}`);
+        const fullUser = response.data;
+  
+        // Save to React state + localStorage
+        setUser(fullUser);
+        localStorage.setItem("user", JSON.stringify(fullUser));
+      } catch (error) {
+        console.error("❌ Session Check Failed:", error);
+      } finally {
+        setLoading(false);
+      }
     }
+  
     checkSession();
-}, []);
+  }, []);
+  
 
 
   // Logout function
@@ -92,7 +73,7 @@ function App() {
 
   // Inactivity timeout logic (Runs when user logs in)
   useEffect(() => {
-    if (!user) return; // 🔹 Do nothing if user is not logged in
+    if (!user) return; // Do nothing if user is not logged in
 
     const checkInactivity = () => {
       const now = Date.now();
@@ -103,10 +84,10 @@ function App() {
       }
     };
 
-    const interval = setInterval(checkInactivity, 60000); // ✅ Runs every 60 sec
+    const interval = setInterval(checkInactivity, 60000); // Runs every 60 sec
 
-    return () => clearInterval(interval); // ✅ Cleanup interval
-  }, [user]); // ✅ Runs when user changes
+    return () => clearInterval(interval); // Cleanup interval
+  }, [user]); // Runs when user changes
 
   // Tracks user activity (Always Runs)
   useEffect(() => {
@@ -119,39 +100,52 @@ function App() {
       window.removeEventListener("mousemove", updateLastActive);
       window.removeEventListener("keydown", updateLastActive);
     };
-  }, []); // ✅ Runs once on mount
+  }, []); // Runs once on mount
 
-  console.log("Current User in App:", user); // ✅ Debugging log
-
-  
+  console.log("Current User in App:", user); // Debugging log
 
   return (
     <Router>
-      {/* ✅ Sidebar only renders if a user is logged in */}
-      {user && <Sidebar user={user} handleLogout={handleLogout} />}
+          {/* CUSTOM ROUTES WRAPPER FOR CONDITIONAL SIDEBAR */}
+          <AppRoutes
+            user={user}
+            loading={loading}
+            handleLogout={handleLogout}
+            setUser={setUser}
+          />
+        </Router>
+      );
+    }
+const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login"; // DETECT LOGIN PAGE
+
+  return (
+    <>
+    {/* SIDEBAR ONLY SHOWS IF USER EXISTS AND NOT ON LOGIN PAGE */}
+    {!isLoginPage && user && <Sidebar user={user} handleLogout={handleLogout} />}
+
       <Routes>
-        {/* ✅ Public Route - Login */}
+        {/* Public Route - Login */}
         <Route path="/login" element={<LoginPage setUser={setUser} />} />
-        {/* ✅ Redirect to login if `user` is null */}
+        {/* Redirect to login if `user` is null */}
         {!user ? (
           <Route path="*" element={<Navigate to="/login" replace />} />
           ) : (
           <>
       
-          {/* ✅ Protected Routes */}
+          {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute user={user} loading={loading}><Dashboard user={user} /></ProtectedRoute>} />
 
           <Route path="/settings" element={<ProtectedRoute user={user} loading={loading}><SettingsPage user={user} /></ProtectedRoute>} />
           <Route path="/employees" element={<ProtectedRoute user={user} loading={loading}><EmployeesPage user={user} /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute user={user} loading={loading}><TasksPage user={user} /></ProtectedRoute>} />
 
-          {/* ✅ Calendar Routes */}
+          {/* Calendar Routes */}
           <Route path="/calendar" element={<ProtectedRoute user={user} loading={loading}><CalendarPage user={user} /></ProtectedRoute>} />
-          <Route path="/calendar/create" element={<ProtectedRoute user={user} loading={loading} ><CreateCalendarEvent userId={user.id} setEvents={() => {}} closeForm={() => {}}/></ProtectedRoute>} />
-          <Route path="/calendar/edit/:eventId" element={<ProtectedRoute user={user} loading={loading}><EditCalendarEvent user={user} /></ProtectedRoute>} />
+          <Route path="/calendar/create" element={<ProtectedRoute user={user} loading={loading} ><CreateCalendarEvent user={user} userId={user.id} setEvents={() => {}} closeForm={() => {}}/></ProtectedRoute>} />
 
-
-          {/* ✅ Invoice Routes */}
+          {/* Invoice Routes */}
           <Route path="/invoices" element={<ProtectedRoute user={user} loading={loading}><InvoicesPage user={user} /></ProtectedRoute>} />
           <Route path="/invoice/:invoiceId" element={<ProtectedRoute user={user} loading={loading}><InvoiceDetailsPage user={user} /></ProtectedRoute>} />
           <Route path="/invoices/invoice/:invoiceId/edit" element={<ProtectedRoute user={user} loading={loading}><EditInvoicePage user={user} /></ProtectedRoute>} />
@@ -160,24 +154,31 @@ function App() {
           <Route path="/invoices/unpaid" element={<ProtectedRoute user={user} loading={loading}><UnpaidInvoicesPage user={user} /></ProtectedRoute>} />
           <Route path="/invoices/past_due" element={<ProtectedRoute user={user} loading={loading}><PastDueInvoicesPage user={user} /></ProtectedRoute>} />
 
-          {/* ✅ Accounts Routes */}
+          {/* Accounts Routes */}
           <Route path="/accounts" element={<ProtectedRoute user={user} loading={loading}><AccountsPage user={user} /></ProtectedRoute>} />
           <Route path="/accounts/assigned" element={<ProtectedRoute user={user} loading={loading}><AssignedAccountsPage user={user} /></ProtectedRoute>} />
           <Route path="/accounts/new" element={<ProtectedRoute user={user} loading={loading}><CreateNewAccountPage user={user} /></ProtectedRoute>} />
           <Route path="/accounts/details/:accountId" element={<ProtectedRoute user={user} loading={loading}><AccountDetailsPage user={user} /></ProtectedRoute>} />
-          <Route path="/accounts/update/:accountId" element={<ProtectedRoute user={user} loading={loading}><UpdateAccountPage /></ProtectedRoute>} />
-          <Route path="/accounts/create" element={<ProtectedRoute user={user} loading={loading}><CreateNewAccountPage /></ProtectedRoute>} />
+          <Route path="/accounts/update/:accountId" element={<ProtectedRoute user={user} loading={loading}><UpdateAccountPage user={user} /></ProtectedRoute>} />
+          <Route path="/accounts/create" element={<ProtectedRoute user={user} loading={loading}><CreateNewAccountPage user={user}/></ProtectedRoute>} />
 
-          {/* ✅ Commissions */}
+          {/* Commissions */}
           <Route path="/commissions" element={<ProtectedRoute user={user} loading={loading}><CommissionsPage user={user} /></ProtectedRoute>} />
         
-        {/* ✅ Redirect all unknown paths to Login */}
+        {/* Redirect all unknown paths to Login */}
         <Route path="*" element={<Navigate to="/login" />} />
         </>
           )}
       </Routes>
-    </Router>
+    </>
   );
-}
+};
+
+AppRoutes.propTypes = {
+  user: PropTypes.object,
+  loading: PropTypes.bool.isRequired,
+  handleLogout: PropTypes.func.isRequired,
+  setUser: PropTypes.func.isRequired,
+};
 
 export default App;

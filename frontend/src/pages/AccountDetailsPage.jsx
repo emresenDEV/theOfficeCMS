@@ -45,12 +45,12 @@ const AccountDetailsPage = ({ user }) => {
         console.log(" 🔄 Refreshed tasks:", updatedTasks); //debugging
         setTasks(updatedTasks);
     };
-    // ✅ Fetch Users
+    // Fetch Users
     useEffect(() => {
         async function loadUsers() {
             try {
             const fetchedUsers = await fetchUsers();
-            console.log("Fetched users in AccountDetailsPage:", fetchedUsers); //debugging (what is api returning)
+            console.log("Fetched users in AccountDetailsPage:", fetchedUsers); //debugging 
             if (fetchedUsers && fetchedUsers.length > 0) {
                 const normalizedUsers = fetchedUsers.map((user) => ({
                     ...user,
@@ -85,13 +85,10 @@ const AccountDetailsPage = ({ user }) => {
                 setAccount(await fetchAccountDetails(accountId));
                 await refreshInvoices();
                 await refreshNotes();
-                // await refreshTasks();
-                
-                // setInvoices(fetchedInvoices);  
+        
                 
                 setTasks(await fetchTasksByAccount(accountId)); 
-                
-                
+                        
             } catch (error) {
                 console.error("❌ Error loading account details:", error);
                 console.error("🔍 Full Error Object:", error?.response || error);
@@ -178,7 +175,7 @@ const AccountDetailsPage = ({ user }) => {
     );
 };
 
-// ✅ PropTypes Validation
+// PropTypes Validation
 AccountDetailsPage.propTypes = {
     user: PropTypes.shape({
         id: PropTypes.number.isRequired,
@@ -203,7 +200,7 @@ AccountDetailsPage.propTypes = {
         date_created: PropTypes.string,
         date_updated: PropTypes.string,
         
-        // ✅ Assigned Sales Representative (Sales Rep Info)
+        // Assigned Sales Representative (Sales Rep Info)
         sales_rep: PropTypes.shape({
             user_id: PropTypes.number.isRequired,
             first_name: PropTypes.string,
@@ -214,7 +211,7 @@ AccountDetailsPage.propTypes = {
             extension: PropTypes.string,
         }),
 
-        // ✅ Branch Details for Sales Rep
+        // Branch Details for Sales Rep
         branch: PropTypes.shape({
             branch_id: PropTypes.number,
             branch_name: PropTypes.string,

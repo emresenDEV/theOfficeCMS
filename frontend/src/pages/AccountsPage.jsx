@@ -58,7 +58,7 @@ const AccountsPage = ({ user }) => {
             <Sidebar user={user} />
             <div className="flex-1 p-6 ml-64">
                 <h1 className="text-2xl font-bold">Accounts</h1>
-                {/* ✅ Search Bar and New Account Button*/}
+                {/* Search Bar and New Account Button*/}
                 <div className="flex justify-between items-center gap-4">
                     <div className="flex-grow">
                         <input
@@ -78,14 +78,14 @@ const AccountsPage = ({ user }) => {
                         </button>
                     </div>
                 </div>
-                {/* ✅ Account List Layout */}
+                {/* Account List Layout */}
                 <div className="space-y-4">
                     {filteredAccounts.map(account => (
                         <div 
                             key={account.account_id} 
                             className="border p-4 rounded-lg shadow flex justify-between items-center bg-white"
                         >
-                            {/* 🔹 Account Details (Left-aligned) */}
+                            {/* Account Details (Left-aligned) */}
                             <div className="text-left">
                                 <h2 className="text-lg font-semibold">{account.business_name}</h2>
                                 <p className="text-gray-600">
@@ -94,7 +94,7 @@ const AccountsPage = ({ user }) => {
                                 </p>
                                 <p className="text-gray-500"><span className="font-medium">Email:</span> {account.email}</p>
                                 <p className="text-gray-500"><span className="font-medium">Address:</span> {account.address}, {account.city}, {account.state} {account.zip_code}</p>
-                                {/* ✅ Sales Representative Section */}
+                                {/* Sales Representative Section */}
                                 {account.sales_rep ? (
                                     <p className="text-gray-700">
                                         <span className="font-medium">Sales Representative:</span> {account.sales_rep?.first_name || "Unassigned"} {account.sales_rep?.last_name || ""}
@@ -104,7 +104,7 @@ const AccountsPage = ({ user }) => {
                                 )}
                             </div>
 
-                            {/* 🔹 Button (Right-aligned) */}
+                            {/* Button (Right-aligned) */}
                             <button 
                                 className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg"
                                 onClick={() => {

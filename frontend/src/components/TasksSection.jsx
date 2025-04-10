@@ -12,7 +12,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
     const [filteredUsers, setFilteredUsers] = useState([]); // Filtered list based on input
     const [dueDate, setDueDate] = useState("");
 
-    // ✅ Helper: Get Username from `created_by`
+    // Helper: Get Username from `created_by`
     const getCreatedByUsername = (creator) => {
         if (typeof creator === "string") return creator;
         if (!users || users.length === 0) return "Unknown Creator";
@@ -20,14 +20,14 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
         return user ? user.username : "Unknown Creator";
     };
 
-    // ✅ Helper: Get Username from `assigned_to`
+    // Helper: Get Username from `assigned_to`
     const getAssignedToUsername = (assignedToId) => {
         if (!users || users.length === 0 || !assignedToId) return "Unassigned";
         const user = users.find((u) => Number(u.user_id) === Number(assignedToId));
         return user ? user.username : "Unassigned";
     };
 
-    // ✅ Filter Tasks
+    // Filter Tasks
     const filteredTasks = tasks.filter((task) => {
         const createdByUsername = (getCreatedByUsername(task.created_by) || "").toLowerCase();
         const assignedToUsername = (getAssignedToUsername(task.assigned_to) || "").toLowerCase();
@@ -42,13 +42,13 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
         );
     });
 
-    // ✅ Format Date (MM/DD/YYYY)
+    // Format Date (MM/DD/YYYY)
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         return format(new Date(dateString), "MM/dd/yyyy");
     };
 
-    // ✅ Create a New Task
+    // Create a New Task
     const handleCreateTask = async () => {
         if (!newTaskDescription.trim()) return alert("❌ Task description cannot be empty.");
 
@@ -75,7 +75,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
         }
     };
 
-    // ✅ Handle searching through users
+    // Handle searching through users
     const handleAssigneeSearch = (input) => {
         setAssignedToSearch(input);
         if (input.trim() === "") {
@@ -96,14 +96,14 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
         setFilteredUsers(results);
     };
 
-    // ✅ Handle Assignee Select
+    // Handle Assignee Select
     const handleAssigneeSelect = (user) => {
         setAssignedTo(user.user_id); // Save selected user's ID for backend
         setAssignedToSearch(`${user.first_name} ${user.last_name} (${user.username})`);
         setFilteredUsers([]); // Clear the dropdown
     };
 
-    // ✅ Toggle Task Completion Status
+    // Toggle Task Completion Status
     const toggleTaskStatus = async (taskId, currentStatus) => {
         try {
             await updateTask(taskId, { is_completed: !currentStatus });
@@ -113,7 +113,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
         }
     };
 
-    // ✅ Clear Filters
+    // Clear Filters
     const clearFilters = () => {
         setTaskFilter("all");
         setSearchTasks("");
@@ -123,7 +123,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
         <div className="mt-6 border p-4 rounded-lg">
             <h2 className="text-xl font-semibold">Tasks</h2>
 
-            {/* ✅ Task Filter/Search */}
+            {/* Task Filter/Search */}
             <div className="flex justify-between items-center mb-3">
                 <input
                     type="text"
@@ -154,7 +154,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 </div>
             </div>
 
-            {/* ✅ Create New Task Section */}
+            {/* Create New Task Section */}
             <div className="flex items-center mb-4 space-x-2">
                 <input
                     type="text"

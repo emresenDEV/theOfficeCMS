@@ -45,7 +45,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
     const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
 
-    /** ✅ Fetch Account List */
+    /** Fetch Account List */
     useEffect(() => {
         async function loadAccounts() {
             const fetchedAccounts = await fetchAccounts();
@@ -54,7 +54,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
         loadAccounts();
     }, []);
 
-    /** ✅ Dynamic Account Search */
+    /** Dynamic Account Search */
     useEffect(() => {
         if (accountSearch.trim() === "") {
             setFilteredAccounts([]);
@@ -69,13 +69,13 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
         setShowDropdown(matches.length > 0);
     }, [accountSearch, accounts]);
 
-    /** ✅ Handle Input Change */
+    /** Handle Input Change */
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewEvent(prevEvent => ({ ...prevEvent, [name]: value }));
     };
 
-    /** ✅ Handle Time Change */
+    /** Handle Time Change */
     const handleTimeChange = (name, value) => {
         setNewEvent(prevEvent => {
             let newEndTime = prevEvent.end_time;
@@ -86,7 +86,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
         });
     };
 
-    /** ✅ Track End Time Modification */
+    /** Track End Time Modification */
     const handleEndTimeChange = (value) => {
         setNewEvent(prevEvent => ({
             ...prevEvent,
@@ -95,7 +95,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
         }));
     };
 
-    /** ✅ Handle Selecting an Account */
+    /** Handle Selecting an Account */
     const handleSelectAccount = (account) => {
         setNewEvent(prevEvent => ({
             ...prevEvent,
@@ -169,7 +169,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
         <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-300 text-left">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Create Event</h2>
 
-            {/* 🔹 Event Title */}
+            {/* Event Title */}
             <label className="block text-sm font-medium text-gray-700">Event Title</label>
             <input
                 type="text"
@@ -180,7 +180,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
                 placeholder="Enter event title"
             />
 
-            {/* 🔹 Account Search */}
+            {/* Account Search */}
             <label className="block text-sm font-medium text-gray-700">Search for an Account</label>
             <input
                 type="text"
@@ -204,7 +204,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
             )}
 
 
-            {/* 🔹 Location, Contact Name, Phone Number */}
+            {/* Location, Contact Name, Phone Number */}
             <label className="block text-sm font-medium text-gray-700 mt-2">Location</label>
             <input
                 type="text"
@@ -238,7 +238,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
                     />
                 </div>
             </div>
-            {/* 🔹 Start Date, End Date */}
+            {/* Start Date, End Date */}
             <div className="grid grid-cols-2 gap-4 mt-4">
                 <div className="relative">
                     <label className="block text-sm font-medium text-gray-700">Start Date</label>
@@ -264,7 +264,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
                     />
                 </div>
             </div>
-            {/* 🔹 Start Time, End Time */}
+            {/* Start Time, End Time */}
             <div className="grid grid-cols-2 gap-4 mt-4">
                 <div className="relative">
                     <label className="block text-sm font-medium text-gray-700">Start Time</label>
@@ -287,7 +287,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
             <label className="block text-sm font-medium text-gray-700 mt-4">Notes</label>
             <textarea name="notes" value={newEvent.notes} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-lg" rows="3"></textarea>
 
-            {/* 🔹 Buttons */}
+            {/* Buttons */}
             <div className="flex justify-between mt-4">
                 <button className="bg-gray-500 text-white px-4 py-2 rounded-lg" onClick={closeForm}>Cancel</button>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-lg" onClick={handleCreateEvent}>Save</button>

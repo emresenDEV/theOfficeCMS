@@ -122,8 +122,8 @@ def update_calendar_event(event_id):
 
 
 
-# ✅ Delete a Calendar Event
-@calendar_bp.route("/calendar/events/${eventId}", methods=["DELETE"])
+# Delete a Calendar Event
+@calendar_bp.route("/events/<int:event_id>", methods=["DELETE"])
 def delete_calendar_event(event_id):
     event = CalendarEvent.query.get(event_id)
     if not event:

@@ -27,18 +27,6 @@ export const fetchCalendarEvents = async (userId) => {
 };
 
 
-// Fetch Calendar Events (Meetings) for a User
-// export const fetchMeetings = async (userId) => {
-//     try {
-//         const response = await api.get(`/calendar/events?user_id=${userId}`);
-//         console.log("✅ Meetings Response:", response.data);  // 🔹 Debugging log
-//         return response.data;
-//     } catch (error) {
-//         console.error("❌ Error fetching meetings:", error.response?.data || error.message);
-//         return [];
-//     }
-// };
-
 // Update an Existing Calendar Event
 export const updateCalendarEvent = async (eventId, updatedData) => {
     try {
@@ -73,7 +61,7 @@ export const deleteCalendarEvent = async (eventId) => {
 // Fetch all departments
 export const fetchDepartments = async () => {
     try {
-        const response = await api.get("/departments");  I
+        const response = await api.get("/departments");
         console.log("✅ Fetched Departments:", response.data);
         return response.data.map(dept => ({
             department_id: dept.department_id,  
