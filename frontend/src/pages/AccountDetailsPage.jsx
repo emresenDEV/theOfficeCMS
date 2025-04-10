@@ -23,16 +23,16 @@ const AccountDetailsPage = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
     const [userRole, setUserRole] = useState("");
-    // REFRESH Components
-    // const refreshNotes = async () => {
-    //     const updatedNotes = await fetchNotesByAccount(accountId);
-    //     console.log("🔄 Updated Notes from Backend:", updatedNotes);
-    //     setNotes(updatedNotes);
-    // };
+
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         return format(new Date(dateString), "MM/dd/yyyy");
     };
+
+    const refreshInvoices = useCallback(async (status = null) => {
+        const fetched = await fetchInvoiceByAccount(accountId, status);
+        setInvoices(fetched);
+    }, [accountId]);
 
     const refreshNotes = useCallback(async () => {
         const updatedNotes = await fetchNotesByAccount(accountId);
@@ -45,12 +45,12 @@ const AccountDetailsPage = ({ user }) => {
         console.log(" 🔄 Refreshed tasks:", updatedTasks); //debugging
         setTasks(updatedTasks);
     };
-    // ✅ Fetch Users
+    // Fetch Users
     useEffect(() => {
         async function loadUsers() {
             try {
             const fetchedUsers = await fetchUsers();
-            console.log("Fetched users in AccountDetailsPage:", fetchedUsers); //debugging (what is api returning)
+            console.log("Fetched users in AccountDetailsPage:", fetchedUsers); //debugging 
             if (fetchedUsers && fetchedUsers.length > 0) {
                 const normalizedUsers = fetchedUsers.map((user) => ({
                     ...user,
@@ -82,20 +82,13 @@ const AccountDetailsPage = ({ user }) => {
         async function loadData() {
             try {
                 setLoading(true);
-                setAccount(await fetchAccountDetails(accountId));  // ✅ Fetch account details
-
-                const fetchedInvoices = await fetchInvoiceByAccount(accountId);
-                console.log("Invoices fetched for account:", fetchedInvoices); //debugging
-                setInvoices(fetchedInvoices);  // ✅ Fetch invoices
-                // setInvoices(await fetchInvoiceByAccount(accountId));  // ✅ Fetch invoices
-                await refreshNotes();  // ✅ Fetch updated notes
-                setTasks(await fetchTasksByAccount(accountId)); // ✅ Fetch tasks
+                setAccount(await fetchAccountDetails(accountId));
+                await refreshInvoices();
+                await refreshNotes();
+        
                 
-                // ✅ Fetch users (duplicate fetch?)
-                // const fetchedUsers = await fetchUsers();
-                // console.log("Second fetchUsers in loadData returned:", fetchedUsers); //debugging
-                // const usersWithUsernames = fetchedUsers.filter((user) => user.username);
-                // setUsers(usersWithUsernames);
+                setTasks(await fetchTasksByAccount(accountId)); 
+                        
             } catch (error) {
                 console.error("❌ Error loading account details:", error);
                 console.error("🔍 Full Error Object:", error?.response || error);
@@ -107,7 +100,7 @@ const AccountDetailsPage = ({ user }) => {
         if (accountId) {
             loadData();
         }
-    }, [accountId, refreshNotes]);
+    }, [accountId, refreshNotes, refreshInvoices]);
 // debugging useEffect to verify whenever the users prop updates debugging
     useEffect(() => {
         console.log("TasksSection: users prop updated:", users);
@@ -120,7 +113,7 @@ const AccountDetailsPage = ({ user }) => {
 
     return (
         <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-lg ml-64">
-            {/* ✅ Header Section */}
+            {/* Header Section */}
             <div className="flex justify-between items-start">
                 <div className="w-1/2">
                     <h1 className="text-3xl font-bold text-blue-700 text-left">{account.business_name}</h1>
@@ -153,11 +146,13 @@ const AccountDetailsPage = ({ user }) => {
                 </div>
             </div>
 
-            {/* ✅ Sections */}
+            {/* Sections */}
             <InvoicesSection 
-                invoices={invoices || []} 
-                onCreateInvoice={() => navigate("/create-invoice")}
+            invoices={invoices || []} 
+            onCreateInvoice={() => navigate(`/create-invoice/${account.account_id}`)}
+            refreshInvoices={refreshInvoices}
             />
+
 
             <NotesSection 
                 notes={notes}
@@ -180,7 +175,7 @@ const AccountDetailsPage = ({ user }) => {
     );
 };
 
-// ✅ PropTypes Validation
+// PropTypes Validation
 AccountDetailsPage.propTypes = {
     user: PropTypes.shape({
         id: PropTypes.number.isRequired,
@@ -205,7 +200,7 @@ AccountDetailsPage.propTypes = {
         date_created: PropTypes.string,
         date_updated: PropTypes.string,
         
-        // ✅ Assigned Sales Representative (Sales Rep Info)
+        // Assigned Sales Representative (Sales Rep Info)
         sales_rep: PropTypes.shape({
             user_id: PropTypes.number.isRequired,
             first_name: PropTypes.string,
@@ -216,7 +211,7 @@ AccountDetailsPage.propTypes = {
             extension: PropTypes.string,
         }),
 
-        // ✅ Branch Details for Sales Rep
+        // Branch Details for Sales Rep
         branch: PropTypes.shape({
             branch_id: PropTypes.number,
             branch_name: PropTypes.string,

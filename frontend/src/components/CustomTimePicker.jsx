@@ -1,21 +1,21 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import { getCurrentTime } from "../utils/dateUtils"; // ✅ Import helper function
+import { getCurrentTime } from "../utils/dateUtils";
 
 const hours = Array.from({ length: 12 }, (_, i) => i + 1); // 1–12
 const minutes = ["00", "15", "30", "45"]; // 00, 15, 30, 45
 
 const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
-    // ✅ Set initial values using `getCurrentTime()`
+    // Set initial values using `getCurrentTime()`
     const initialTime = useRef(value || getCurrentTime()).current; // Example: "2:30 PM"
     const [selectedHour, setSelectedHour] = useState(initialTime.split(/[: ]/)[0]);
     const [selectedMinute, setSelectedMinute] = useState(initialTime.split(/[: ]/)[1]);
     const [selectedPeriod, setSelectedPeriod] = useState(initialTime.split(/[: ]/)[2]);
 
     const [showDropdown, setShowDropdown] = useState(false);
-    const timeoutRef = useRef(null);
+    // const timeoutRef = useRef(null);
 
-    /** ✅ Handle Time Change */
+    /** Handle Time Change */
     const handleTimeChange = useCallback((hour, minute, period) => {
         setSelectedHour(hour);
         setSelectedMinute(minute);
@@ -23,12 +23,12 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
         
         const formattedTime = `${hour}:${minute} ${period}`;
         if (onChange) {
-            onChange(formattedTime); // ✅ Calls the parent function with updated time
+            onChange(formattedTime); 
         }
     }, [onChange]);
 
 
-    /** ✅ Sync End Time with Start Time +1 Hour */
+    /** Sync End Time with Start Time +1 Hour */
     useEffect(() => {
         if (!isEndTime || !startTime) return; // Only modify end time if necessary
 
@@ -41,7 +41,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
             newPeriod = period === "AM" ? "PM" : "AM";
         }
 
-        // ✅ Update only if values actually changed
+        // Update only if values actually changed
         if (
             newHour !== parseInt(selectedHour, 10) ||
             minute !== selectedMinute ||
@@ -50,34 +50,11 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
             setSelectedHour(String(newHour));
             setSelectedMinute(minute);
             setSelectedPeriod(newPeriod);
-            onChange(`${newHour}:${minute} ${newPeriod}`); // ✅ Correct format
+            onChange(`${newHour}:${minute} ${newPeriod}`);
         }
     }, [isEndTime, startTime, selectedHour, selectedMinute, selectedPeriod, onChange]);
 
-    
-
-    /** ✅ Update Selected Time */
-    // useEffect(() => {
-    //     const time = `${selectedHour}:${selectedMinute} ${selectedPeriod}`;
-    //     if (onChange) {
-    //         onChange(time);
-    //     }
-    // }, [selectedHour, selectedMinute, selectedPeriod ]);
-
-
-    /** ✅ Handle Input Focus/Blur */
-    const handleFocus = () => {
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            setShowDropdown(true);
-        }
-    };
-
-    const handleBlur = () => {
-        timeoutRef.current = setTimeout(() => setShowDropdown(false), 200);
-    };
-
-    /** ✅ Auto-scroll to current time in the dropdown */
+    /** Auto-scroll to current time in the dropdown */
     useEffect(() => {
         if (showDropdown) {
             const hourIndex = hours.indexOf(parseInt(selectedHour, 10));
@@ -91,18 +68,14 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
 
     return (
         <div className="relative w-full">
-            <input
-                type="text"
-                value={`${selectedHour}:${selectedMinute} ${selectedPeriod}`}
-                readOnly
-                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="HH:MM AM/PM"
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                aria-label="Time picker"
-                aria-expanded={showDropdown}
-                aria-haspopup="listbox"
-            />
+            <button
+                type="button"
+                onClick={() => setShowDropdown(prev => !prev)}
+                className="w-full p-2 border border-gray-300 rounded-lg bg-white text-left hover:border-blue-400 focus:ring-2 focus:ring-blue-500"
+                >
+                {`${selectedHour}:${selectedMinute} ${selectedPeriod}`}
+            </button>
+
             {showDropdown && (
                 <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto p-2">
                     <div className="flex">
@@ -170,7 +143,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
     );
 };
 
-// ✅ Prop validation for CustomTimePicker
+// Prop validation for CustomTimePicker
 CustomTimePicker.propTypes = {
     value: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,

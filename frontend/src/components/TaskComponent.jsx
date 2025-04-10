@@ -61,10 +61,10 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
             );
         });
 
-        /** ✅ Sort tasks by due date (ascending order) */
+        /** Sort tasks by due date (ascending order) */
         filteredTasks.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
-        /** ✅ Map Business Name from Account ID */
+        /** Map Business Name from Account ID */
         const updatedTasks = filteredTasks.map(task => ({
             ...task,
             assigned_by_username: getUsername(task.user_id),
@@ -73,7 +73,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                 : "No Account",
 
         }));
-        console.log("📌 Updated Visible Tasks:", updatedTasks);  // ✅ Debugging log
+        console.log("📌 Updated Visible Tasks:", updatedTasks);  //  Debugging log
         setVisibleTasks(updatedTasks);
     }, [tasks, accounts, users, getUsername]);
 
@@ -112,7 +112,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
             account_id: selectedAccount?.account_id || null,
         };
 
-        console.log("📤 Creating Task:", taskData); // ✅ Debugging log
+        console.log("📤 Creating Task:", taskData); // Debugging log
 
         try {
             await createTask(taskData);
@@ -181,7 +181,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
 
             {!isCollapsed && (
                 <div className="p-4">
-                    {/* 🔹 New Task Inputs */}
+                    {/* New Task Inputs */}
                     <div className="grid grid-cols-12 gap-4 items-center mb-4">
                         <input
                             type="text"
@@ -229,7 +229,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                         </button>
                     </div>
 
-                    {/* 🔹 Tasks Table */}
+                    {/* Tasks Table */}
                     <div className="overflow-y-auto max-h-[300px]">
                         <table className="w-full text-left border-collapse">
                             <thead className="sticky top-0 bg-gray-100 shadow-sm">

@@ -27,55 +27,18 @@ export const fetchInvoiceById = async (invoiceId) => {
 };
 
 // Fetch Invoice by Account
-export const fetchInvoiceByAccount = async (accountId) => {
+export const fetchInvoiceByAccount = async (accountId, status = null) => {
     try {
-        const response = await api.get(`/invoices/account/${accountId}`);
-        console.log(`✅ Fetched Invoices for Account ${accountId}:`, response.data); // Debugging
+        const url = status 
+            ? `/invoices/account/${accountId}?status=${status}` 
+            : `/invoices/account/${accountId}`;
+        const response = await api.get(url);
         return response.data;
     } catch (error) {
-        console.error("❌ Error fetching invoices for account:", error.response?.data || error.message);
-        return []; // ✅ Always return an array to prevent crashes
-    }
-};
-
-
-
-
-
-// Fetch Paid Invoices
-export const fetchPaidInvoices = async (userId) => {
-    try {
-        const response = await api.get(`/invoices/paid?user_id=${userId}`);
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching paid invoices:", error);
+        console.error("❌ Error fetching invoices for account:", error);
         return [];
     }
 };
-
-// Fetch Unpaid Invoices
-export const fetchUnpaidInvoices = async (userId) => {
-    try {
-        const response = await api.get(`/invoices/unpaid?user_id=${userId}`);
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching unpaid invoices:", error);
-        return [];
-    }
-};
-
-// Fetch Past Due Invoices
-export const fetchPastDueInvoices = async (userId) => {
-    try {
-        const response = await fetch(`http://127.0.0.1:5001/invoices/past_due?user_id=${userId}`);
-        if (!response.ok) throw new Error("Failed to fetch past due invoices.");
-        return await response.json();
-    } catch (error) {
-        console.error("❌ API Error - Fetching Past Due Invoices:", error);
-        return [];
-    }
-};
-
 
 // Fetch Update Invoice
 export const updateInvoice = async (invoiceId, updatedData) => {
@@ -87,6 +50,18 @@ export const updateInvoice = async (invoiceId, updatedData) => {
         return null;
     }
 };
+
+// Fetch Invoices by Status
+export async function fetchInvoicesByStatus(status) {
+    try {
+        const response = await api.get(`/invoices/status/${status}`);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Error fetching invoices with status ${status}:`, error);
+        throw error;
+    }
+}
+
 
 // Invoice Status API Call
 export const updateInvoiceStatus = async (invoiceId, status) => {
@@ -121,48 +96,31 @@ export const updateInvoiceStatus = async (invoiceId, status) => {
     }
 };
 
-
-
-// export const updateInvoice = async (invoiceId, updatedData) => {
-//     try {
-//         const response = await fetch(`http://127.0.0.1:5001/invoices/${invoiceId}`, {
-//             method: "PUT",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify({
-//                 ...updatedData,
-//                 services: updatedData.services.map(s => ({
-//                     service_id: s.service_id,
-//                     quantity: s.quantity,
-//                     price: s.price
-//                 }))
-//             }),
-//         });
-
-//         if (!response.ok) throw new Error("Failed to update invoice.");
-//         return await response.json();
-//     } catch (error) {
-//         console.error("Error updating invoice:", error);
-//         return null;
-//     }
-// };
-
-
 // Create Invoice
-export const createInvoice = async (invoiceData) => {
+export const createInvoice = async (data) => {
     try {
-        const response = await fetch("http://127.0.0.1:5001/invoices", {
+        const res = await fetch(`http://127.0.0.1:5001/invoices`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(invoiceData),
+            headers: {
+            "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(data),
         });
-
-        if (!response.ok) throw new Error("Failed to create invoice.");
-        return await response.json();
-    } catch (error) {
-        console.error("Error creating invoice:", error);
+    
+        if (!res.ok) {
+            console.error("❌ Server returned:", res.status);
+            const errorDetails = await res.json();
+            throw new Error(errorDetails?.error || "Failed to create invoice");
+        }
+    
+        return await res.json();
+        } catch (err) {
+        console.error("Error creating invoice:", err);
         return { success: false };
-    }
-};
+        }
+    };
+    
 
 
 // ✅ Delete Invoice
@@ -187,7 +145,19 @@ export const fetchInvoiceServices = async () => {
         console.error("Error fetching invoice_services:", error);
         return [];
     }
-}
+};
+
+// Delete an invoice service by ID
+export const deleteInvoiceService = async (invoiceServiceId) => {
+    try {
+        const response = await api.delete(`/invoices/invoice_services/${invoiceServiceId}`);
+        return response.data;
+        } catch (error) {
+        console.error("Error deleting invoice service:", error);
+        throw error;
+        }
+    };
+    
 
 //  Validate Invoice: Invoice must be related to account
 export const validateInvoiceForAccount = async (accountId, invoiceId) => {
@@ -201,75 +171,16 @@ export const validateInvoiceForAccount = async (accountId, invoiceId) => {
     }
 };
 
-
-// // Fetch all invoices
-// export const fetchInvoices = async (userId) => {
-//     try {
-//         const response = await fetch(`http://127.0.0.1:5001/invoices?user_id=${userId}`);
-//         if (!response.ok) throw new Error("Failed to fetch invoices.");
-//         return await response.json();
-//     } catch (error) {
-//         console.error("Error fetching invoices:", error);
-//         return [];
-//     }
-// };
-
-
-// // Fetch invoices for a specific account
-// export const fetchInvoicesByAccount = async (accountId) => {
-//     try {
-//         const response = await api.get(`/invoices?account_id=${accountId}`);
-//         return response.data;
-//     } catch (error) {
-//         console.error("Error fetching invoices for account:", error);
-//         return [];
-//     }
-// };
-
-
-// // Fetch Paid Invoices
-// export const fetchPaidInvoices = async (userId) => {
-//     try {
-//         console.log(`🔍 Fetching Paid Invoices for user ${userId}`);
-//         const response = await fetch(`http://127.0.0.1:5001/invoices/paid?user_id=${userId}`);
-//         if (!response.ok) throw new Error("Failed to fetch paid invoices.");
-        
-//         const data = await response.json();
-//         console.log("✅ API Response - Paid Invoices:", data.length, "invoices found."); // ✅ Debugging Log
-//         return data;
-//     } catch (error) {
-//         console.error("❌ API Error - Fetching Paid Invoices:", error);
-//         return [];
-//     }
-// };
-
-
-
-// // Fetch Unpaid Invoices
-// export const fetchUnpaidInvoices = async (userId) => {
-//     try {
-//         const response = await fetch(`http://127.0.0.1:5001/invoices/unpaid?user_id=${userId}`);
-//         if (!response.ok) throw new Error("Failed to fetch unpaid invoices.");
-//         return await response.json();
-//     } catch (error) {
-//         console.error("❌ API Error - Fetching Unpaid Invoices:", error);
-//         return [];
-//     }
-// };
-
-
-
-
-// Fetch all services
-export const fetchServices = async () => {
+// Create Payment
+export const logInvoicePayment = async (invoiceId, paymentData) => {
     try {
-        const response = await api.get("/services");
+        const response = await api.post(`/invoices/${invoiceId}/log_payment`, paymentData);
         return response.data;
     } catch (error) {
-        console.error("Error fetching services:", error);
-        return [];
+        console.error("❌ Error logging payment:", error.response?.data || error.message);
+        return null;
     }
-}
+};
 
 // Fetch all tax_rates
 export const fetchTaxRates = async () => {
@@ -283,7 +194,6 @@ export const fetchTaxRates = async () => {
 }
 
 // Fetch all payment_methods
-// invoiceService.js
 export const fetchPaymentMethods = async () => {
     try {
         const response = await api.get("/invoices/payment_methods");
@@ -305,3 +215,4 @@ export const fetchIndustries = async () => {
         return [];
     }
 }
+

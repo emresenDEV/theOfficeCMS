@@ -161,7 +161,7 @@ return (
                 <td className="p-2 border-b text-center">
                 {note.invoice_id ? (
                     <button
-                    onClick={() => navigate(`/invoices/invoice/${note.invoice_id}`)}
+                    onClick={() => navigate(`/invoice/${note.invoice_id}`)}
                     className="bg-blue-600 text-white px-4 py-1 rounded shadow-lg hover:bg-blue-700 transition-colors w-24"
                     >
                     {note.invoice_id}

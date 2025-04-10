@@ -5,6 +5,8 @@ import PropTypes from "prop-types";
 
 const Sidebar = ({ user, handleLogout }) => {
     const [isOpen, setIsOpen] = useState(false);
+    console.log("🧠 Sidebar Received User:", user); // debugging
+
 
     return (
         <>

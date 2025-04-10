@@ -52,7 +52,7 @@ const CreateNewAccountPage = () => {
         loadDropdownData();
     }, []);
 
-    // ✅ Handle Form Input Changes
+    // Handle Form Input Changes
     const handleChange = (e) => {
         setAccountData({ ...accountData, [e.target.name]: e.target.value });
     };
@@ -71,7 +71,7 @@ const CreateNewAccountPage = () => {
     };
     
 
-    // ✅ Handle Industry Selection
+    // Handle Industry Selection
     const handleIndustryChange = (e) => {
         const value = e.target.value;
         if (value === "new") {
@@ -82,7 +82,7 @@ const CreateNewAccountPage = () => {
         }
     };
 
-    // ✅ Handle Creating New Industry
+    // Handle Creating New Industry
     const handleCreateIndustry = async () => {
         if (!newIndustry.trim()) return;
     
@@ -216,7 +216,7 @@ const CreateNewAccountPage = () => {
                     <option value="new">➕ Add New Industry</option>
                 </select>
 
-                {/* ✅ Show input field when "Add New Industry" is selected */}
+                {/* Show input field when "Add New Industry" is selected */}
                 {showNewIndustryInput && (
                     <div className="flex mt-2">
                         <input 
@@ -237,7 +237,7 @@ const CreateNewAccountPage = () => {
                 )}
 
 
-                {/* ✅ Sales Representative Selection */}
+                {/* Sales Representative Selection */}
                 <select
                     className="w-full p-2 border rounded"
                     value={accountData.user_id || ""}
@@ -252,7 +252,7 @@ const CreateNewAccountPage = () => {
                     ))}
                 </select>
 
-                {/* ✅ Branch Selection */}
+                {/* Branch Selection */}
                 <select 
                     name="branch_id" 
                     value={accountData.branch_id || ""}

@@ -28,7 +28,7 @@ const SummaryCards = ({
     );
 };
 
-// ✅ Prop Validations
+// Prop Validations
 SummaryCards.propTypes = {
     currentMonthCommission: PropTypes.number.isRequired,
     currentYearCommission: PropTypes.number.isRequired,

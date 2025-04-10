@@ -9,11 +9,30 @@ import {
 import { Bar } from "react-chartjs-2";
 import PropTypes from "prop-types";
 
-// ✅ Register required elements for ChartJS
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-const CommissionsChart = ({ viewMode, pastFiveYears, yearlyData, monthlyData, weeklyData, numWeeks }) => {
-    // **1️⃣ Format Data for Each View Mode**
+const CommissionsChart = ({
+    viewMode,
+    pastFiveYears,
+    yearlyData,
+    monthlyData,
+    weeklyData,
+    selectedYear,
+    selectedMonth
+}) => {
+
+    // Dynamically calculate the number of weeks in the month
+    function getWeeksInMonth(year, month) {
+        const firstDay = new Date(year, month - 1, 1);
+        const lastDay = new Date(year, month, 0);
+        const used = firstDay.getDay() + lastDay.getDate();
+        return Math.ceil(used / 7);
+    }
+
+    const weeksInMonth = Math.min(getWeeksInMonth(selectedYear, selectedMonth), 5);
+    const weekLabels = Array.from({ length: weeksInMonth }, (_, i) => `Week ${i + 1}`);
+
+    // CHART DATA SETUP
     const yearlyChartData = {
         labels: pastFiveYears,
         datasets: [
@@ -32,34 +51,30 @@ const CommissionsChart = ({ viewMode, pastFiveYears, yearlyData, monthlyData, we
         datasets: [
             {
                 label: "Monthly Commissions ($)",
-                data: monthlyData.length > 0 ? monthlyData.map(value => value || 0) : Array(12).fill(0),
+                data: monthlyData.map(value => value || 0),
                 backgroundColor: "rgba(75, 192, 192, 0.6)",
             },
         ],
     };
 
     const weeklyChartData = {
-        labels: Array.from({ length: numWeeks || 4 }, (_, i) => `Week ${i + 1}`), // ✅ Dynamically set week labels
+        labels: weekLabels,
         datasets: [
             {
                 label: "Weekly Commissions ($)",
-                data: weeklyData.length > 0
-                    ? weeklyData.map(value => Number(value || 0).toFixed(2))
-                    : Array(numWeeks || 4).fill("0.00"), 
+                data: weeklyData.map(value => Number(value || 0).toFixed(2)),
                 backgroundColor: "rgba(255, 159, 64, 0.6)",
             },
         ],
     };
-    
 
-    // **2️⃣ Select Chart Data Based on View Mode**
-    const chartData = viewMode === "yearly"
-        ? yearlyChartData
-        : viewMode === "monthly"
-        ? monthlyChartData
-        : weeklyChartData;
+    const chartData =
+        viewMode === "yearly"
+            ? yearlyChartData
+            : viewMode === "monthly"
+            ? monthlyChartData
+            : weeklyChartData;
 
-    // **3️⃣ Chart Options**
     const options = {
         responsive: true,
         maintainAspectRatio: false,
@@ -80,15 +95,14 @@ const CommissionsChart = ({ viewMode, pastFiveYears, yearlyData, monthlyData, we
         },
     };
 
-    // **🔍 Debugging Chart Data Before Render**
+    // Debug logging
     console.log("📊 Chart Data Before Render:", {
         viewMode,
-        pastFiveYears,
-        yearlyData,
-        monthlyData,
+        selectedYear,
+        selectedMonth,
         weeklyData,
-        numWeeks,
-        selectedChartData: chartData,
+        weekLabels,
+        chartData,
     });
 
     return (
@@ -104,7 +118,8 @@ CommissionsChart.propTypes = {
     yearlyData: PropTypes.oneOfType([PropTypes.object, PropTypes.array]).isRequired,
     monthlyData: PropTypes.arrayOf(PropTypes.number).isRequired,
     weeklyData: PropTypes.arrayOf(PropTypes.number).isRequired,
-    numWeeks: PropTypes.number,
+    selectedYear: PropTypes.number.isRequired,
+    selectedMonth: PropTypes.number.isRequired,
 };
 
 export default CommissionsChart;

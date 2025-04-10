@@ -1,25 +1,33 @@
 import { useEffect, useState } from "react";
-import { fetchPaidInvoices } from "../services/invoiceService";
+import { fetchInvoicesByStatus } from "../services/invoiceService";
+import { fetchAccountById } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
 
 const PaidInvoicesPage = ({ user }) => {
     const [invoices, setInvoices] = useState([]);
+    const [accountNames, setAccountNames] = useState({});
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (user?.id) {
-            fetchPaidInvoices(user.id).then((data) => {
-                console.log("📌 API Data - Paid Invoices:", data); // ✅ Debug Log
-                if (Array.isArray(data)) {
-                    setInvoices(data);
-                } else {
-                    console.error("❌ Data is not an array:", data);
-                }
-            });
-        }
-    }, [user?.id]);
+            if (user?.id) {
+                fetchInvoicesByStatus("Paid").then((filtered) => {
+                    setInvoices(filtered);
+                    filtered.forEach((inv) => {
+                        if (!accountNames[inv.account_id]) {
+                            fetchAccountById(inv.account_id).then(account => {
+                                setAccountNames(prev => ({
+                                    ...prev,
+                                    [inv.account_id]: account.business_name
+                                }));
+                            });
+                        }
+                    });
+                });
+            }
+        }, [user?.id, accountNames]);
+    
 
     return (
         <div className="flex">

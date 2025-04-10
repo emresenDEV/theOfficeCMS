@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchUnpaidInvoices } from "../services/invoiceService";
+import { fetchInvoicesByStatus } from "../services/invoiceService";
 import { fetchAccountById } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
@@ -12,19 +12,23 @@ const UnpaidInvoicesPage = ({ user }) => {
 
     useEffect(() => {
         if (user?.id) {
-            fetchUnpaidInvoices(user.id).then(data => {
-                setInvoices(data);
-
-                data.forEach(inv => {
+            fetchInvoicesByStatus("Pending").then((filtered) => {
+                setInvoices(filtered);
+                filtered.forEach((inv) => {
                     if (!accountNames[inv.account_id]) {
                         fetchAccountById(inv.account_id).then(account => {
-                            setAccountNames(prev => ({ ...prev, [inv.account_id]: account.business_name }));
+                            setAccountNames(prev => ({
+                                ...prev,
+                                [inv.account_id]: account.business_name
+                            }));
                         });
                     }
                 });
             });
         }
-    }, [user?.id]);
+    }, [user?.id, accountNames]);
+    
+    
 
     return (
         <div className="flex">

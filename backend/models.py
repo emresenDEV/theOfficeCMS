@@ -27,14 +27,16 @@ class Account(db.Model):
     # Relationships
     invoices = db.relationship('Invoice', back_populates='account')
     # sales_rep = db.relationship('Users', back_populates='accounts', foreign_keys=[sales_rep_id])
-    sales_rep = db.relationship("Users", foreign_keys=[sales_rep_id], overlaps="accounts_assigned")
-    updated_by_user = db.relationship("Users", foreign_keys=[updated_by_user_id], overlaps="accounts_updated")
+    sales_rep = db.relationship('Users', back_populates='accounts', foreign_keys=[sales_rep_id],  overlaps="accounts_assigned")
+    updated_by_user = db.relationship(
+    'Users',
+    back_populates='accounts_updated',
+    foreign_keys=[updated_by_user_id]
+    )
 
+    payments = db.relationship("Payment", back_populates="account", foreign_keys='Payment.account_id')
 
-
-
-    
-    # ✅ Convert object to dictionary for JSON responses
+    # Convert object to dictionary for JSON responses
     def to_dict(self):
         return {
             "account_id": self.account_id,
@@ -88,12 +90,13 @@ class Commissions(db.Model):
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=False)
     commission_rate = db.Column(db.Numeric, nullable=False) #RATE SHOULD BE BASED ON USER ID set commission rate. 
     commission_amount = db.Column(db.Numeric, nullable=False)
+    payment_id = db.Column(db.Integer, db.ForeignKey('payments.payment_id'), nullable=True)
     date_paid = db.Column(db.DateTime)
     
     # Relationships
     sales_rep = db.relationship('Users', back_populates='commissions', foreign_keys=[sales_rep_id])
     invoice = db.relationship('Invoice', back_populates='commissions', foreign_keys=[invoice_id])
-# Commissions table stores all of the commissions for each invoice. Commissions have an ID, a user_id they are linked to, and an invoice_id they are linked to. The invoice_id links to commission to a specific account (which is connected to the invoice via na account_id). The rate is determined by the user_id and the rate associated with said user. The commission amount is calculated by multiplying the com rate by the amount of the invoice (not total_due, because we dont earn commission on taxes). The date_paid is the date the commission was paid out. This table simply stores commission data. 
+    payment = db.relationship('Payment', backref='commission', foreign_keys=[payment_id]) 
 
 class Departments(db.Model):
     __tablename__ = 'departments'
@@ -109,48 +112,69 @@ class Industry(db.Model):
 
 class Invoice(db.Model):
     __tablename__ = 'invoices'
-    invoice_id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable = False)
-    sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable = False)
     
+    invoice_id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=False)
+    sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+
     tax_rate = db.Column(db.Numeric, db.ForeignKey('tax_rates.rate'))
     tax_amount = db.Column(db.Numeric)
-    discount_percent = db.Column(db.Numeric, db.ForeignKey('services.discount_percent')) 
+    discount_percent = db.Column(db.Numeric)
     discount_amount = db.Column(db.Numeric)
     final_total = db.Column(db.Numeric)
-    status = db.Column(db.String(20))
-    paid = db.Column(db.Boolean)
-    payment_method = db.Column(db.String(30), db.ForeignKey('payment_methods.method_name'))
-    last_four_payment_method = db.Column(db.Numeric)
-    total_paid = db.Column(db.Numeric)
-    date_paid = db.Column(db.DateTime)
-    date_created = db.Column(db.DateTime)
-    date_updated = db.Column(db.DateTime)
+    
+    status = db.Column(db.String(20))  # Computed dynamically in service or frontend
+
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     due_date = db.Column(db.Date)
-    
-    amount = db.Column(db.Numeric)
-    payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_methods.method_id'))
-    commission_amount = db.Column(db.Numeric, db.ForeignKey('commissions.commission_amount'))
-    
+
     # Relationships
     account = db.relationship('Account', back_populates='invoices', foreign_keys=[account_id])
-    commissions = db.relationship('Commissions', back_populates='invoice', foreign_keys=[Commissions.invoice_id])
+    commissions = db.relationship('Commissions', back_populates='invoice', foreign_keys='Commissions.invoice_id')
     sales_rep = db.relationship('Users', back_populates='invoices', foreign_keys=[sales_rep_id])
-    invoice_services = db.relationship('InvoiceServices', back_populates='invoice', cascade="all, delete-orphan", overlaps="services")
-    services = db.relationship('Service', secondary='invoice_services', back_populates='invoices', overlaps="invoice_services")
+    invoice_services = db.relationship(
+    'InvoiceServices',
+    back_populates='invoice',
+    cascade="all, delete-orphan",
+    overlaps="services,service,invoices"
+    )
+    services = db.relationship(
+        'Service',
+        secondary='invoice_services',
+        back_populates='invoices',
+        overlaps="invoice_services,service,invoice"
+    )
+    payments = db.relationship('Payment', back_populates='invoice', cascade="all, delete-orphan")
+
+
 
 class InvoiceServices(db.Model):
     __tablename__ = 'invoice_services'
     invoice_service_id = db.Column(db.Integer, primary_key=True)
-    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
-    service_id = db.Column(db.Integer, db.ForeignKey('services.service_id'))
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=False)
+    service_id = db.Column(db.Integer, db.ForeignKey('services.service_id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
-    price = db.Column(db.Numeric, nullable=False)  # Price per unit
-    total_price = db.Column(db.Numeric, nullable=False)  # Computed as quantity * price
+    price_per_unit = db.Column(db.Numeric, nullable=False)
+    total_price = db.Column(db.Numeric, nullable=False) #subtotal after discount
+    discount_percent = db.Column(db.Numeric, nullable=True) #0.10 for 10%
+    discount_total = db.Column(db.Numeric, nullable=True) #amount saved ($00.00)
+
     
     # Relationships
-    invoice = db.relationship('Invoice', back_populates='invoice_services', foreign_keys=[invoice_id])
-    service = db.relationship('Service', back_populates='invoice_services', foreign_keys=[service_id], overlaps="invoices")
+    invoice = db.relationship(
+    'Invoice',
+    back_populates='invoice_services',
+    foreign_keys=[invoice_id],
+    overlaps="services,service,invoices"
+    )
+    service = db.relationship(
+        'Service',
+        back_populates='invoice_services',
+        foreign_keys=[service_id],
+        overlaps="invoices,invoice,services"
+    )
+
 
 
 class Notes(db.Model): 
@@ -162,6 +186,24 @@ class Notes(db.Model):
     note_text = db.Column(db.Text, nullable=False)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     
+class Payment(db.Model):
+    __tablename__ = 'payments'
+
+    payment_id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=False)
+    sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    logged_by = db.Column(db.String, nullable=False)
+    payment_method = db.Column(db.Integer, db.ForeignKey('payment_methods.method_id'), nullable=False)
+    last_four_payment_method = db.Column(db.String(4), nullable=True)
+    total_paid = db.Column(db.Numeric, nullable=False)
+    date_paid = db.Column(db.DateTime(timezone=True), server_default=db.func.now(), nullable=False)
+
+    # Relationship fix
+    invoice = db.relationship("Invoice", back_populates="payments", foreign_keys=[invoice_id])
+    account = db.relationship("Account", back_populates="payments", foreign_keys=[account_id])
+    sales_rep = db.relationship("Users", back_populates="payments", foreign_keys=[sales_rep_id])
+
 class PaymentMethods(db.Model):
     __tablename__ = 'payment_methods'
     method_id = db.Column(db.Integer, primary_key=True)
@@ -171,13 +213,22 @@ class Service(db.Model):
     __tablename__ = 'services'
     service_id = db.Column(db.Integer, primary_key=True)
     service_name = db.Column(db.String(50))
-    price = db.Column(db.Numeric)
-    discount = db.Column(db.Numeric)
-    discount_percent = db.Column(db.Numeric)
+    price_per_unit = db.Column(db.Numeric)
     
     # Relationships
-    invoice_services = db.relationship('InvoiceServices', back_populates='service', cascade="all, delete-orphan")
-    invoices = db.relationship('Invoice', secondary='invoice_services', back_populates='services', overlaps="invoice_services")
+    invoice_services = db.relationship(
+    'InvoiceServices',
+    back_populates='service',
+    cascade="all, delete-orphan",
+    overlaps="invoice,services"
+    )
+    invoices = db.relationship(
+        'Invoice',
+        secondary='invoice_services',
+        back_populates='services',
+        overlaps="invoice_services,invoice"
+    )
+
 
 class TaxRates(db.Model):
     __tablename__ = 'tax_rates'
@@ -209,13 +260,13 @@ class UserRoles(db.Model):
         "Users",
         back_populates="role",
         primaryjoin="UserRoles.role_id == Users.role_id",
-        foreign_keys="[Users.role_id]"  # ✅ Explicitly define foreign key
+        foreign_keys="[Users.role_id]"  # Explicitly define foreign key
     )
     
     managers = db.relationship(
         "UserRoles",
         backref=db.backref("subordinates", remote_side=[role_id]),
-        foreign_keys=[reports_to]  # ✅ Explicitly define foreign key for hierarchy
+        foreign_keys=[reports_to]  # Explicitly define foreign key for hierarchy
     )
 
 class Users(db.Model):
@@ -241,11 +292,28 @@ class Users(db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
     
     # Relationships
-    accounts_assigned = db.relationship('Account', foreign_keys=[Account.sales_rep_id], overlaps="sales_rep")
-    accounts_updated = db.relationship('Account', foreign_keys=[Account.updated_by_user_id], overlaps="updated_by_user")
+    accounts = db.relationship(
+    'Account',
+    back_populates='sales_rep',
+    foreign_keys='Account.sales_rep_id',
+    overlaps="accounts_assigned"
+    )
+
+    accounts_assigned = db.relationship(
+        'Account',
+        foreign_keys=[Account.sales_rep_id],
+        overlaps="accounts"
+    )
+
+    accounts_updated = db.relationship(
+    'Account',
+    foreign_keys=[Account.updated_by_user_id],
+    back_populates="updated_by_user",
+    overlaps="updated_by_user"
+    )
 
 
-
+    payments = db.relationship("Payment", back_populates="sales_rep", foreign_keys="Payment.sales_rep_id")
 
     invoices = db.relationship("Invoice", back_populates="sales_rep")
     commissions = db.relationship("Commissions", back_populates="sales_rep")

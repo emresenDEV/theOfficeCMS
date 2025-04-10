@@ -85,11 +85,11 @@ const SettingsPage = ({ user }) => {
         <h1 className="text-2xl font-bold text-left">Settings</h1>
 
         {/* Theme Selection */}
-        <div className="mt-6 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-          <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4 text-left">Appearance</h2>
+        {/* <div className="mt-6 bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
+          <h2 className="font-semibold text-gray-700 dark:text-gray-300 mb-4 text-left">Appearance</h2> */}
 
           {/* Light Mode */}
-          <div className="flex items-center justify-between mb-3">
+          {/* <div className="flex items-center justify-between mb-3">
             <span className="text-gray-700 dark:text-gray-300">Light Mode</span>
             <button
               className={`px-4 py-2 rounded-lg transition ${
@@ -99,10 +99,10 @@ const SettingsPage = ({ user }) => {
             >
               {theme === "light" ? "Enabled" : "Enable"}
             </button>
-          </div>
+          </div> */}
 
           {/* Dark Mode */}
-          <div className="flex items-center justify-between mb-3">
+          {/* <div className="flex items-center justify-between mb-3">
             <span className="text-gray-700 dark:text-gray-300">Dark Mode</span>
             <button
               className={`px-4 py-2 rounded-lg transition ${
@@ -112,10 +112,10 @@ const SettingsPage = ({ user }) => {
             >
               {theme === "dark" ? "Enabled" : "Enable"}
             </button>
-          </div>
+          </div> */}
 
           {/* Use System Theme (Auto) */}
-          <div className="flex items-center justify-between">
+          {/* <div className="flex items-center justify-between">
             <span className="text-gray-700 dark:text-gray-300">Use System Theme (Auto)</span>
             <button
               className={`px-4 py-2 rounded-lg transition ${
@@ -125,8 +125,8 @@ const SettingsPage = ({ user }) => {
             >
               {theme === "system" ? "Auto" : "Set to Auto"}
             </button>
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
 
         {/* Font Size Control */}
         <div className="mt-6 flex items-center justify-between bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">

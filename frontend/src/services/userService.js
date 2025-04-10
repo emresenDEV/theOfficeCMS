@@ -1,7 +1,7 @@
 // userService.js
 import api from "./api";
 
-// ✅ Fetch all users
+// Fetch all users
 export const fetchUsers = async () => {
     try {
         const response = await api.get("/users");
@@ -12,7 +12,7 @@ export const fetchUsers = async () => {
     }
 };
 
-// ✅ Fetch all user roles
+// Fetch all user roles
 export const fetchUserRoles = async () => {
     try {
         const response = await api.get("/user_roles");
@@ -23,7 +23,7 @@ export const fetchUserRoles = async () => {
     }
 };
 
-// ✅ Fetch user profile
+// Fetch user profile
 export const fetchUserProfile = async (userId) => {
     try {
         const response = await api.get(`/users/${userId}`);
@@ -35,7 +35,7 @@ export const fetchUserProfile = async (userId) => {
     }
 };
 
-// ✅ Fetch Sales Representatives
+// Fetch Sales Representatives
 export const fetchSalesReps = async () => {
     try {
         const response = await api.get("/users", {
@@ -56,3 +56,4 @@ export const fetchSalesReps = async () => {
         return [];
     }
 };
+
