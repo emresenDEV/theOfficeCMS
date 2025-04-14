@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users
+from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users, TaxRates
 from flask_cors import cross_origin
 from database import db
 from datetime import datetime
@@ -12,7 +12,7 @@ from sqlalchemy.sql import func
 invoice_bp = Blueprint("invoice", __name__, url_prefix="/invoices")
 central = timezone('America/Chicago')
 
-# ✅ Update Invoice Status (Pending to Paid, Past Due, etc.)
+# Update Invoice Status (Pending to Paid, Past Due, etc.)
 @invoice_bp.route("/invoices/<int:invoice_id>/update_status", methods=["PUT", "OPTIONS"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def update_invoice_status(invoice_id):
@@ -36,6 +36,10 @@ def update_invoice_status(invoice_id):
 
     return jsonify({"message": f"Invoice {invoice_id} status updated to {new_status}"}), 200
 
+def get_tax_rate(zip_code):
+    from models import TaxRates
+    tax = TaxRates.query.filter_by(zip_code=zip_code).first()
+    return float(tax.rate) if tax else 0.0
 
 # Invoices (PLURAL) API
 @invoice_bp.route("/", methods=["GET"])
@@ -81,6 +85,7 @@ def get_invoice_by_id(invoice_id):
         account = Account.query.get(invoice.account_id)
         sales_rep = Users.query.get(invoice.sales_rep_id)
         commission = db.session.query(func.sum(Commissions.commission_amount)).filter(Commissions.invoice_id == invoice_id).scalar()
+        tax_rate = get_tax_rate(account.zip_code)
         # user = Users.query.filter_by(username=p.logged_by).first()
 
         services = (
@@ -117,13 +122,15 @@ def get_invoice_by_id(invoice_id):
                 "date_paid": p.date_paid.strftime("%Y-%m-%d %H:%M:%S")
             })
 
+        
+
 
         return jsonify({
             "invoice_id": invoice.invoice_id,
             "account_id": invoice.account_id,
             "sales_rep_id": invoice.sales_rep_id,
             "status": current_status,
-            "tax_rate": float(invoice.tax_rate or 0),
+            "tax_rate": tax_rate,
             "tax_amount": float(invoice.tax_amount or 0),
             "discount_percent": float(invoice.discount_percent or 0),
             "discount_amount": float(invoice.discount_amount or 0),
@@ -409,36 +416,6 @@ def delete_invoice(invoice_id):
     return jsonify({"message": "Invoice deleted successfully"}), 200
 
 
-# Create Invoices API
-# @invoice_bp.route("/invoices", methods=["POST"])
-# @invoice_bp.route("/", methods=["POST", "OPTIONS"])
-# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
-# def create_invoice():
-#     data = request.json
-#     new_invoice = Invoice(
-#         account_id=data["account_id"],
-#         sales_rep_id=data["sales_rep_id"],
-#         tax_rate=data.get("tax_rate", 0),
-#         discount_percent=data.get("discount_percent", 0),
-#         due_date=datetime.strptime(data["due_date"], "%Y-%m-%d"),
-#         date_created=datetime.now(central),
-#         date_updated=datetime.now(central),
-#     )
-#     db.session.add(new_invoice)
-#     db.session.flush()
-
-#     for s in data["services"]:
-#         invoice_service = InvoiceServices(
-#             invoice_id=new_invoice.invoice_id,
-#             service_id=s["service_id"],
-#             quantity=s["quantity"],
-#             price=s["price"],
-#             total_price=s["quantity"] * s["price"]
-#         )
-#         db.session.add(invoice_service)
-
-#     db.session.commit()
-#     return jsonify({"success": True, "invoice_id": new_invoice.invoice_id}), 201
 
 @invoice_bp.route("", methods=["POST", "OPTIONS"])
 @cross_origin(origin="http://localhost:5174", supports_credentials=True)
@@ -632,3 +609,5 @@ def log_payment(invoice_id):
     except Exception as e:
         print("❌ Error saving payment:", e)
         return jsonify({"error": str(e)}), 500
+    
+

@@ -117,7 +117,7 @@ class Invoice(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=False)
     sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
-    tax_rate = db.Column(db.Numeric, db.ForeignKey('tax_rates.rate'))
+    tax_rate = db.Column(db.Numeric)
     tax_amount = db.Column(db.Numeric)
     discount_percent = db.Column(db.Numeric)
     discount_amount = db.Column(db.Numeric)
@@ -234,7 +234,7 @@ class TaxRates(db.Model):
     __tablename__ = 'tax_rates'
     state = db.Column(db.String(2))
     zip_code = db.Column(db.String(10), primary_key=True)
-    rate = db.Column(db.Numeric)
+    rate = db.Column(db.Numeric, nullable=False)
     
 class Tasks(db.Model):
     __tablename__ = 'tasks'
