@@ -1,3 +1,10 @@
+# Environment Config and Secrets
+.env
+*.pem
+__pycache__/
+*.pyc
+*.sqlite3
+
 # Logs
 logs
 *.log
@@ -12,6 +19,9 @@ dist
 dist-ssr
 *.local
 
+# Test Artifacts
+*.test
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +32,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Flask Session Files
+/tmp/flask_sessions/
+
+# Dev-specific scripts
+backend/generate_dbdiagram.py
+backend/generate_passwords.py

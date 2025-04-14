@@ -282,7 +282,7 @@ class Users(db.Model):
     salary = db.Column(db.Numeric)
     commission_rate = db.Column(db.Numeric) # Commission rate is set and stored here
     is_active = db.Column(db.Boolean, default=True)
-    is_department_lead = db.Column(db.Boolean, db.ForeignKey('user_roles.is_lead'))
+    is_department_lead = db.Column(db.Boolean) 
     receives_commission = db.Column(db.Boolean, default=False)
     phone_number = db.Column(db.String(20))
     extension = db.Column(db.String(5))

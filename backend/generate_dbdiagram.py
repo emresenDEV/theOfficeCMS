@@ -10,7 +10,7 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
-# ✅ Query all tables
+# Query all tables
 cursor.execute("""
     SELECT table_name
     FROM information_schema.tables
@@ -18,7 +18,7 @@ cursor.execute("""
 """)
 tables = {row[0]: [] for row in cursor.fetchall()}  # Store table names
 
-# ✅ Query for column details
+# Query for column details
 cursor.execute("""
     SELECT c.table_name, c.column_name, c.data_type, c.column_default, 
             tc.constraint_type
@@ -33,18 +33,18 @@ cursor.execute("""
 for row in cursor.fetchall():
     table_name, column_name, data_type, column_default, constraint_type = row
 
-    # 🔹 Convert PostgreSQL data types to dbdiagram.io-friendly types
+    # Convert PostgreSQL data types to dbdiagram.io-friendly types
     if data_type == "character varying":
         data_type = "varchar"
     elif data_type == "timestamp without time zone":
         data_type = "timestamp"
 
-    # 🔹 Mark primary key
+    # Mark primary key
     is_primary_key = " [pk]" if constraint_type == "PRIMARY KEY" else ""
 
     tables[table_name].append(f"  {column_name} {data_type}{is_primary_key}")
 
-# ✅ Query for foreign key relationships
+# Query for foreign key relationships
 cursor.execute("""
     SELECT 
         conrelid::regclass AS table_name,
@@ -67,19 +67,19 @@ for row in cursor.fetchall():
     table_name, column_name, foreign_table, foreign_column = row
     relationships.append(f"Ref: {table_name}.{column_name} > {foreign_table}.{foreign_column}")
 
-# ✅ Generate dbdiagram.io schema
+# Generate dbdiagram.io schema
 output = ""
 
-# ✅ Generate tables
+#  Generate tables
 for table, columns in tables.items():
     output += f"Table {table} {{\n"
     output += "\n".join(columns) + "\n}\n\n"
 
-# ✅ Append relationships
+#  Append relationships
 output += "\n".join(relationships)
 
-# ✅ Save to file
+#  Save to file
 with open("dbdiagram_schema.txt", "w") as f:
     f.write(output)
 
-print("✅ Schema exported to dbdiagram_schema.txt")
+print(" Schema exported to dbdiagram_schema.txt")
