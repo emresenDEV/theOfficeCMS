@@ -233,7 +233,7 @@ class Service(db.Model):
 class TaxRates(db.Model):
     __tablename__ = 'tax_rates'
     state = db.Column(db.String(2))
-    zip_code = db.Column(db.Numeric, primary_key=True)
+    zip_code = db.Column(db.String(10), primary_key=True)
     rate = db.Column(db.Numeric)
     
 class Tasks(db.Model):
