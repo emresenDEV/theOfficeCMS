@@ -13,8 +13,8 @@ class Config:
     SESSION_PERMANENT = True
     SESSION_USE_SIGNER = True
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SECURE = False  # ❌ Set to True in production
-    SESSION_COOKIE_SAMESITE = "Lax"  # ✅ Allows cross-site requests for authentication
+    SESSION_COOKIE_SECURE = False  # Set to True in production
+    SESSION_COOKIE_SAMESITE = "Lax"  # Allows cross-site requests for authentication
     SESSION_COOKIE_NAME = "session"
-    SESSION_FILE_DIR = "/tmp/flask_sessions"  # ✅ Ensure the session is stored
+    SESSION_FILE_DIR = "/tmp/flask_sessions"  # Ensure the session is stored
     SESSION_KEY_PREFIX = "auth_"  

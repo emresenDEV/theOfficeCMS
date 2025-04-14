@@ -1,5 +1,17 @@
+# Flask framework
 Flask
 Flask-Cors
 Flask-SQLAlchemy
+Flask-Session
+
+# PostgreSQL
 psycopg2-binary
+
+# Environment variable loading
 python-dotenv
+
+# Date/timezone handling
+pytz
+
+
+Flask-Migrate>=4.0.4
