@@ -1,11 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_session import Session
 from flask_cors import CORS
-from flask_cors import cross_origin
 from config import Config
 from database import db
-import logging
 import os
+
+# Route Blueprints
 from routes.account_routes import account_bp
 from routes.auth_routes import auth_bp
 from routes.branch_routes import branch_bp
@@ -27,30 +27,16 @@ from routes.services_route import service_bp
 app = Flask(__name__)
 app.config.from_object(Config)
 
-Session(app)  # Initialize Flask-Session
-db.init_app(app) # Initialize Database
+Session(app)
+db.init_app(app)
 
-# Apply CORS
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5174"}})
+# Global CORS config for both localhost & Amplify
+CORS(app, supports_credentials=True, origins=[
+    "http://localhost:5174",
+    "https://main.d10cut9dluytw2.amplifyapp.com"
+])
 
-
-
-@app.after_request
-def add_cors_headers(response):
-    origin = request.headers.get("Origin")
-    allowed_origin = "http://localhost:5174"  # Only allowing 5174
-
-    if origin == allowed_origin:
-        response.headers["Access-Control-Allow-Origin"] = allowed_origin  # Set the allowed origin
-    
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    
-    return response
-
-
-# Register Blueprints (Routes)
+# Route Blueprints
 app.register_blueprint(account_bp, url_prefix="/accounts")
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(branch_bp, url_prefix="/branches")
@@ -68,26 +54,23 @@ app.register_blueprint(task_bp, url_prefix="/tasks")
 app.register_blueprint(user_bp, url_prefix="/users")
 app.register_blueprint(user_role_bp, url_prefix="/roles")
 
-# Test Route
+# Root Route
 @app.route('/')
 def home():
     return jsonify({'message': 'Flask Backend Running!'})
 
-# CORS Test Route
-@app.route('/test-cors', methods=['GET', 'OPTIONS'])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+# CORS Test Route 
+@app.route('/test-cors')
 def test_cors():
     return jsonify({"message": "CORS is working!"}), 200
 
 
 if __name__ == "__main__":
-    with app.app_context():  # Proper Context
-        db.create_all()  # Creates tables if they don't exist
-        # app.run(host="0.0.0.0", port=5001, debug=True)
+    with app.app_context():
+        db.create_all()
+
         use_ssl = os.getenv("USE_SSL", "false").lower() == "true"
-
         if use_ssl:
-            app.run(host='0.0.0.0', port=5001, ssl_context=('cert.pem', 'key.pem'))
+            app.run(host="0.0.0.0", port=5001, ssl_context=('cert.pem', 'key.pem'))
         else:
-            app.run(host='0.0.0.0', port=5001, debug=True)
-
+            app.run(host="0.0.0.0", port=5001, debug=True)
