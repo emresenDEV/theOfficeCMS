@@ -5,6 +5,7 @@ from flask_cors import cross_origin
 from config import Config
 from database import db
 import logging
+import os
 from routes.account_routes import account_bp
 from routes.auth_routes import auth_bp
 from routes.branch_routes import branch_bp
@@ -82,5 +83,11 @@ def test_cors():
 if __name__ == "__main__":
     with app.app_context():  # Proper Context
         db.create_all()  # Creates tables if they don't exist
-        app.run(host="0.0.0.0", port=5001, debug=True)
+        # app.run(host="0.0.0.0", port=5001, debug=True)
+        use_ssl = os.getenv("USE_SSL", "false").lower() == "true"
+
+        if use_ssl:
+            app.run(host='0.0.0.0', port=5001, ssl_context=('cert.pem', 'key.pem'))
+        else:
+            app.run(host='0.0.0.0', port=5001, debug=True)
 
