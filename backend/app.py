@@ -82,4 +82,5 @@ def test_cors():
 if __name__ == "__main__":
     with app.app_context():  # Proper Context
         db.create_all()  # Creates tables if they don't exist
-        app.run(debug=True, port=5001)  # Ensure correct port is set
+        app.run(host="0.0.0.0", port=5001, debug=True)
+
