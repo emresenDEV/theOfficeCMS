@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { FiHome, FiUsers, FiSettings, FiBriefcase, FiLogOut, FiMenu, FiClipboard, FiTrendingUp } from "react-icons/fi";
 import PropTypes from "prop-types";
+import logo from "../assets/Dunder-Mifflin.svg";
 
 const Sidebar = ({ user, handleLogout }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +29,7 @@ const Sidebar = ({ user, handleLogout }) => {
                 <div>
                     {/* Logo */}
                     <div className="mb-6 flex items-center justify-center">
-                        <img src="./public/Dunder-Mifflin.svg" alt="Dunder Mifflin Company Logo" className="w-11/12 max-w-[280px] object-contain" />
+                        <img src={logo} alt="Dunder Mifflin Company Logo" className="w-11/12 max-w-[280px] object-contain" />
                     </div>
 
                     {/* User Info */}
