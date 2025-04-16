@@ -31,10 +31,10 @@ Session(app)
 db.init_app(app)
 
 # Global CORS config for both localhost & Amplify
-CORS(app, supports_credentials=True, origins=[
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": [
     "http://localhost:5174",
     "https://main.d10cut9dluytw2.amplifyapp.com"
-])
+]}})
 
 # Route Blueprints
 app.register_blueprint(account_bp, url_prefix="/accounts")
