@@ -65,12 +65,16 @@ def test_cors():
     return jsonify({"message": "CORS is working!"}), 200
 
 
+# if __name__ == "__main__":
+#     with app.app_context():
+#         db.create_all()
+
+#         use_ssl = os.getenv("USE_SSL", "false").lower() == "true"
+#         if use_ssl:
+#             app.run(host="0.0.0.0", port=5001, ssl_context=('cert.pem', 'key.pem'))
+#         else:
+#             app.run(host="0.0.0.0", port=5001, debug=True)
+            
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-
-        use_ssl = os.getenv("USE_SSL", "false").lower() == "true"
-        if use_ssl:
-            app.run(host="0.0.0.0", port=5001, ssl_context=('cert.pem', 'key.pem'))
-        else:
-            app.run(host="0.0.0.0", port=5001, debug=True)
