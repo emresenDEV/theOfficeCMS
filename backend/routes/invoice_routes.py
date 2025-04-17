@@ -318,20 +318,18 @@ def validate_invoice_for_account(account_id, invoice_id):
     "http://localhost:5174",
     "https://theofficecms.com"
 ], supports_credentials=True)
-
 def update_invoice(invoice_id):
+    origin = request.headers.get("Origin", "https://theofficecms.com")
+    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
+        origin = "https://theofficecms.com"
+
     if request.method == "OPTIONS":
-        origin = request.headers.get("Origin", "https://theofficecms.com")
-        if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
-            origin = "https://theofficecms.com"
-
-    response = jsonify({"message": "Preflight OK"})
-    response.headers["Access-Control-Allow-Origin"] = origin
-    response.headers["Access-Control-Allow-Methods"] = "PUT, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response, 200
-
+        response = jsonify({"message": "Preflight OK"})
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "PUT, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response, 200
 
     data = request.get_json()
     invoice = Invoice.query.get_or_404(invoice_id)

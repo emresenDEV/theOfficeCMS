@@ -28,7 +28,10 @@ def handle_options_update_account(account_id):
 
 # GET Assigned Accounts API
 @account_bp.route("/assigned", methods=["GET"])
-@cross_origin()
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_assigned_accounts():
     sales_rep_id = request.args.get("sales_rep_id", type=int)
     if not sales_rep_id:

@@ -24,7 +24,7 @@ export const fetchAccountById = async (accountId) => {
     }
 };
 
-// ✅ Fetch Account Metrics (Revenue, Tasks, Last Invoice Date)
+// Fetch Account Metrics (Revenue, Tasks, Last Invoice Date)
 export const fetchAccountMetrics = async (salesRepId) => {
     try {
         const response = await api.get(`/accounts/account_metrics?sales_rep_id=${salesRepId}`);

@@ -37,11 +37,11 @@ export const AccountsTable = ({ user }) => {
 
     }, [user]);
 
-        // ✅ Extract unique industries (remove empty values)
+        // Extract unique industries (remove empty values)
         useEffect(() => {
             if (accounts.length === 0) return;
         
-            // ✅ Extract unique industries, ensuring no duplicates and filtering out null/empty values
+            // Extract unique industries, ensuring no duplicates and filtering out null/empty values
             const uniqueIndustries = Array.from(
                 new Set(accounts.map(acc => acc.industry_name).filter(industry => industry && industry.trim() !== ""))
             );
@@ -52,13 +52,13 @@ export const AccountsTable = ({ user }) => {
         }, [accounts]);
         
 
-    // ✅ Merging account data with metrics
+    // Merging account data with metrics
     const mergedAccounts = accounts.map(acc => {
         const metrics = accountMetrics.find(m => m.account_id === acc.account_id) || {};
         return { ...acc, ...metrics };
     });
 
-    // ✅ Sorting Logic
+    // Sorting Logic
     const toggleSortOrder = (column) => {
         setSortOrder(prevOrder => (sortColumn === column && prevOrder === "asc" ? "desc" : "asc"));
         setSortColumn(column);
@@ -68,12 +68,12 @@ export const AccountsTable = ({ user }) => {
         let valueA = a[sortColumn] || "";
         let valueB = b[sortColumn] || "";
     
-        // ✅ Sorting for Industry Name (Alphabetically)
+        // Sorting for Industry Name (Alphabetically)
         if (sortColumn === "industry_name") {
             return sortOrder === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
         }
     
-        // ✅ Sorting for Last Invoice Date
+        // Sorting for Last Invoice Date
         if (sortColumn === "last_invoice_date") {
             if (!valueA) valueA = "0000-01-01"; // Ensure "N/A" is always last
             if (!valueB) valueB = "0000-01-01";
@@ -83,12 +83,12 @@ export const AccountsTable = ({ user }) => {
                 : new Date(valueB) - new Date(valueA);
         }
     
-        // ✅ Default Sorting (for numbers & other text fields)
+        // Default Sorting (for numbers & other text fields)
         return sortOrder === "asc" ? valueA.toString().localeCompare(valueB.toString()) : valueB.toString().localeCompare(valueA.toString());
     });
     
 
-    // ✅ Filtering Logic
+    // Filtering Logic
     const filteredAccounts = sortedAccounts.filter(acc => {
         const searchText = searchQuery.toLowerCase();
         const matchesSearch =
@@ -139,7 +139,7 @@ export const AccountsTable = ({ user }) => {
                     </div>
 
                     {/* Table */}
-                    <div className="overflow-y-auto max-h-[600px]"> {/* ✅ Scrollable Table */}
+                    <div className="overflow-y-auto max-h-[600px]"> {/* Scrollable Table */}
                         <table className="w-full text-left border-collapse">
                             <thead className="sticky top-0 bg-gray-100 shadow-md z-10">
                                 <tr>
@@ -184,7 +184,7 @@ export const AccountsTable = ({ user }) => {
     );
 };
 
-// ✅ Fixed `PropTypes` and ensured correct user field names
+
 AccountsTable.propTypes = {
     user: PropTypes.shape({
         user_id: PropTypes.number.isRequired,
