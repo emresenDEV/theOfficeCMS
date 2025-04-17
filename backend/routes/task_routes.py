@@ -8,22 +8,26 @@ task_bp = Blueprint("tasks", __name__)
 @task_bp.route("", methods=["OPTIONS"])
 @task_bp.route("/", methods=["OPTIONS"])
 def options_tasks():
-    """✅ Handle CORS preflight for /tasks"""
-    response = jsonify({"message": "CORS preflight OK"})
-    response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "http://localhost:5174")
-    response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response, 200
+        origin = request.headers.get("Origin", "https://theofficecms.com")
+        if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
+            origin = "https://theofficecms.com"
 
+        response = jsonify({"message": "CORS preflight OK"})
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response, 200
 
-
-# ✅ Fetch Tasks Assigned to User
+#  Fetch Tasks Assigned to User
 @task_bp.route("/", methods=["GET"])
-@cross_origin(supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_tasks():
     user_id = request.args.get("assigned_to", type=int)
-    print(f"🔍 DEBUG: Received user_id = {user_id}")  # ✅ Add debugging
+    print(f"🔍 DEBUG: Received user_id = {user_id}")  #  Add debugging
 
     if not user_id:
         return jsonify({"message": "User ID required"}), 400
@@ -40,13 +44,16 @@ def get_tasks():
         "is_completed": task.is_completed,
         "account_id": task.account_id, # If task is associated with an account
         "account_name": Account.query.get(task.account_id).business_name if task.account_id else "No Account", # Name of associated account
-        "created_by": Users.query.get(task.user_id).username if task.user_id else "Unknown",  # ✅ Show creator's username
+        "created_by": Users.query.get(task.user_id).username if task.user_id else "Unknown",  #  Show creator's username
         "date_created": task.date_created.strftime("%Y-%m-%d %H:%M:%S") if task.date_created else None,
     } for task in tasks])
 
-# ✅ Fetch Tasks By Account ID
+# Fetch Tasks By Account ID
 @task_bp.route("/accounts/<int:account_id>/tasks", methods=["GET"])
-@cross_origin(supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_tasks_by_account(account_id):
     """Fetch all tasks associated with a specific account"""
     tasks = Tasks.query.filter_by(account_id=account_id).all()
@@ -69,10 +76,13 @@ def get_tasks_by_account(account_id):
 
 
 
-# ✅ Create a New Task
+# Create a New Task
 @task_bp.route("", methods=["POST"])
 @task_bp.route("/", methods=["POST"])
-@cross_origin(supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def create_task():
     data = request.json
     required_fields = ["user_id", "task_description", "due_date"]
@@ -105,9 +115,12 @@ def create_task():
 
 
 
-# ✅ Update an Existing Task
+# Update an Existing Task
 @task_bp.route("/<int:task_id>", methods=["PUT"])
-@cross_origin()
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def update_task(task_id):
     task = Tasks.query.get(task_id)
 
@@ -133,9 +146,12 @@ def update_task(task_id):
         "is_completed": task.is_completed
     }), 200
 
-# ✅ Delete a Task
+# Delete a Task
 @task_bp.route("/<int:task_id>", methods=["DELETE"])
-@cross_origin()
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def delete_task(task_id):
     task = Tasks.query.get(task_id)
 

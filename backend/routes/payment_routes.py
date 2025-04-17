@@ -8,15 +8,23 @@ payment_bp = Blueprint("payment", __name__, url_prefix="/payment")
 
 # Update a payment
 @payment_bp.route("/<int:payment_id>", methods=["PUT", "OPTIONS"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def update_payment(payment_id):
     if request.method == "OPTIONS":
+        origin = request.headers.get("Origin", "https://theofficecms.com")
+        if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
+            origin = "https://theofficecms.com"
+
         response = jsonify({"message": "CORS preflight OK"})
-        response.headers["Access-Control-Allow-Origin"] = "http://localhost:5174"
+        response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Methods"] = "GET, PUT, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
         response.headers["Access-Control-Allow-Credentials"] = "true"
         return response, 200
+
     
     payment = Payment.query.get_or_404(payment_id)
     data = request.get_json()
@@ -62,7 +70,10 @@ def update_payment(payment_id):
 
 # Delete a payment
 @payment_bp.route("/<int:payment_id>", methods=["DELETE"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def delete_payment(payment_id):
     payment = Payment.query.get_or_404(payment_id)
     try:

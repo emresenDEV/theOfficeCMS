@@ -8,14 +8,18 @@ calendar_bp = Blueprint("calendar", __name__)
 
 
 @calendar_bp.route("/events/<int:event_id>", methods=["OPTIONS"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def options_update_event(event_id):
+    origin = request.headers.get("Origin", "https://theofficecms.com")
+    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
+        origin = "https://theofficecms.com"
+
     response = jsonify({"message": "CORS preflight OK"})
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:5174"
+    response.headers["Access-Control-Allow-Origin"] = origin
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Credentials"] = "true"
     return response, 200
+
 
 # READ
 @calendar_bp.route("/events", methods=["GET"])
@@ -47,25 +51,25 @@ def get_calendar_events():
         for event in events
     ])
 
-# ✅ Create a New Calendar Event
+#  Create a New Calendar Event
 @calendar_bp.route("/events", methods=["POST"])
 def create_calendar_event():
     data = request.json
 
-    # ✅ Simulating getting the user_id from the session (or authentication)
+    #  Simulating getting the user_id from the session (or authentication)
     # If you have authentication middleware, use the logged-in user
     user_id = data.get("user_id")
     if not user_id:
         return jsonify({"error": "User authentication required"}), 401
 
     try:
-        # ✅ Ensure user_id is an integer
+        # Ensure user_id is an integer
         user_id = int(user_id)
 
-        # ✅ Convert account_id if provided
+        # Convert account_id if provided
         account_id = int(data["account_id"]) if data.get("account_id") else None
 
-        # ✅ Ensure start_time and end_time are properly formatted
+        # Ensure start_time and end_time are properly formatted
         start_time = datetime.strptime(data["start_time"], "%H:%M:%S").time()
         end_time = datetime.strptime(data["end_time"], "%H:%M:%S").time()
 
@@ -91,20 +95,23 @@ def create_calendar_event():
         return jsonify({"error": f"Invalid data format: {str(e)}"}), 400
 
 
-# ✅ Update an Existing Calendar Event
+# Update an Existing Calendar Event
 @calendar_bp.route("/events/<int:event_id>", methods=["PUT", "OPTIONS"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def update_calendar_event(event_id):
     print(f"🔍 Received PUT request for event ID: {event_id}")
     event = CalendarEvent.query.get(event_id)
     if not event:
         return jsonify({"error": "Event not found"}), 404
 
-    data = request.json  # ✅ Ensure JSON is parsed correctly
+    data = request.json  # Ensure JSON is parsed correctly
     if not data:
         return jsonify({"error": "Invalid JSON data"}), 400
 
-    # ✅ Update event fields safely
+    # Update event fields safely
     event.event_title = data.get("event_title", event.event_title)
     event.location = data.get("location", event.location)
     event.start_time = datetime.strptime(data["start_time"], "%H:%M:%S").time() if "start_time" in data else event.start_time

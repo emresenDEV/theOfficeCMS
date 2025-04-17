@@ -5,16 +5,7 @@ from flask_cors import cross_origin
 
 notes_bp = Blueprint("note", __name__)
 
-# UPDATE BELOW WITH CORRECT PATH FOR NOTES
-# @notes_bp.route("/update/<int:account_id>", methods=["OPTIONS"])
-# @cross_origin(origin="http://localhost:5174", supports_credentials=True)
-# def handle_options_create_note(note_id):
-#     response = jsonify({"message": "CORS preflight OK"})
-#     response.headers["Access-Control-Allow-Origin"] = "http://localhost:5174"
-#     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-#     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-#     response.headers["Access-Control-Allow-Credentials"] = "true"
-#     return response, 200
+
 
 # Get Notes API
 @notes_bp.route("/notes", methods=["GET"])
@@ -27,7 +18,7 @@ def get_notes():
         notes = Notes.query.all()
 
     if not notes:
-        return jsonify([])  # ✅ Ensure empty list instead of error
+        return jsonify([])  #  Ensure empty list instead of error
 
     return jsonify([
         {
@@ -42,12 +33,15 @@ def get_notes():
 
 #Create Notes API
 @notes_bp.route("/", methods=["POST"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def create_note():
     data = request.json
     try:
         print(f"🔍 Incoming Data: {data}")
-        # ✅ Extract note data
+        # Extract note data
         account_id = data.get("account_id")
         user_id = data.get("user_id")
         invoice_id = data.get("invoice_id")
@@ -56,7 +50,7 @@ def create_note():
         if not account_id or not user_id or not note_text:
             return jsonify({"error": "Missing required fields"}), 400
         
-        # ✅ Fetch the user's information based on user_id
+        # Fetch the user's information based on user_id
         user = Users.query.get(user_id)
         if not user:
             return jsonify({"success": False, "error": "User not found"}), 404
@@ -90,25 +84,13 @@ def create_note():
         return jsonify({"error": "An error occurred while creating the note"}), 500
 
 
-# ✅ Fetch all notes for a specific account
-# @notes_bp.route("/", methods=["GET"])
-# def get_notes_by_account():
-#     account_id = request.args.get("account_id", type=int)
+# Fetch all notes for a specific account
 
-#     if not account_id:
-#         return jsonify({"error": "Account ID is required"}), 400
-
-#     notes = Note.query.filter_by(account_id=account_id).all()
-
-#     if not notes:
-#         return jsonify([]), 200  # Return an empty list instead of 404
-
-#     return jsonify([note.to_dict() for note in notes]), 200
 
 @notes_bp.route("/account/<int:account_id>", methods=["GET"])
 def get_notes_by_account(account_id):
     try:
-        # ✅ Proper JOIN with Users table to fetch username
+        # Proper JOIN with Users table to fetch username
         notes = db.session.query(Notes, Users.username).join(
             Users, Notes.user_id == Users.user_id
         ).filter(Notes.account_id == account_id).all()
@@ -118,7 +100,7 @@ def get_notes_by_account(account_id):
                 "note_id": note.Notes.note_id,
                 "account_id": note.Notes.account_id,
                 "user_id": note.Notes.user_id,
-                "username": note.username,  # ✅ Properly fetched username
+                "username": note.username,  
                 "invoice_id": note.Notes.invoice_id,
                 "note_text": note.Notes.note_text,
                 "date_created": note.Notes.date_created.strftime("%Y-%m-%d %H:%M:%S")
@@ -155,20 +137,3 @@ def get_notes_by_invoice(invoice_id):
     except Exception as e:
         print(f"❌ Error fetching notes for invoice: {str(e)}")
         return jsonify({"error": "An error occurred while fetching notes"}), 500
-
-
-    # notes = Notes.query.filter_by(account_id=account_id).all()
-    # if not notes:
-    #     return jsonify([]), 200  # ✅ Return empty list instead of a 404 error
-
-    # return jsonify([
-    #     {
-    #         "note_id": note.note_id,
-    #         "account_id": note.account_id,
-    #         "invoice_id": note.invoice_id,
-    #         "user_id": note.user_id,
-    #         "note_text": note.note_text,
-    #         "date_created": note.date_created.strftime('%Y-%m-%d %H:%M:%S')
-    #     } for note in notes
-    #     return jsonify(notes_list), 200
-    # ]), 200

@@ -9,10 +9,18 @@ from flask_cors import cross_origin
 account_bp = Blueprint("accounts", __name__)
 
 @account_bp.route("/update/<int:account_id>", methods=["OPTIONS"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
+
 def handle_options_update_account(account_id):
+    origin = request.headers.get("Origin")
+    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
+        origin = "https://theofficecms.com"  # fallback just in case
+
     response = jsonify({"message": "CORS preflight OK"})
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:5174"
+    response.headers["Access-Control-Allow-Origin"] = origin
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Credentials"] = "true"
@@ -170,7 +178,11 @@ def get_account_metrics():
 
 # Update Account Details
 @account_bp.route("/update/<int:account_id>", methods=["PUT"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
+
 def update_account(account_id):
     try:
         data = request.json
@@ -217,7 +229,11 @@ def update_account(account_id):
 
 # Create a New Account API
 @account_bp.route("/", methods=["POST"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
+
 def create_account():
     try:
         data = request.json  

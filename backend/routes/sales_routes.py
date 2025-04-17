@@ -7,9 +7,12 @@ from datetime import datetime
 
 sales_bp = Blueprint("sales", __name__)
 
-# ✅ Company-wide monthly sales
+# Company-wide monthly sales
 @sales_bp.route("/company", methods=["GET"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_company_sales():
     year = request.args.get("year", type=int)
 
@@ -32,9 +35,12 @@ def get_company_sales():
     return jsonify(sales_data), 200
 
 
-# ✅ Fetch sales for a specific user
+# Fetch sales for a specific user
 @sales_bp.route("/user", methods=["GET"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_user_sales():
     """Retrieve monthly sales for a specific user."""
     sales_rep_id = request.args.get("user_id", type=int)
@@ -71,9 +77,12 @@ def get_user_sales():
         return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
 
 
-# ✅ Branch-wide monthly sales
+# Branch-wide monthly sales
 @sales_bp.route("/branch", methods=["GET"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_branch_sales():
     year = request.args.get("year", type=int)
     if not year:
@@ -102,9 +111,12 @@ def get_branch_sales():
     return jsonify(sales_data), 200
 
 
-# ✅ Sales for all users in a branch
+# Sales for all users in a branch
 @sales_bp.route("/branch-users", methods=["GET"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_branch_users_sales():
     branch_id = request.args.get("branch_id", type=int)
     year = request.args.get("year", type=int, default=datetime.now().year)

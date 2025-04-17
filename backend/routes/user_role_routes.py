@@ -5,20 +5,28 @@ from flask_cors import cross_origin
 
 user_role_bp = Blueprint("user_roles", __name__)
 
-# ✅ Handle CORS Preflight
+#  Handle CORS Preflight
 @user_role_bp.route("", methods=["OPTIONS"])
 @user_role_bp.route("/", methods=["OPTIONS"])
 def options_roles():
+    origin = request.headers.get("Origin", "https://theofficecms.com")
+    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
+        origin = "https://theofficecms.com"
+
     response = jsonify({"message": "CORS preflight OK"})
-    response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "http://localhost:5174")
+    response.headers["Access-Control-Allow-Origin"] = origin
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
     response.headers["Access-Control-Allow-Credentials"] = "true"
     return response, 200
 
-# ✅ Fetch All Roles
+
+# Fetch All Roles
 @user_role_bp.route("/roles", methods=["GET"])
-@cross_origin(supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_all_roles():
     roles = UserRoles.query.all()
     return jsonify([{
@@ -29,9 +37,12 @@ def get_all_roles():
         "is_lead": role.is_lead
     } for role in roles]), 200
 
-# ✅ Fetch Role by ID
+# Fetch Role by ID
 @user_role_bp.route("/roles/<int:role_id>", methods=["GET"])
-@cross_origin(supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def get_role_by_id(role_id):
     role = UserRoles.query.get(role_id)
     if not role:
@@ -45,9 +56,12 @@ def get_role_by_id(role_id):
         "is_lead": role.is_lead
     }), 200
 
-# ✅ Create New Role
+# Create New Role
 @user_role_bp.route("/roles", methods=["POST"])
-@cross_origin(supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def create_role():
     data = request.json
     if not data.get("role_name"):
@@ -65,9 +79,12 @@ def create_role():
 
     return jsonify({"message": "Role created successfully", "role_id": new_role.role_id}), 201
 
-# ✅ Update Role
+# Update Role
 @user_role_bp.route("/roles/<int:role_id>", methods=["PUT"])
-@cross_origin(supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def update_role(role_id):
     role = UserRoles.query.get(role_id)
     if not role:
@@ -83,9 +100,12 @@ def update_role(role_id):
 
     return jsonify({"message": "Role updated successfully"}), 200
 
-# ✅ Delete Role
+# Delete Role
 @user_role_bp.route("/roles/<int:role_id>", methods=["DELETE"])
-@cross_origin(supports_credentials=True)
+@cross_origin(origins=[
+    "http://localhost:5174",
+    "https://theofficecms.com"
+], supports_credentials=True)
 def delete_role(role_id):
     role = UserRoles.query.get(role_id)
     if not role:
