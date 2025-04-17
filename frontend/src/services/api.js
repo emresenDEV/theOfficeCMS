@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Base URL for Flask API
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://theofficecms.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.theofficecms.com";
 
 // was: "http://127.0.0.1:5001" but updated to our domain
 
