@@ -14,13 +14,12 @@ central = timezone('America/Chicago')
 
 # Update Invoice Status (Pending to Paid, Past Due, etc.)
 @invoice_bp.route("/invoices/<int:invoice_id>/update_status", methods=["PUT", "OPTIONS"])
-@cross_origin(origin="http://localhost:5174", supports_credentials=True)
 def update_invoice_status(invoice_id):
-    if request.method == "OPTIONS":
-        origin = request.headers.get("Origin", "https://theofficecms.com")
-        if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
-            origin = "https://theofficecms.com"
+    origin = request.headers.get("Origin", "https://theofficecms.com")
+    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
+        origin = "https://theofficecms.com"
 
+    if request.method == "OPTIONS":
         response = jsonify({"message": "Preflight OK"})
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Methods"] = "PUT, OPTIONS"
@@ -28,18 +27,27 @@ def update_invoice_status(invoice_id):
         response.headers["Access-Control-Allow-Credentials"] = "true"
         return response, 200
 
-
     data = request.json
     new_status = data.get("status")
 
     if not new_status:
-        return jsonify({"error": "Status is required"}), 400
+        response = jsonify({"error": "Status is required"}), 400
+    else:
+        invoice = Invoice.query.get_or_404(invoice_id)
+        invoice.status = new_status
+        db.session.commit()
+        response = jsonify({"message": f"Invoice {invoice_id} status updated to {new_status}"}), 200
 
-    invoice = Invoice.query.get_or_404(invoice_id)
-    invoice.status = new_status
-    db.session.commit()
+    # Add CORS headers to main response too
+    if isinstance(response, tuple):
+        response[0].headers["Access-Control-Allow-Origin"] = origin
+        response[0].headers["Access-Control-Allow-Credentials"] = "true"
+    else:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
 
-    return jsonify({"message": f"Invoice {invoice_id} status updated to {new_status}"}), 200
+    return response
+
 
 def get_tax_rate(zip_code):
     from models import TaxRates
