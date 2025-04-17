@@ -38,41 +38,63 @@ export const fetchUserSession = async () => {
 
 
 //  Login User with proper session management
+// export const loginUser = async (username, password) => {
+//     try {
+//         const response = await fetch("http://127.0.0.1:5001/auth/login", {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             credentials: "include", 
+//             body: JSON.stringify({ username, password }),
+//         });
+
+//         if (!response.ok) throw new Error("❌ Login failed");
+
+//         const data = await response.json();
+//         console.log("✅ Login Successful:", data);
+//         return data;
+//     } catch (error) {
+//         console.error("❌ Error logging in:", error);
+//         throw error;
+//     }
+// };
+
 export const loginUser = async (username, password) => {
     try {
-        const response = await fetch("http://127.0.0.1:5001/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include", 
-            body: JSON.stringify({ username, password }),
-        });
-
-        if (!response.ok) throw new Error("❌ Login failed");
-
-        const data = await response.json();
-        console.log("✅ Login Successful:", data);
-        return data;
+        const response = await api.post("/auth/login", { username, password });
+        console.log("✅ Login Successful:", response.data);
+        return response.data;
     } catch (error) {
-        console.error("❌ Error logging in:", error);
+        console.error("❌ Error logging in:", error.response?.data || error.message);
         throw error;
     }
 };
 
-
 // Logout User
+
+// export const logoutUser = async () => {
+//     try {
+//         const response = await fetch("http://127.0.0.1:5001/auth/logout", {
+//             method: "POST",
+//             credentials: "include", 
+//         });
+
+//         if (!response.ok) throw new Error("❌ Logout failed");
+
+//         console.log("✅ Logged out successfully");
+//         return true;
+//     } catch (error) {
+//         console.error("❌ Error logging out:", error);
+//         return false;
+//     }
+// };
+
 export const logoutUser = async () => {
     try {
-        const response = await fetch("http://127.0.0.1:5001/auth/logout", {
-            method: "POST",
-            credentials: "include", 
-        });
-
-        if (!response.ok) throw new Error("❌ Logout failed");
-
+        await api.post("/auth/logout");
         console.log("✅ Logged out successfully");
         return true;
     } catch (error) {
-        console.error("❌ Error logging out:", error);
+        console.error("❌ Error logging out:", error.response?.data || error.message);
         return false;
     }
 };
