@@ -4,7 +4,7 @@ import api from "./api";
 
 // CRUD Operations for Task Events
 
-// ✅ Create a Task
+// Create a Task
 export const createTask = async (task) => {
     try {
         const response = await api.post("tasks", task, {
@@ -22,7 +22,7 @@ export const createTask = async (task) => {
     }
 };
 
-// ✅ Fetch Tasks (Assigned to a User)
+// Fetch Tasks (Assigned to a User)
 export const fetchTasks = async (userId) => {
     try {
         const response = await api.get(`/tasks?user_id=${userId}`, {
@@ -36,7 +36,7 @@ export const fetchTasks = async (userId) => {
     }
 };
 
-// ✅ Fetch Tasks By Account
+// Fetch Tasks By Account
 export const fetchTasksByAccount = async (accountId) => {
     try {
         const response = await api.get(`/tasks/accounts/${accountId}/tasks`);
@@ -50,7 +50,7 @@ export const fetchTasksByAccount = async (accountId) => {
 
 
 
-// ✅ Update a Task (Mark Complete / Edit)
+// Update a Task (Mark Complete / Edit)
 export const updateTask = async (taskId, updatedData) => {
     try {
         const response = await api.put(`/tasks/${taskId}`, updatedData);
@@ -61,7 +61,7 @@ export const updateTask = async (taskId, updatedData) => {
     }
 };
 
-// ✅ Delete a Task
+// Delete a Task
 export const deleteTask = async (taskId) => {
     try {
         await api.delete(`/tasks/${taskId}`);
@@ -74,7 +74,7 @@ export const deleteTask = async (taskId) => {
 
 // FILTER FOR DESIRED USER CALLS
 
-// ✅ Fetch All Branches
+// Fetch All Branches
 export const fetchBranches = async () => {
     try {
         const response = await api.get("/branches");
@@ -89,7 +89,7 @@ export const fetchBranches = async () => {
     }
 };
 
-// ✅ Fetch All Departments 
+// Fetch All Departments 
 export const fetchDepartments = async () => {
     try {
         const response = await api.get("/departments");
@@ -103,20 +103,7 @@ export const fetchDepartments = async () => {
         return [];
     }
 };
-// ✅ Fetch All Departments (No Filtering by Branch-Completed on Frontend)
-// export const fetchDepartments = async () => {
-//     try {
-//         const response = await api.get("/departments");
-//         console.log("✅ Fetched Departments:", response.data);
-//         return response.data;
-//     } catch (error) {
-//         console.error("❌ Error fetching departments:", error.response?.data || error.message);
-//         return [];
-//     }
-// };
-
-
-// ✅ Fetch Employees in a Specific Department and Include Department Name
+// Fetch Employees in a Specific Department and Include Department Name
 export const fetchEmployees = async (departmentId) => {
     try {
         const response = await api.get("/employees", {
@@ -129,7 +116,7 @@ export const fetchEmployees = async (departmentId) => {
         return [];
     }
 };
-// ✅ Fetch Users in a Specific Branch and Department and Include Department Name
+// Fetch Users in a Specific Branch and Department and Include Department Name
 export const fetchUsers = async (branchId = null, departmentId = null) => {
     try {
         const params = {};
@@ -144,20 +131,6 @@ export const fetchUsers = async (branchId = null, departmentId = null) => {
         return [];
     }
 };
-
-
-
-// Fetch all departments
-// export const fetchDepartments = async () => {
-//     try {
-//         const response = await api.get("/departments.department_name");
-//         return response.data;
-//     }
-//     catch (error) {
-//         console.error("Error fetching departments:", error);
-//         return [];
-//     }
-// }
 
 // Fetch all roles
 export const fetchRoles = async () => {

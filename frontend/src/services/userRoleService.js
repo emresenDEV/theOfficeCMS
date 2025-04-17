@@ -1,6 +1,6 @@
 import api from "./api";
 
-// ✅ Fetch all roles
+// Fetch all roles
 export const fetchAllRoles = async () => {
     try {
         const response = await api.get("/user_roles/roles");
@@ -12,7 +12,7 @@ export const fetchAllRoles = async () => {
     }
 };
 
-// ✅ Fetch role by ID
+// Fetch role by ID
 export const fetchRoleById = async (roleId) => {
     try {
         const response = await api.get(`/user_roles/roles/${roleId}`);
@@ -24,7 +24,7 @@ export const fetchRoleById = async (roleId) => {
     }
 };
 
-// ✅ Create a new role
+// Create a new role
 export const createRole = async (roleData) => {
     try {
         const response = await api.post("/user_roles/roles", roleData);
@@ -36,7 +36,7 @@ export const createRole = async (roleData) => {
     }
 };
 
-// ✅ Update role
+// Update role
 export const updateRole = async (roleId, roleData) => {
     try {
         const response = await api.put(`/user_roles/roles/${roleId}`, roleData);
@@ -48,7 +48,7 @@ export const updateRole = async (roleId, roleData) => {
     }
 };
 
-// ✅ Delete role
+//  Delete role
 export const deleteRole = async (roleId) => {
     try {
         const response = await api.delete(`/user_roles/roles/${roleId}`);

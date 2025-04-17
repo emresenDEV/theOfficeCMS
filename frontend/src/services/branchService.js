@@ -1,6 +1,6 @@
 import api from "./api";
 
-// ✅ Fetch All Branches
+// Fetch All Branches
 export const fetchBranches = async () => {
     try {
         const response = await api.get("/branches");
@@ -15,7 +15,7 @@ export const fetchBranches = async () => {
     }
 };
 
-// ✅ Fetch Branch by ID
+// Fetch Branch by ID
 export const fetchBranchById = async (branchId) => {
     try {
         const response = await api.get(`/branches/${branchId}`);

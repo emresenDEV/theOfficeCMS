@@ -24,20 +24,17 @@ export const fetchNotes = async () => {
 // };
 export const fetchNotesByAccount = async (accountId) => {
     try {
-        const response = await fetch(
-            `http://127.0.0.1:5001/notes/account/${accountId}?timestamp=${Date.now()}`, // ✅ Cache-busting query param
-            { credentials: "include" }
-        );
-        if (!response.ok) throw new Error("❌ Failed to fetch notes");
-
-        const data = await response.json();
-        console.log("✅ Fetched Notes for Account", accountId, ":", data);
-        return data;
+        const response = await api.get(`/notes/account/${accountId}`, {
+            params: { timestamp: Date.now() } // cache busting if needed
+        });
+        console.log("✅ Fetched Notes for Account", accountId, ":", response.data);
+        return response.data;
     } catch (error) {
-        console.error("❌ Error fetching notes:", error);
+        console.error("❌ Error fetching notes:", error.response?.data || error.message);
         return [];
     }
 };
+
 
 
 

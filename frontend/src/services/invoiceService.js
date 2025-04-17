@@ -64,6 +64,38 @@ export async function fetchInvoicesByStatus(status) {
 
 
 // Invoice Status API Call
+// export const updateInvoiceStatus = async (invoiceId, status) => {
+//     if (!invoiceId) {
+//         console.error("❌ Error: Invoice ID is missing.");
+//         return null;
+//     }
+
+//     try {
+//         console.log(`🔍 Sending update request for Invoice ID: ${invoiceId} with status: ${status}`);
+
+//         const response = await fetch(`http://127.0.0.1:5001/invoices/${invoiceId}/update_status`, {
+//             method: "PUT",
+//             headers: {
+//                 "Content-Type": "application/json", 
+//             },
+//             body: JSON.stringify({ status }),
+//             credentials: "include", // ✅ Ensures cookies are sent if required
+//         });
+
+//         if (!response.ok) {
+//             const errorText = await response.text();
+//             console.error(`❌ Failed to update invoice: ${errorText}`);
+//             throw new Error("Failed to update invoice status.");
+//         }
+
+//         console.log("✅ Invoice status updated successfully!");
+//         return await response.json();
+//     } catch (error) {
+//         console.error("❌ Error updating invoice status:", error);
+//         return null;
+//     }
+// };
+
 export const updateInvoiceStatus = async (invoiceId, status) => {
     if (!invoiceId) {
         console.error("❌ Error: Invoice ID is missing.");
@@ -71,59 +103,53 @@ export const updateInvoiceStatus = async (invoiceId, status) => {
     }
 
     try {
-        console.log(`🔍 Sending update request for Invoice ID: ${invoiceId} with status: ${status}`);
-
-        const response = await fetch(`http://127.0.0.1:5001/invoices/${invoiceId}/update_status`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json", 
-            },
-            body: JSON.stringify({ status }),
-            credentials: "include", // ✅ Ensures cookies are sent if required
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`❌ Failed to update invoice: ${errorText}`);
-            throw new Error("Failed to update invoice status.");
-        }
-
+        const response = await api.put(`/invoices/${invoiceId}/update_status`, { status });
         console.log("✅ Invoice status updated successfully!");
-        return await response.json();
+        return response.data;
     } catch (error) {
-        console.error("❌ Error updating invoice status:", error);
+        console.error("❌ Error updating invoice status:", error.response?.data || error.message);
         return null;
     }
 };
 
+
 // Create Invoice
+// export const createInvoice = async (data) => {
+//     try {
+//         const res = await fetch(`http://127.0.0.1:5001/invoices`, {
+//             method: "POST",
+//             headers: {
+//             "Content-Type": "application/json",
+//             },
+//             credentials: "include",
+//             body: JSON.stringify(data),
+//         });
+    
+//         if (!res.ok) {
+//             console.error("❌ Server returned:", res.status);
+//             const errorDetails = await res.json();
+//             throw new Error(errorDetails?.error || "Failed to create invoice");
+//         }
+    
+//         return await res.json();
+//         } catch (err) {
+//         console.error("Error creating invoice:", err);
+//         return { success: false };
+//         }
+//     };
+
 export const createInvoice = async (data) => {
     try {
-        const res = await fetch(`http://127.0.0.1:5001/invoices`, {
-            method: "POST",
-            headers: {
-            "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify(data),
-        });
-    
-        if (!res.ok) {
-            console.error("❌ Server returned:", res.status);
-            const errorDetails = await res.json();
-            throw new Error(errorDetails?.error || "Failed to create invoice");
-        }
-    
-        return await res.json();
-        } catch (err) {
-        console.error("Error creating invoice:", err);
+        const response = await api.post("/invoices", data);
+        return response.data;
+    } catch (err) {
+        console.error("❌ Error creating invoice:", err.response?.data || err.message);
         return { success: false };
-        }
-    };
-    
+    }
+};
 
 
-// ✅ Delete Invoice
+// Delete Invoice
 export const deleteInvoice = async (invoiceId) => {
     try {
         await api.delete(`/invoices/${invoiceId}`);

@@ -48,7 +48,7 @@ export const fetchAssignedAccounts = async (userId) => {
 };
 
 
-// ✅ Fetch Account Details by Account ID
+// Fetch Account Details by Account ID
 export const fetchAccountDetails = async (accountId) => {
     try {
         const response = await api.get(`/accounts/details/${accountId}`);
@@ -60,7 +60,7 @@ export const fetchAccountDetails = async (accountId) => {
     }
 };
 
-// ✅ Create a New Account
+// Create a New Account
 export const createAccount = async (accountData) => {
     try {
         const response = await api.post("/accounts/", accountData);
@@ -72,7 +72,7 @@ export const createAccount = async (accountData) => {
     }
 };
 
-// ✅ Update an Existing Account
+// Update an Existing Account
 export const updateAccount = async (accountId, accountData, userId) => {
     try {
         const updatedData = { ...accountData, updated_by_user_id: userId };
@@ -84,15 +84,4 @@ export const updateAccount = async (accountId, accountData, userId) => {
         return { success: false, message: error.response?.data || "Update failed" };
     }
 };
-
-// export const updateAccount = async (accountId, accountData) => {
-//     try {
-//         const response = await api.put(`/accounts/update/${accountId}`, accountData);
-//         console.log("✅ Account updated in DB:", response.data);
-//         return { success: true, data: response.data };
-//     } catch (error) {
-//         console.error("❌ Error updating account:", error.response?.data || error.message);
-//         return { success: false, message: error.response?.data || "Update failed" };
-//     }
-// };
 
