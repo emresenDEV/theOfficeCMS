@@ -31,13 +31,17 @@ const Sidebar = ({ user, handleLogout }) => {
                     <div className="mb-6 flex items-center justify-center">
                         <img src={logo} alt="Dunder Mifflin Company Logo" className="w-11/12 max-w-[280px] object-contain" />
                     </div>
-
                     {/* User Info */}
-                    <h2 className="text-lg font-bold">{user.first_name} {user.last_name}</h2>
-                    <h3 className="text-md font-semibold text-gray-400">
+                    {user ? (
+                    <>
+                        <h2 className="text-lg font-bold">{user.first_name} {user.last_name}</h2>
+                        <h3 className="text-md font-semibold text-gray-400">
                         {user?.department_name ? `${user.department_name} Department` : "Unknown Department"}
-                    </h3>
-
+                        </h3>
+                    </>
+                    ) : (
+                    <h3 className="text-md font-semibold text-gray-400">Loading user...</h3>
+                    )}
                     {/* Navigation */}
                     <nav className="mt-6 space-y-2">
                         <NavItem to="/" icon={<FiHome />} label="Dashboard" />
