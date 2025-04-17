@@ -50,7 +50,7 @@ def update_payment(payment_id):
 
         db.session.commit()
 
-        user = Users.query.filter_by(username=p.logged_by).first()
+        user = Users.query.filter_by(username=payment.logged_by).first()
 
         return jsonify({
             "message": "Payment updated successfully",
