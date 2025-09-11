@@ -14,7 +14,7 @@ auth_bp = Blueprint("auth", __name__)
 ], supports_credentials=True)
 
 def login():
-    """✅ Authenticate user and start session"""
+    """ Authenticate user and start session"""
     data = request.json
     user = Users.query.filter_by(username=data["username"]).first()
 
@@ -49,7 +49,7 @@ def login():
 ], supports_credentials=True)
 
 def get_session():
-    """✅ Fetch full logged-in user profile for session"""
+    """ Fetch full logged-in user profile for session"""
     user_id = session.get("user_id")
 
     if not user_id:

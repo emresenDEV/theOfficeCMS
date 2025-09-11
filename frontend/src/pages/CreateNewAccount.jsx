@@ -196,7 +196,7 @@ const CreateNewAccountPage = () => {
                     className="border p-2 w-full" 
                 />
 
-                {/* ✅ Industry Selection */}
+                {/* Industry Selection */}
                 <select 
                     name="industry_id" 
                     value={accountData.industry_id || ""}

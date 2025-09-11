@@ -4,6 +4,9 @@ Flask-Cors
 Flask-SQLAlchemy
 Flask-Session
 
+# Gunicorn
+gunicorn
+
 # PostgreSQL
 psycopg2-binary
 

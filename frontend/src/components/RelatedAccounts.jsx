@@ -10,7 +10,7 @@ const RelatedAccounts = ({ commissions }) => {
         return <p className="text-center text-gray-500">No commission data available.</p>;
     }
 
-    // ✅ Group invoices by account
+    //  Group invoices by account
     const groupedAccounts = commissions.reduce((acc, com) => {
         const account = com?.invoice?.account;
         if (!account || !com.date_paid) return acc;

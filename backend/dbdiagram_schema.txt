@@ -1,0 +1,206 @@
+Table payments {
+  payment_id integer [pk]
+  invoice_id integer
+  account_id integer
+  sales_rep_id integer
+  payment_method integer
+  date_paid timestamp with time zone
+  last_four_payment_method varchar
+  logged_by varchar
+  total_paid numeric
+}
+
+Table tax_rates {
+  zip_code varchar [pk]
+  rate numeric
+  state varchar
+}
+
+Table departments {
+  department_id integer [pk]
+  department_name varchar
+}
+
+Table user_roles {
+  role_id integer [pk]
+  reports_to integer
+  role_name varchar
+  is_lead boolean
+  description text
+}
+
+Table industries {
+  industry_id integer [pk]
+  industry_name varchar
+}
+
+Table services {
+  service_id integer [pk]
+  service_name varchar
+  price_per_unit numeric
+}
+
+Table payment_methods {
+  method_id integer [pk]
+  method_name varchar
+}
+
+Table accounts {
+  account_id integer [pk]
+  industry_id integer
+  branch_id integer
+  sales_rep_id integer
+  sales_rep_id integer
+  updated_by_user_id integer
+  email varchar
+  contact_name varchar
+  city varchar
+  state varchar
+  notes text
+  phone_number varchar
+  date_created timestamp
+  business_name varchar
+  zip_code varchar
+  date_updated timestamp
+  address varchar
+}
+
+Table tasks {
+  task_id integer [pk]
+  user_id integer
+  assigned_to integer
+  account_id integer
+  is_completed boolean
+  due_date timestamp
+  date_created timestamp
+  task_description text
+}
+
+Table invoices {
+  invoice_id integer [pk]
+  account_id integer
+  sales_rep_id integer
+  paid integer
+  tax_amount numeric
+  discount_amount numeric
+  discount_percent numeric
+  date_created timestamp
+  due_date date
+  date_updated timestamp
+  final_total numeric
+  date_paid timestamp
+  tax_rate numeric
+  status varchar
+}
+
+Table users {
+  user_id integer [pk]
+  username varchar
+  role_id integer
+  reports_to integer
+  department_id integer
+  branch_id integer
+  date_created timestamp
+  phone_number varchar
+  last_name varchar
+  is_department_lead boolean
+  commission_rate numeric
+  date_updated timestamp
+  password_hash varchar
+  salary numeric
+  extension varchar
+  email varchar
+  is_active boolean
+  receives_commission boolean
+  first_name varchar
+}
+
+Table notes {
+  account_id integer
+  invoice_id integer
+  user_id integer
+  note_id integer [pk]
+  account_id integer
+  user_id integer
+  invoice_id integer
+  note_text text
+  date_created timestamp
+}
+
+Table invoice_services {
+  invoice_service_id integer [pk]
+  invoice_id integer
+  service_id integer
+  price_per_unit numeric
+  total_price numeric
+  quantity integer
+  discount_percent numeric
+  discount_total numeric
+}
+
+Table branches {
+  branch_id integer [pk]
+  branch_name varchar
+  state varchar
+  city varchar
+  address varchar
+  zip_code varchar
+  phone_number varchar
+}
+
+Table commissions {
+  commission_id integer [pk]
+  sales_rep_id integer
+  invoice_id integer
+  payment_id integer
+  commission_rate numeric
+  commission_amount numeric
+  date_paid timestamp
+}
+
+Table calendar_events {
+  event_id integer [pk]
+  account_id integer
+  user_id integer
+  start_time time without time zone
+  notes text
+  start_date date
+  contact_name varchar
+  end_time time without time zone
+  end_date date
+  location varchar
+  phone_number varchar
+  event_title varchar
+}
+
+Ref: users.role_id > user_roles.role_id
+Ref: users.reports_to > users.user_id
+Ref: users.department_id > departments.department_id
+Ref: accounts.industry_id > industries.industry_id
+Ref: invoices.account_id > accounts.account_id
+Ref: tasks.user_id > users.user_id
+Ref: tasks.assigned_to > users.user_id
+Ref: notes.account_id > accounts.account_id
+Ref: notes.invoice_id > invoices.invoice_id
+Ref: notes.user_id > users.user_id
+Ref: users.branch_id > branches.branch_id
+Ref: accounts.branch_id > branches.branch_id
+Ref: invoice_services.invoice_id > invoices.invoice_id
+Ref: invoice_services.service_id > services.service_id
+Ref: commissions.sales_rep_id > users.user_id
+Ref: commissions.invoice_id > invoices.invoice_id
+Ref: calendar_events.account_id > accounts.account_id
+Ref: calendar_events.user_id > users.user_id
+Ref: invoices.sales_rep_id > users.user_id
+Ref: accounts.sales_rep_id > users.user_id
+Ref: notes.account_id > accounts.account_id
+Ref: notes.user_id > users.user_id
+Ref: notes.invoice_id > invoices.invoice_id
+Ref: accounts.sales_rep_id > users.user_id
+Ref: accounts.updated_by_user_id > users.user_id
+Ref: payments.invoice_id > invoices.invoice_id
+Ref: payments.account_id > accounts.account_id
+Ref: payments.sales_rep_id > users.user_id
+Ref: payments.payment_method > payment_methods.method_id
+Ref: invoices.paid > payments.payment_id
+Ref: commissions.payment_id > payments.payment_id
