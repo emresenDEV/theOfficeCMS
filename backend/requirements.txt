@@ -9,6 +9,7 @@ gunicorn
 
 # PostgreSQL
 psycopg2-binary
+SQLAlchemy
 
 # Environment variable loading
 python-dotenv
