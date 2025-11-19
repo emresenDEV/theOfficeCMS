@@ -33,7 +33,8 @@ db.init_app(app)
 # Global CORS config for both localhost & Amplify
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": [
     "http://localhost:5174",
-    "https://theofficecms.com"
+    "https://theofficecms.com",
+    "https://www.theofficecms.com"
 ]}})
 
 # Route Blueprints
