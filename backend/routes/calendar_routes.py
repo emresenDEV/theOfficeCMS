@@ -82,10 +82,6 @@ def create_calendar_event():
 
 # Update an Existing Calendar Event
 @calendar_bp.route("/events/<int:event_id>", methods=["PUT", "OPTIONS"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def update_calendar_event(event_id):
     print(f"🔍 Received PUT request for event ID: {event_id}")
     event = CalendarEvent.query.get(event_id)

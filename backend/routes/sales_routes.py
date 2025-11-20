@@ -100,10 +100,6 @@ def get_branch_sales():
 
 # Sales for all users in a branch
 @sales_bp.route("/branch-users", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_branch_users_sales():
     branch_id = request.args.get("branch_id", type=int)
     year = request.args.get("year", type=int, default=datetime.now().year)

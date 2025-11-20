@@ -52,10 +52,6 @@ def update_payment(payment_id):
 
 # Delete a payment
 @payment_bp.route("/<int:payment_id>", methods=["DELETE"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def delete_payment(payment_id):
     payment = Payment.query.get_or_404(payment_id)
     try:

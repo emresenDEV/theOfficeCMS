@@ -32,10 +32,6 @@ def get_notes():
 
 #Create Notes API
 @notes_bp.route("/", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def create_note():
     data = request.json
     try:
