@@ -10,7 +10,8 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/login", methods=["POST"])
 @cross_origin(origins=[
     "http://localhost:5174",
-    "https://theofficecms.com"
+    "https://theofficecms.com",
+    "https://www.theofficecms.com"
 ], supports_credentials=True)
 
 def login():
@@ -45,7 +46,8 @@ def login():
 @auth_bp.route("/session", methods=["GET"])
 @cross_origin(origins=[
     "http://localhost:5174",
-    "https://theofficecms.com"
+    "https://theofficecms.com",
+    "https://www.theofficecms.com"
 ], supports_credentials=True)
 
 def get_session():
@@ -95,7 +97,8 @@ def debug_session():
 @auth_bp.route("/logout", methods=["POST"])
 @cross_origin(origins=[
     "http://localhost:5174",
-    "https://theofficecms.com"
+    "https://theofficecms.com",
+    "https://www.theofficecms.com"
 ], supports_credentials=True)
 
 def logout():
