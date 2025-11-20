@@ -1,19 +1,12 @@
 from flask import Blueprint, request, jsonify, session
 from models import Users, Departments, UserRoles
 from database import db
-from flask_cors import cross_origin
 from werkzeug.security import check_password_hash
 
 auth_bp = Blueprint("auth", __name__)
 
 # LOGIN Endpoint
 @auth_bp.route("/login", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com",
-    "https://www.theofficecms.com"
-], supports_credentials=True)
-
 def login():
     """ Authenticate user and start session"""
     data = request.json
@@ -44,12 +37,6 @@ def login():
 
 
 @auth_bp.route("/session", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com",
-    "https://www.theofficecms.com"
-], supports_credentials=True)
-
 def get_session():
     """ Fetch full logged-in user profile for session"""
     user_id = session.get("user_id")
@@ -95,12 +82,6 @@ def debug_session():
 
 #  LOGOUT Endpoint
 @auth_bp.route("/logout", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com",
-    "https://www.theofficecms.com"
-], supports_credentials=True)
-
 def logout():
     """Logout user and clear session"""
     session.pop("user_id", None)

@@ -36,7 +36,11 @@ db.init_app(app)
 #     "https://theofficecms.com",
 #     "https://www.theofficecms.com"
 # ]}})
-CORS(app, supports_credentials=True, origins="*")
+CORS(app,
+     supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     origins=["http://localhost:5174", "https://theofficecms.com", "https://www.theofficecms.com"])
 
 # Route Blueprints
 app.register_blueprint(account_bp, url_prefix="/accounts")
