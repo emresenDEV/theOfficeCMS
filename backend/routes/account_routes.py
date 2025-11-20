@@ -204,11 +204,6 @@ def update_account(account_id):
 
 # Create a New Account API
 @account_bp.route("/", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
-
 def create_account():
     try:
         data = request.json  
