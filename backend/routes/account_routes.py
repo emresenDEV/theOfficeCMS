@@ -158,11 +158,6 @@ def get_account_metrics():
 
 # Update Account Details
 @account_bp.route("/update/<int:account_id>", methods=["PUT"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
-
 def update_account(account_id):
     try:
         data = request.json
