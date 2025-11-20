@@ -1,30 +1,12 @@
 from flask import Blueprint, request, jsonify
 from models import Tasks, Users, Account
 from database import db
-from flask_cors import cross_origin
 
 task_bp = Blueprint("tasks", __name__)
 
-@task_bp.route("", methods=["OPTIONS"])
-@task_bp.route("/", methods=["OPTIONS"])
-def options_tasks():
-        origin = request.headers.get("Origin", "https://theofficecms.com")
-        if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
-            origin = "https://theofficecms.com"
-
-        response = jsonify({"message": "CORS preflight OK"})
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        return response, 200
 
 #  Fetch Tasks Assigned to User
 @task_bp.route("/", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_tasks():
     user_id = request.args.get("assigned_to", type=int)
     print(f"🔍 DEBUG: Received user_id = {user_id}")  #  Add debugging
@@ -50,10 +32,6 @@ def get_tasks():
 
 # Fetch Tasks By Account ID
 @task_bp.route("/accounts/<int:account_id>/tasks", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_tasks_by_account(account_id):
     """Fetch all tasks associated with a specific account"""
     tasks = Tasks.query.filter_by(account_id=account_id).all()
@@ -79,10 +57,6 @@ def get_tasks_by_account(account_id):
 # Create a New Task
 @task_bp.route("", methods=["POST"])
 @task_bp.route("/", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def create_task():
     data = request.json
     required_fields = ["user_id", "task_description", "due_date"]
@@ -117,10 +91,6 @@ def create_task():
 
 # Update an Existing Task
 @task_bp.route("/<int:task_id>", methods=["PUT"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def update_task(task_id):
     task = Tasks.query.get(task_id)
 
@@ -148,10 +118,6 @@ def update_task(task_id):
 
 # Delete a Task
 @task_bp.route("/<int:task_id>", methods=["DELETE"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def delete_task(task_id):
     task = Tasks.query.get(task_id)
 

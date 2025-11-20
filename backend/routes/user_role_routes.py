@@ -1,32 +1,12 @@
 from flask import Blueprint, request, jsonify
 from models import UserRoles
 from database import db
-from flask_cors import cross_origin
 
 user_role_bp = Blueprint("user_roles", __name__)
-
-#  Handle CORS Preflight
-@user_role_bp.route("", methods=["OPTIONS"])
-@user_role_bp.route("/", methods=["OPTIONS"])
-def options_roles():
-    origin = request.headers.get("Origin", "https://theofficecms.com")
-    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
-        origin = "https://theofficecms.com"
-
-    response = jsonify({"message": "CORS preflight OK"})
-    response.headers["Access-Control-Allow-Origin"] = origin
-    response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE,OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response, 200
 
 
 # Fetch All Roles
 @user_role_bp.route("/roles", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_all_roles():
     roles = UserRoles.query.all()
     return jsonify([{
@@ -39,10 +19,6 @@ def get_all_roles():
 
 # Fetch Role by ID
 @user_role_bp.route("/roles/<int:role_id>", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_role_by_id(role_id):
     role = UserRoles.query.get(role_id)
     if not role:
@@ -58,10 +34,6 @@ def get_role_by_id(role_id):
 
 # Create New Role
 @user_role_bp.route("/roles", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def create_role():
     data = request.json
     if not data.get("role_name"):
@@ -81,10 +53,6 @@ def create_role():
 
 # Update Role
 @user_role_bp.route("/roles/<int:role_id>", methods=["PUT"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def update_role(role_id):
     role = UserRoles.query.get(role_id)
     if not role:
@@ -102,10 +70,6 @@ def update_role(role_id):
 
 # Delete Role
 @user_role_bp.route("/roles/<int:role_id>", methods=["DELETE"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def delete_role(role_id):
     role = UserRoles.query.get(role_id)
     if not role:

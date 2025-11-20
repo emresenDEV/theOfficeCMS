@@ -1,24 +1,9 @@
 from flask import Blueprint, request, jsonify, session
-from models import CalendarEvent  
+from models import CalendarEvent
 from database import db
 from datetime import datetime
-from flask_cors import cross_origin
 
 calendar_bp = Blueprint("calendar", __name__)
-
-
-@calendar_bp.route("/events/<int:event_id>", methods=["OPTIONS"])
-def options_update_event(event_id):
-    origin = request.headers.get("Origin", "https://theofficecms.com")
-    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
-        origin = "https://theofficecms.com"
-
-    response = jsonify({"message": "CORS preflight OK"})
-    response.headers["Access-Control-Allow-Origin"] = origin
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response, 200
 
 
 # READ

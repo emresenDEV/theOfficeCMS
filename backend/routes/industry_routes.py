@@ -1,17 +1,12 @@
 from flask import Blueprint, request, jsonify
 from models import Industry
 from database import db
-from flask_cors import cross_origin
 
 # Create Blueprint
 industry_bp = Blueprint("industries", __name__)
 
 # GET All Industries
 @industry_bp.route("/", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_industries():
     """Fetch all industries"""
     industries = Industry.query.all()
@@ -22,10 +17,6 @@ def get_industries():
 
 # CREATE New Industry
 @industry_bp.route("/", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def add_industry():
     """ Add a new industry and return its ID"""
     data = request.json
@@ -45,10 +36,6 @@ def add_industry():
 
 # UPDATE Industry Name
 @industry_bp.route("/<int:industry_id>", methods=["PUT"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def update_industry(industry_id):
     """Update an industry name"""
     industry = Industry.query.get(industry_id)

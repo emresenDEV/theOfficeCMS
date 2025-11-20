@@ -1,16 +1,11 @@
 from flask import Blueprint, request, jsonify
 from models import Users, Branches, Departments, UserRoles
 from database import db
-from flask_cors import cross_origin
 
 user_bp = Blueprint("users", __name__)
 
 # Users API
 @user_bp.route("/", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_users():
     branch_id = request.args.get("branch_id", type=int)
     department_id = request.args.get("department_id", type=int)
@@ -41,10 +36,6 @@ def get_users():
 
 
 @user_bp.route("/<int:user_id>", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_user_by_id(user_id):
     """Retrieve detailed profile information for a specific user."""
     user = Users.query.get(user_id)
@@ -123,10 +114,6 @@ def get_user_by_id(user_id):
     }), 200
     
 @user_bp.route("/sales_reps", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_sales_reps():
     sales_reps = Users.query.filter_by(role_id=3).all()
     return jsonify([

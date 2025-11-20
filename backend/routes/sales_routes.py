@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-from flask_cors import cross_origin
 from models import Payment, Users, Branches, Invoice
 from database import db
 from sqlalchemy.sql import func
@@ -9,10 +8,6 @@ sales_bp = Blueprint("sales", __name__)
 
 # Company-wide monthly sales
 @sales_bp.route("/company", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_company_sales():
     year = request.args.get("year", type=int)
 
@@ -37,10 +32,6 @@ def get_company_sales():
 
 # Fetch sales for a specific user
 @sales_bp.route("/user", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_user_sales():
     """Retrieve monthly sales for a specific user."""
     sales_rep_id = request.args.get("user_id", type=int)
@@ -79,10 +70,6 @@ def get_user_sales():
 
 # Branch-wide monthly sales
 @sales_bp.route("/branch", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_branch_sales():
     year = request.args.get("year", type=int)
     if not year:

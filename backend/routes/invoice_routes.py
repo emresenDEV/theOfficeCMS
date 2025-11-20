@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users, TaxRates
-from flask_cors import cross_origin
 from database import db
 from datetime import datetime
 import pytz
@@ -13,40 +12,18 @@ invoice_bp = Blueprint("invoice", __name__, url_prefix="/invoices")
 central = timezone('America/Chicago')
 
 # Update Invoice Status (Pending to Paid, Past Due, etc.)
-@invoice_bp.route("/invoices/<int:invoice_id>/update_status", methods=["PUT", "OPTIONS"])
+@invoice_bp.route("/invoices/<int:invoice_id>/update_status", methods=["PUT"])
 def update_invoice_status(invoice_id):
-    origin = request.headers.get("Origin", "https://theofficecms.com")
-    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
-        origin = "https://theofficecms.com"
-
-    if request.method == "OPTIONS":
-        response = jsonify({"message": "Preflight OK"})
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Methods"] = "PUT, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        return response, 200
-
     data = request.json
     new_status = data.get("status")
 
     if not new_status:
-        response = jsonify({"error": "Status is required"}), 400
-    else:
-        invoice = Invoice.query.get_or_404(invoice_id)
-        invoice.status = new_status
-        db.session.commit()
-        response = jsonify({"message": f"Invoice {invoice_id} status updated to {new_status}"}), 200
+        return jsonify({"error": "Status is required"}), 400
 
-    # Add CORS headers to main response too
-    if isinstance(response, tuple):
-        response[0].headers["Access-Control-Allow-Origin"] = origin
-        response[0].headers["Access-Control-Allow-Credentials"] = "true"
-    else:
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-
-    return response
+    invoice = Invoice.query.get_or_404(invoice_id)
+    invoice.status = new_status
+    db.session.commit()
+    return jsonify({"message": f"Invoice {invoice_id} status updated to {new_status}"}), 200
 
 
 def get_tax_rate(zip_code):
@@ -56,10 +33,6 @@ def get_tax_rate(zip_code):
 
 # Invoices (PLURAL) API
 @invoice_bp.route("/", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_invoices():
     sales_rep_id = request.args.get("sales_rep_id", type=int)
     invoices = Invoice.query.filter_by(sales_rep_id=sales_rep_id).all() if sales_rep_id else Invoice.query.all()
@@ -77,10 +50,6 @@ def get_invoices():
 
 # Fetch Invoice by ID (Include Services)
 @invoice_bp.route("/invoice/<int:invoice_id>", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_invoice_by_id(invoice_id):
     try:
         invoice = Invoice.query.get_or_404(invoice_id)
@@ -194,10 +163,6 @@ def get_invoice_status(invoice):
 
 # Fetch invoices by account ID
 @invoice_bp.route("/account/<int:account_id>", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_invoices_by_account(account_id):
     try:
         status_filter = request.args.get("status")  # optional query param
@@ -269,10 +234,6 @@ def get_invoices_by_account(account_id):
     
 # Fetch invoice by status
 @invoice_bp.route("/status/<string:status>", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_invoices_by_status(status):
     try:
         invoices = Invoice.query.filter(Invoice.status == status).all()
@@ -293,10 +254,6 @@ def get_invoices_by_status(status):
 
 # Validate Invoice Belongs to Account
 @invoice_bp.route('/validate/<int:account_id>/<int:invoice_id>', methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def validate_invoice_for_account(account_id, invoice_id):
     try:
         # Query invoice by ID and check if it belongs to the account
@@ -313,24 +270,8 @@ def validate_invoice_for_account(account_id, invoice_id):
 
 
 # Update Invoice (SINGLE) API
-@invoice_bp.route("/<int:invoice_id>", methods=["PUT", "OPTIONS"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
+@invoice_bp.route("/<int:invoice_id>", methods=["PUT"])
 def update_invoice(invoice_id):
-    origin = request.headers.get("Origin", "https://theofficecms.com")
-    if origin not in ["http://localhost:5174", "https://theofficecms.com"]:
-        origin = "https://theofficecms.com"
-
-    if request.method == "OPTIONS":
-        response = jsonify({"message": "Preflight OK"})
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Methods"] = "PUT, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        return response, 200
-
     data = request.get_json()
     invoice = Invoice.query.get_or_404(invoice_id)
 
@@ -425,10 +366,6 @@ def update_invoice(invoice_id):
 
 # DELETE invoice service
 @invoice_bp.route("/invoice_services/<int:invoice_service_id>", methods=["DELETE"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def delete_invoice_service(invoice_service_id):
     service = InvoiceServices.query.get(invoice_service_id)
     if not service:
@@ -443,10 +380,6 @@ def delete_invoice_service(invoice_service_id):
 # Delete Invoice (SINGLE) API
 # @invoice_bp.route("/invoices/<int:invoice_id>", methods=["DELETE"])
 @invoice_bp.route("/<int:invoice_id>", methods=["DELETE"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def delete_invoice(invoice_id):
     invoice = Invoice.query.get(invoice_id)
     if not invoice:
@@ -458,11 +391,7 @@ def delete_invoice(invoice_id):
 
 
 
-@invoice_bp.route("", methods=["POST", "OPTIONS"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
+@invoice_bp.route("", methods=["POST"])
 def create_invoice():
     data = request.json
     central = pytz.timezone("US/Central")
@@ -533,10 +462,6 @@ def create_invoice():
 
 # Get Payment Methods
 @invoice_bp.route("/payment_methods", methods=["GET"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def get_payment_methods():
     methods = PaymentMethods.query.all()
     result = [
@@ -547,10 +472,6 @@ def get_payment_methods():
 
 # Create New Payment Method
 @invoice_bp.route("/payment_methods", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def create_payment_method():
     data = request.json
     method_name = data.get("method_name", "").strip()
@@ -576,10 +497,6 @@ def create_payment_method():
 # Log Payment
 # @invoice_bp.route("/invoices/<int:invoice_id>/log_payment", methods=["POST"])
 @invoice_bp.route("/<int:invoice_id>/log_payment", methods=["POST"])
-@cross_origin(origins=[
-    "http://localhost:5174",
-    "https://theofficecms.com"
-], supports_credentials=True)
 def log_payment(invoice_id):
     data = request.get_json()
     try:

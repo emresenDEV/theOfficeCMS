@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import Notes, Users
 from database import db
-from flask_cors import cross_origin
 
 notes_bp = Blueprint("note", __name__)
 
