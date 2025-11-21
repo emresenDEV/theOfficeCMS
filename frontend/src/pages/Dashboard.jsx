@@ -21,11 +21,11 @@ const Dashboard = ({ user }) => {
     const refreshDashboardData = useCallback(async (userId) => {
         setLoading(true);
         try {
-            const [tasksData, eventsData] = await Promise.all([
-                fetchTasks(userId),
-                fetchCalendarEvents(userId),
-            ]);
+            // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+            const tasksData = await fetchTasks(userId);
             setTasks(tasksData);
+
+            const eventsData = await fetchCalendarEvents(userId);
             setEvents(eventsData);
         } catch (error) {
             console.error("❌ Error refreshing dashboard data:", error);
@@ -64,11 +64,11 @@ const Dashboard = ({ user }) => {
         async function fetchData() {
             setLoading(true);
             try {
-                const [tasksData, eventsData] = await Promise.all([
-                    fetchTasks(userData.user_id),
-                    fetchCalendarEvents(userData.user_id),
-                ]);
+                // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+                const tasksData = await fetchTasks(userData.user_id);
                 setTasks(tasksData);
+
+                const eventsData = await fetchCalendarEvents(userData.user_id);
                 setEvents(eventsData);
             } catch (error) {
                 console.error("❌ Error fetching dashboard data:", error);

@@ -64,58 +64,53 @@ const CommissionsPage = ({ user }) => {
         if (!user?.id) return;
 
         console.log("🚀 Fetching commissions for user ID:", user.id);
-        
-        Promise.all([
-            fetchCommissions(user.id),
-            fetchCurrentMonthCommissions(user.id),
-            fetchCurrentYearCommissions(user.id),
-            fetchLastYearCommissions(user.id),
-            fetchProjectedCommissions(user.id),
-            fetchMonthlyCommissions(user.id, selectedYear),
-            fetchWeeklyCommissions(user.id, selectedYear, selectedMonth),
-            fetchYearlyCommissions(user.id, fromYear, toYear),
-        ])
-        .then(([detailedCommissions, currentMonth, currentYear, lastYear, projected, monthly, weekly, yearly]) => {
-            console.log("✅ API Responses Received:", { currentMonth, currentYear, lastYear, projected }); //debugging
 
-            setCurrentMonthCommission(currentMonth.total_commissions || 0);
-            setCurrentYearCommission(currentYear.total_commissions || 0);
-            setLastYearCommission(lastYear.total_commissions || 0);
-            setProjectedCommission(projected.projected_commissions || 0);
+        async function loadCommissionsData() {
+            try {
+                // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+                const detailedCommissions = await fetchCommissions(user.id);
+                const currentMonth = await fetchCurrentMonthCommissions(user.id);
+                const currentYear = await fetchCurrentYearCommissions(user.id);
+                const lastYear = await fetchLastYearCommissions(user.id);
+                const projected = await fetchProjectedCommissions(user.id);
+                const monthly = await fetchMonthlyCommissions(user.id, selectedYear);
+                const weekly = await fetchWeeklyCommissions(user.id, selectedYear, selectedMonth);
+                const yearly = await fetchYearlyCommissions(user.id, fromYear, toYear);
+                console.log("✅ API Responses Received:", { currentMonth, currentYear, lastYear, projected }); //debugging
 
-            setMonthlyData(monthly || Array(12).fill(0));
-            setWeeklyData(weekly || Array(4).fill(0));
-            setYearlyData(yearly || {});
+                setCurrentMonthCommission(currentMonth.total_commissions || 0);
+                setCurrentYearCommission(currentYear.total_commissions || 0);
+                setLastYearCommission(lastYear.total_commissions || 0);
+                setProjectedCommission(projected.projected_commissions || 0);
 
-            //  Filter out only paid invoices within the selected time period
-            const filteredCommissions = detailedCommissions.filter(com => {
-                const date = com.date_paid
-                if (!date) return false;
+                setMonthlyData(monthly || Array(12).fill(0));
+                setWeeklyData(weekly || Array(4).fill(0));
+                setYearlyData(yearly || {});
 
-                const paidDate = new Date(date);
-                const year = paidDate.getFullYear();
-                const month = paidDate.getMonth() + 1;
+                //  Filter out only paid invoices within the selected time period
+                const filteredCommissions = detailedCommissions.filter(com => {
+                    const date = com.date_paid
+                    if (!date) return false;
 
-                if (viewMode === "yearly") return year >= fromYear && year <= toYear;
-                if (viewMode === "monthly") return year === selectedYear;
-                if (viewMode === "weekly") return year === selectedYear && month === selectedMonth;
+                    const paidDate = new Date(date);
+                    const year = paidDate.getFullYear();
+                    const month = paidDate.getMonth() + 1;
 
-                return false;
-            });
+                    if (viewMode === "yearly") return year >= fromYear && year <= toYear;
+                    if (viewMode === "monthly") return year === selectedYear;
+                    if (viewMode === "weekly") return year === selectedYear && month === selectedMonth;
 
-            console.log("✅ Filtered Commissions:", filteredCommissions);  //debugging
-            setCommissions(filteredCommissions);
+                    return false;
+                });
 
-            // ✅ Compute Yearly Data
-            // const yearlyDataMap = {};
-            // filteredCommissions.forEach(com => {
-            //     const year = new Date(com.invoice.date_paid).getFullYear();
-            //     yearlyDataMap[year] = (yearlyDataMap[year] || 0) + com.commission_amount;
-            // });
+                console.log("✅ Filtered Commissions:", filteredCommissions);  //debugging
+                setCommissions(filteredCommissions);
+            } catch (error) {
+                console.error("❌ Error Fetching Commissions Data:", error);  //debugging
+            }
+        }
 
-            // setYearlyData(yearlyDataMap);
-        })
-        .catch(error => console.error("❌ Error Fetching Commissions Data:", error));  //debugging
+        loadCommissionsData();
 
     }, [user?.id, viewMode, selectedYear, fromYear, toYear, selectedMonth]);
 

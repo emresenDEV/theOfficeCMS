@@ -116,13 +116,12 @@ const UpdateAccountPage = () => {
     useEffect(() => {
         async function loadAccountAndDropdowns() {
             try {
-                const [fetchedAccount, fetchedIndustries, fetchedSalesReps, fetchedBranches] = await Promise.all([
-                    fetchAccountDetails(accountId),
-                    fetchIndustries(),
-                    fetchSalesReps(),
-                    fetchBranches(),
-                ]);
-    
+                // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+                const fetchedAccount = await fetchAccountDetails(accountId);
+                const fetchedIndustries = await fetchIndustries();
+                const fetchedSalesReps = await fetchSalesReps();
+                const fetchedBranches = await fetchBranches();
+
                 if (fetchedAccount) {
                     // ✅ Format Date and Time of Last Update
                     const formatDateTime = (dateString) => {

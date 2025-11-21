@@ -79,14 +79,14 @@ const CalendarPage = ({ user }) => {
     useEffect(() => {
         async function loadDropdownData() {
             try {
-                const [fetchedUsers, fetchedBranches, fetchedDepartments] = await Promise.all([
-                    fetchUsers(),
-                    fetchBranches(),
-                    fetchDepartments(),
-                ]);
-
+                // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+                const fetchedUsers = await fetchUsers();
                 setUsers(fetchedUsers);
+
+                const fetchedBranches = await fetchBranches();
                 setBranches(fetchedBranches);
+
+                const fetchedDepartments = await fetchDepartments();
                 setDepartments(fetchedDepartments);
 
                 const currentUser = fetchedUsers.find(u => u.user_id === user.user_id);

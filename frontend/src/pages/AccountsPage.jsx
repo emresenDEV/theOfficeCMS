@@ -13,9 +13,22 @@ const AccountsPage = ({ user }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!user) return; 
-        fetchAccounts().then(setAccounts);
-        fetchUsers().then(setUsers);
+        if (!user) return;
+
+        async function loadData() {
+            try {
+                // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+                const accounts = await fetchAccounts();
+                setAccounts(accounts);
+
+                const users = await fetchUsers();
+                setUsers(users);
+            } catch (error) {
+                console.error("❌ Error loading accounts data:", error);
+            }
+        }
+
+        loadData();
     }, [user]); 
     
     useEffect(() => {

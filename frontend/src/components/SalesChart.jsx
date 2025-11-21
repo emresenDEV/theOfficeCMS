@@ -51,16 +51,17 @@ const SalesChart = ({ userProfile }) => {
                 const year = selectedYear;
                 const branchId = userProfile.branch_id;
 
-                const [company, user, branches, reps] = await Promise.all([
-                    fetchCompanySales(year),
-                    fetchUserSales(userProfile.user_id, year),
-                    fetchBranchSales(year),
-                    fetchBranchUsersSales(branchId, year)
-                ]);
-
+                // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+                const company = await fetchCompanySales(year);
                 setCompanySales(company || Array(12).fill(0));
+
+                const user = await fetchUserSales(userProfile.user_id, year);
                 setUserSales(user || Array(12).fill(0));
+
+                const branches = await fetchBranchSales(year);
                 setBranchSales(branches || {});
+
+                const reps = await fetchBranchUsersSales(branchId, year);
                 setBranchUsersSales(reps || {});
 
                 const branchNames = Object.keys(branches || {});

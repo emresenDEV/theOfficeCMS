@@ -29,13 +29,10 @@ useEffect(() => {
 
     async function loadData() {
         try {
-            const [fetchedTasks, fetchedAccounts, fetchedUsers] = await Promise.all([
-                fetchTasks(user.id),
-                fetchAccounts(),
-                fetchUsers(),
-            ]);
-
-            // setUsers(fetchedUsers);
+            // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+            const fetchedTasks = await fetchTasks(user.id);
+            const fetchedAccounts = await fetchAccounts();
+            const fetchedUsers = await fetchUsers();
 
             // Use fetchedUsers directly instead of referencing `users`
             const updatedTasks = fetchedTasks.map((task) => ({
@@ -61,14 +58,14 @@ useEffect(() => {
 useEffect(() => {
     async function loadDropdownData() {
     try {
-        const [fetchedBranches, fetchedDepartments, fetchedEmployees] = await Promise.all([
-        fetchBranches(),
-        fetchDepartments(),
-        fetchEmployees(),
-        ]);
-
+        // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+        const fetchedBranches = await fetchBranches();
         setBranches(fetchedBranches);
+
+        const fetchedDepartments = await fetchDepartments();
         setDepartments(fetchedDepartments);
+
+        const fetchedEmployees = await fetchEmployees();
         setEmployees(fetchedEmployees);
     } catch (error) {
         console.error("❌ Error fetching dropdown data:", error);

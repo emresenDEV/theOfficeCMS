@@ -28,20 +28,19 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
     useEffect(() => {
         async function loadData() {
             if (!user || !user.user_id) return;
-    
+
             try {
-                const [fetchedAccounts, fetchedUsers] = await Promise.all([
-                    fetchAccounts(),
-                    fetchUsers()
-                ]);
-    
+                // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+                const fetchedAccounts = await fetchAccounts();
                 setAccounts(fetchedAccounts);
+
+                const fetchedUsers = await fetchUsers();
                 setUsers(fetchedUsers);
             } catch (error) {
                 console.error("❌ Error fetching data:", error);
             }
         }
-    
+
         loadData();
     }, [user]);
 
