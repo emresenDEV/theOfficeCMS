@@ -47,7 +47,7 @@ function App() {
         }
   
         // Fetch full user profile from backend
-        const response = await api.get(`/users/details/${userId}`);
+        const response = await api.get(`/users/${userId}`);
         const fullUser = response.data;
   
         // Save to React state + localStorage
