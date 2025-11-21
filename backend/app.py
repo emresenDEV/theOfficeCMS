@@ -3,7 +3,6 @@ from flask_session import Session
 from flask_cors import CORS
 from config import Config
 from database import db
-from werkzeug.proxy_fix import ProxyFix
 import os
 
 # Route Blueprints
@@ -28,24 +27,15 @@ from routes.services_route import service_bp
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Configure app to trust proxy headers from Cloudflare Tunnel
-# This tells Flask it's behind HTTPS and to preserve the original request info
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
-
 Session(app)
 db.init_app(app)
 
-# Global CORS config for both localhost & Amplify
-# CORS(app, supports_credentials=True, resources={r"/*": {"origins": [
-#     "http://localhost:5174",
-#     "https://theofficecms.com",
-#     "https://www.theofficecms.com"
-# ]}})
+# Global CORS config for both localhost & Vercel
 CORS(app,
-     supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization'],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-     origins=["http://localhost:5174", "https://theofficecms.com", "https://www.theofficecms.com", "https://api.theofficecms.com"])
+        supports_credentials=True,
+        allow_headers=['Content-Type', 'Authorization'],
+        methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        origins=["http://localhost:5174", "https://theofficecms.com", "https://www.theofficecms.com", "https://api.theofficecms.com"])
 
 # Route Blueprints
 app.register_blueprint(account_bp, url_prefix="/accounts")
