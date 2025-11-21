@@ -25,7 +25,7 @@ export const createTask = async (task) => {
 // Fetch Tasks (Assigned to a User)
 export const fetchTasks = async (userId) => {
     try {
-        const response = await api.get(`/tasks?user_id=${userId}`, {
+        const response = await api.get(`/tasks`, {
             params: { assigned_to: userId },
         });
         console.log("✅ Fetched Tasks:", response.data);
