@@ -3,6 +3,7 @@ from flask_session import Session
 from flask_cors import CORS
 from config import Config
 from database import db
+from werkzeug.proxy_fix import ProxyFix
 import os
 
 # Route Blueprints
@@ -26,6 +27,10 @@ from routes.services_route import service_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# Configure app to trust proxy headers from Cloudflare Tunnel
+# This tells Flask it's behind HTTPS and to preserve the original request info
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
 Session(app)
 db.init_app(app)

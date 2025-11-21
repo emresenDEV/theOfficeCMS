@@ -7,9 +7,12 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
+    # Trust X-Forwarded-Proto header from Cloudflare Tunnel for HTTPS redirects
+    PREFERRED_URL_SCHEME = "https"
+
     # Flask Session Configuration
-    SESSION_TYPE = "filesystem" 
+    SESSION_TYPE = "filesystem"
     SESSION_PERMANENT = True
     SESSION_USE_SIGNER = True
     SESSION_COOKIE_HTTPONLY = True
