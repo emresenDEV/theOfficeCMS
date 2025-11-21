@@ -19,4 +19,3 @@ pytz
 
 
 Flask-Migrate>=4.0.4
- 
