@@ -1,10 +1,12 @@
 import axios from "axios";
 
 // Base URL for Flask API
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.theofficecms.com";
+let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.theofficecms.com";
 
-// was: "http://127.0.0.1:5001" but updated to our domain
-
+// Ensure HTTPS in production
+if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    API_BASE_URL = API_BASE_URL.replace(/^http:/, 'https:');
+}
 
 // Axios instance for API requests
 const api = axios.create({
