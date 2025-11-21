@@ -17,49 +17,7 @@ def get_assigned_accounts():
     accounts = Account.query.filter_by(sales_rep_id=sales_rep_id).all()
     return jsonify([account.to_dict() for account in accounts]), 200
 
-
-# Get All Accounts API
-@account_bp.route("/", methods=["GET"])
-def get_accounts():
-    accounts = Account.query.all()
-    account_list = [
-        {
-            "account_id": acc.account_id,
-            "business_name": acc.business_name,
-            "contact_name": acc.contact_name,
-            "phone_number": acc.phone_number,
-            "email": acc.email,
-            "address": acc.address,
-            "city": acc.city,
-            "state": acc.state,
-            "zip_code": acc.zip_code,
-            "industry_id": acc.industry_id,
-            "sales_rep_id": acc.sales_rep_id,
-            "notes": acc.notes,
-            "date_created": acc.date_created,
-            "date_updated": acc.date_updated,
-            "branch_id": acc.branch_id,
-        }
-        for acc in accounts
-    ]
-    return jsonify(account_list), 200
-
-# Get Account By ID API
-@account_bp.route("/<int:account_id>", methods=["GET"])
-def get_account_by_id(account_id):
-    account = Account.query.get(account_id)
-    if not account:
-        return jsonify({"error": "Account not found"}), 404
-
-    return jsonify({
-        "account_id": account.account_id,
-        "business_name": account.business_name,
-        "contact_name": account.contact_name,
-        "email": account.email,
-        "phone_number": account.phone_number,
-    })
-
-# Get Account Details API (with Sales Rep and Branch Info)
+# Get Account Details API (with Sales Rep and Branch Info) - MUST COME BEFORE /<int:account_id>
 @account_bp.route("/details/<int:account_id>", methods=["GET"])
 def get_account_details(account_id):
     account = Account.query.get_or_404(account_id)
@@ -116,7 +74,7 @@ def get_account_details(account_id):
         "date_updated": account.date_updated.strftime("%Y-%m-%d"),
     }), 200
 
-# Fetch account revenue, last invoice date, and task count
+# Fetch account revenue, last invoice date, and task count - MUST COME BEFORE /<int:account_id>
 @account_bp.route("/account_metrics", methods=["GET"])
 def get_account_metrics():
     sales_rep_id = request.args.get("sales_rep_id", type=int)
@@ -155,6 +113,47 @@ def get_account_metrics():
     ]
 
     return jsonify(result), 200
+
+# Get All Accounts API
+@account_bp.route("/", methods=["GET"])
+def get_accounts():
+    accounts = Account.query.all()
+    account_list = [
+        {
+            "account_id": acc.account_id,
+            "business_name": acc.business_name,
+            "contact_name": acc.contact_name,
+            "phone_number": acc.phone_number,
+            "email": acc.email,
+            "address": acc.address,
+            "city": acc.city,
+            "state": acc.state,
+            "zip_code": acc.zip_code,
+            "industry_id": acc.industry_id,
+            "sales_rep_id": acc.sales_rep_id,
+            "notes": acc.notes,
+            "date_created": acc.date_created,
+            "date_updated": acc.date_updated,
+            "branch_id": acc.branch_id,
+        }
+        for acc in accounts
+    ]
+    return jsonify(account_list), 200
+
+# Get Account By ID API
+@account_bp.route("/<int:account_id>", methods=["GET"])
+def get_account_by_id(account_id):
+    account = Account.query.get(account_id)
+    if not account:
+        return jsonify({"error": "Account not found"}), 404
+
+    return jsonify({
+        "account_id": account.account_id,
+        "business_name": account.business_name,
+        "contact_name": account.contact_name,
+        "email": account.email,
+        "phone_number": account.phone_number,
+    })
 
 # Update Account Details
 @account_bp.route("/update/<int:account_id>", methods=["PUT"])
