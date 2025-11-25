@@ -97,15 +97,9 @@ const DnDCalendar = withDragAndDrop(Calendar);
 
     const handleSave = async (formData) => {
         const { event_id } = selectedEvent;
-        // Use the updated start/end from formData (modal input), not the old selectedEvent times
-        const { start, end } = formData;
         const payload = {
             ...formData,
             user_id: userId,
-            start_date: DateTime.fromJSDate(start).toFormat("yyyy-MM-dd"),
-            start_time: DateTime.fromJSDate(start).toFormat("HH:mm:ss"),
-            end_date: DateTime.fromJSDate(end).toFormat("yyyy-MM-dd"),
-            end_time: DateTime.fromJSDate(end).toFormat("HH:mm:ss"),
         };
         if (event_id) {
             await updateCalendarEvent(event_id, payload);
