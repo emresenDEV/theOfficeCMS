@@ -1,5 +1,6 @@
 
 # Deployment documentation (local use only - contains sensitive paths/credentials)
+.env
 DEPLOYMENT_GUIDE.md
 QUICK_REFERENCE.md
 
