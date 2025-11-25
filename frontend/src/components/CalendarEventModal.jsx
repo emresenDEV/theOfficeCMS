@@ -1,8 +1,8 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterLuxon } from "@mui/x-date-pickers/AdapterLuxon";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { DateTime } from "luxon";
 
 const CalendarEventModal = ({
@@ -123,24 +123,61 @@ const handleDelete = () => {
                     className="w-full border rounded px-3 py-2"
                 />
 
-                <LocalizationProvider dateAdapter={AdapterLuxon}>
-                    <DateTimePicker
-                    label="Start Date & Time"
-                    value={formData.start}
-                    onChange={(newVal) =>
-                        setFormData((prev) => ({ ...prev, start: newVal }))
-                    }
-                    className="w-full"
-                    />
-                    <DateTimePicker
-                    label="End Date & Time"
-                    value={formData.end}
-                    onChange={(newVal) =>
-                        setFormData((prev) => ({ ...prev, end: newVal }))
-                    }
-                    className="w-full"
-                    />
-                </LocalizationProvider>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <DatePicker
+                            selected={formData.start.toJSDate()}
+                            onChange={(date) => setFormData((prev) => ({ ...prev, start: DateTime.fromJSDate(date).set({ hour: prev.start.hour, minute: prev.start.minute }) }))}
+                            dateFormat="MM/dd/yyyy"
+                            className="w-full border rounded px-3 py-2"
+                            placeholderText="Select start date"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                            <input
+                                type="time"
+                                value={formData.start.toFormat("HH:mm")}
+                                onChange={(e) => {
+                                    const [hours, minutes] = e.target.value.split(":");
+                                    setFormData((prev) => ({ ...prev, start: prev.start.set({ hour: parseInt(hours), minute: parseInt(minutes) }) }));
+                                }}
+                                className="w-full border rounded px-3 py-2"
+                            />
+                            <span className="text-xs text-gray-500 mt-1">{formData.start.toFormat("h:mm a")}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <DatePicker
+                            selected={formData.end.toJSDate()}
+                            onChange={(date) => setFormData((prev) => ({ ...prev, end: DateTime.fromJSDate(date).set({ hour: prev.end.hour, minute: prev.end.minute }) }))}
+                            dateFormat="MM/dd/yyyy"
+                            className="w-full border rounded px-3 py-2"
+                            placeholderText="Select end date"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                            <input
+                                type="time"
+                                value={formData.end.toFormat("HH:mm")}
+                                onChange={(e) => {
+                                    const [hours, minutes] = e.target.value.split(":");
+                                    setFormData((prev) => ({ ...prev, end: prev.end.set({ hour: parseInt(hours), minute: parseInt(minutes) }) }));
+                                }}
+                                className="w-full border rounded px-3 py-2"
+                            />
+                            <span className="text-xs text-gray-500 mt-1">{formData.end.toFormat("h:mm a")}</span>
+                        </div>
+                    </div>
+                </div>
 
                 <select
                     name="account_id"
