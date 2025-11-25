@@ -96,7 +96,9 @@ const DnDCalendar = withDragAndDrop(Calendar);
     };
 
     const handleSave = async (formData) => {
-        const { start, end, event_id } = selectedEvent;
+        const { event_id } = selectedEvent;
+        // Use the updated start/end from formData (modal input), not the old selectedEvent times
+        const { start, end } = formData;
         const payload = {
             ...formData,
             user_id: userId,
