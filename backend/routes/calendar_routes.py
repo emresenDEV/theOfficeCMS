@@ -92,20 +92,29 @@ def update_calendar_event(event_id):
     if not data:
         return jsonify({"error": "Invalid JSON data"}), 400
 
-    # Update event fields safely
-    event.event_title = data.get("event_title", event.event_title)
-    event.location = data.get("location", event.location)
-    event.start_time = datetime.strptime(data["start_time"], "%H:%M:%S").time() if "start_time" in data else event.start_time
-    event.end_time = datetime.strptime(data["end_time"], "%H:%M:%S").time() if "end_time" in data else event.end_time
-    event.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date() if "start_date" in data else event.start_date
-    event.end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date() if "end_date" in data else event.end_date
-    event.notes = data.get("notes", event.notes)
-    event.account_id = data.get("account_id", event.account_id)
-    event.contact_name = data.get("contact_name", event.contact_name)
-    event.phone_number = data.get("phone_number", event.phone_number)
+    print(f"📝 Received data: {data}")
 
-    db.session.commit()
-    return jsonify({"message": "Event updated successfully"}), 200
+    try:
+        # Update event fields safely
+        event.event_title = data.get("event_title", event.event_title)
+        event.location = data.get("location", event.location)
+        event.start_time = datetime.strptime(data["start_time"], "%H:%M:%S").time() if "start_time" in data else event.start_time
+        event.end_time = datetime.strptime(data["end_time"], "%H:%M:%S").time() if "end_time" in data else event.end_time
+        event.start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date() if "start_date" in data else event.start_date
+        event.end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date() if "end_date" in data else event.end_date
+        event.notes = data.get("notes", event.notes)
+        event.account_id = data.get("account_id", event.account_id)
+        event.contact_name = data.get("contact_name", event.contact_name)
+        event.phone_number = data.get("phone_number", event.phone_number)
+
+        print(f"✅ Updated event fields. Committing to database...")
+        db.session.commit()
+        print(f"✅ Event {event_id} successfully updated in database")
+        return jsonify({"message": "Event updated successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error updating event: {str(e)}")
+        return jsonify({"error": f"Failed to update event: {str(e)}"}), 500
 
 
 
