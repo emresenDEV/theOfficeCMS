@@ -108,6 +108,7 @@ const DnDCalendar = withDragAndDrop(Calendar);
         }
         loadEvents();
         setModalOpen(false);
+        setSelectedEvent(null);
     };
 
     return (
@@ -134,13 +135,17 @@ const DnDCalendar = withDragAndDrop(Calendar);
         />
     <CalendarEventModal
         isOpen={modalOpen}
-        closeModal={() => setModalOpen(false)}
+        closeModal={() => {
+            setModalOpen(false);
+            setSelectedEvent(null);
+        }}
         initialData={selectedEvent}
         onSave={handleSave}
         onDelete={async (eventId) => {
             await deleteCalendarEvent(eventId);
             await loadEvents();
             setModalOpen(false);
+            setSelectedEvent(null);
         }}
         accounts={accounts}
     />
