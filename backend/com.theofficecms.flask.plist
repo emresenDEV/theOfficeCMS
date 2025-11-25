@@ -28,6 +28,10 @@
 	<true/>
 	<key>KeepAlive</key>
 	<true/>
+	<key>UserName</key>
+	<string>monicanieckula</string>
+	<key>GroupName</key>
+	<string>staff</string>
 	<key>Restart</key>
 	<string>on-demand</string>
 </dict>
