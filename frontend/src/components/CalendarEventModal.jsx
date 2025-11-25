@@ -78,6 +78,10 @@ const handleSubmit = (e) => {
         end_time: formData.end.toFormat("HH:mm:ss"),
     };
 
+    // Remove Luxon DateTime objects from payload - only send serializable strings
+    delete payload.start;
+    delete payload.end;
+
     onSave(payload);
 };
 
