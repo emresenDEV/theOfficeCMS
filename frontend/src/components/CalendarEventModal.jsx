@@ -24,15 +24,29 @@ const [formData, setFormData] = useState({
     account_id: "",
 });
 
-  // Set form data when editing an event
+  // Set form data when editing an event or creating new one
 useEffect(() => {
     if (initialData?.event_id) {
+        // Editing existing event
         setFormData({
             ...initialData,
             start: DateTime.fromJSDate(initialData.start),
             end: DateTime.fromJSDate(initialData.end),
         });
+    } else if (initialData?.start && initialData?.end) {
+        // Creating new event from calendar slot click
+        setFormData({
+            event_title: "",
+            location: "",
+            start: DateTime.fromJSDate(initialData.start),
+            end: DateTime.fromJSDate(initialData.end),
+            notes: "",
+            contact_name: "",
+            phone_number: "",
+            account_id: "",
+        });
     } else {
+        // Default: new event at current time
         setFormData((prev) => ({
             ...prev,
             start: DateTime.now(),
