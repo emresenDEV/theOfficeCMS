@@ -3,6 +3,7 @@
 .env
 DEPLOYMENT_GUIDE.md
 QUICK_REFERENCE.md
+# LAUNCHD_SETUP.md
 
 config.py
 database.py
