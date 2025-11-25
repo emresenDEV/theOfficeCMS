@@ -3,7 +3,6 @@ from flask_session import Session
 from flask_cors import CORS
 from config import Config
 from database import db
-from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 
 # Route Blueprints
@@ -29,18 +28,18 @@ app = Flask(__name__)
 app.config.from_object(Config)
 app.url_map.strict_slashes = False
 
-# Configure ProxyFix to trust Cloudflare Tunnel headers
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+# ProxyFix middleware removed - no longer needed with Tailscale Funnel
+# Tailscale handles header proxying securely through its tunnel
 
 Session(app)
 db.init_app(app)
 
-# Global CORS config for both localhost & Vercel
+# Global CORS config for localhost, Vercel, and Tailscale Funnel
 CORS(app,
         supports_credentials=True,
         allow_headers=['Content-Type', 'Authorization'],
         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        origins=["http://localhost:5174", "https://theofficecms.com", "https://www.theofficecms.com", "https://api.theofficecms.com"])
+        origins=["http://localhost:5174", "https://theofficecms.com", "https://www.theofficecms.com", "https://mac.tailced3de.ts.net"])
 
 # Route Blueprints
 app.register_blueprint(account_bp, url_prefix="/accounts")
