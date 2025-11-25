@@ -39,7 +39,7 @@ CORS(app,
         supports_credentials=True,
         allow_headers=['Content-Type', 'Authorization'],
         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        origins=["http://localhost:5174", "https://theofficecms.com", "https://www.theofficecms.com", "https://mac.tailced3de.ts.net"])
+        origins=["http://localhost:5174", "https://theofficecms.com", "https://www.theofficecms.com", "https://macmini.tailced3de.ts.net"])
 
 # Route Blueprints
 app.register_blueprint(account_bp, url_prefix="/accounts")
