@@ -2,3 +2,12 @@
 # Deployment documentation (local use only - contains sensitive paths/credentials)
 DEPLOYMENT_GUIDE.md
 QUICK_REFERENCE.md
+
+config.py
+database.py
+dbdiagram_schema.txt
+dump.rdb
+dunder_mifflin_backup.sql
+generate_dbdiagram.py
+generate_passwords.py
+schema.sql
