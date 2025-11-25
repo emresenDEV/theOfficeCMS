@@ -81,7 +81,7 @@ def create_calendar_event():
 
 
 # Update an Existing Calendar Event
-@calendar_bp.route("/events/<int:event_id>", methods=["PUT", "OPTIONS"])
+@calendar_bp.route("/events/<int:event_id>", methods=["PUT"])
 def update_calendar_event(event_id):
     print(f"🔍 Received PUT request for event ID: {event_id}")
     event = CalendarEvent.query.get(event_id)
