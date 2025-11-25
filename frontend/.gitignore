@@ -40,3 +40,6 @@ dist-ssr
 # Dev-specific scripts
 backend/generate_dbdiagram.py
 backend/generate_passwords.py
+# Deployment documentation (local use only)
+DEPLOYMENT_GUIDE.md
+QUICK_REFERENCE.md
