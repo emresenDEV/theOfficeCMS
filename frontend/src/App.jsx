@@ -22,6 +22,7 @@ import TasksPage from "./pages/TaskPage";
 import UnpaidInvoicesPage from "./pages/UnpaidInvoicesPage";
 import UpdateAccountPage from "./pages/UpdateAccountPage";
 import Sidebar from "./components/Sidebar";
+import Layout from "./components/Layout";
 import { fetchUserSession } from "./services/authService";
 import api from "./services/api";
 import PropTypes from "prop-types";
@@ -119,13 +120,14 @@ function App() {
 const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login"; // DETECT LOGIN PAGE
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <>
-    {/* SIDEBAR ONLY SHOWS IF USER EXISTS AND NOT ON LOGIN PAGE */}
-    {!isLoginPage && user && <Sidebar user={user} handleLogout={handleLogout} />}
-
-      <Routes>
+    {/* LAYOUT WRAPPER ONLY SHOWS IF USER EXISTS AND NOT ON LOGIN PAGE */}
+    {!isLoginPage && user ? (
+      <Layout sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} user={user} handleLogout={handleLogout}>
+        <Routes>
         {/* Public Route - Login */}
         <Route path="/login" element={<LoginPage setUser={setUser} />} />
         {/* Redirect to login if `user` is null */}
@@ -170,6 +172,13 @@ const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
         </>
           )}
       </Routes>
+      </Layout>
+    ) : (
+      <Routes>
+        <Route path="/login" element={<LoginPage setUser={setUser} />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )}
     </>
   );
 };

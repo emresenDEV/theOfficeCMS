@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { fetchAccounts } from "../services/accountService";
 import { fetchUsers } from "../services/userService";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
 import PropTypes from "prop-types";
 
 const AccountsPage = ({ user }) => {
@@ -67,9 +66,8 @@ const AccountsPage = ({ user }) => {
     
 
     return (
-        <div className="flex">
-            <Sidebar user={user} />
-            <div className="flex-1 p-6 ml-64">
+        <div className="w-full">
+            <div className="flex-1 p-4 sm:p-6 mt-16 md:mt-0">
                 <h1 className="text-2xl font-bold">Accounts</h1>
                 {/* Search Bar and New Account Button*/}
                 <div className="flex justify-between items-center gap-4">

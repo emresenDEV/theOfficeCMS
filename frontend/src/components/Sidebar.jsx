@@ -1,29 +1,19 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import { FiHome, FiUsers, FiSettings, FiBriefcase, FiLogOut, FiMenu, FiClipboard, FiTrendingUp } from "react-icons/fi";
+import { FiHome, FiUsers, FiSettings, FiBriefcase, FiLogOut, FiClipboard, FiTrendingUp } from "react-icons/fi";
 import PropTypes from "prop-types";
 import logo from "../assets/Dunder-Mifflin.svg";
 
-const Sidebar = ({ user, handleLogout }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const Sidebar = ({ user, handleLogout, isOpen, toggleSidebar }) => {
     console.log("🧠 Sidebar Received User:", user); // debugging
 
 
     return (
         <>
-            {/* Mobile Hamburger Menu */}
-            <button
-                className="md:hidden fixed top-4 left-4 bg-gray-800 text-white p-2 rounded-md z-50"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <FiMenu size={24} />
-            </button>
-
             {/* Sidebar */}
             <div
-                className={`fixed top-0 left-0 h-screen w-1/4 bg-gray-900 text-white flex flex-col justify-between p-4 transition-transform duration-300 ease-in-out md:w-1/4 ${
+                className={`fixed md:relative top-0 left-0 h-screen w-64 bg-gray-900 text-white flex flex-col justify-between p-4 transition-transform duration-300 ease-in-out ${
                     isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-                }`}
+                } z-40`}
             >
                 {/* Upper Section */}
                 <div>
@@ -64,13 +54,6 @@ const Sidebar = ({ user, handleLogout }) => {
                 </button>
             </div>
 
-            {/* Overlay when menu is open (Mobile) */}
-            {isOpen && (
-                <div
-                    className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 z-40 md:hidden"
-                    onClick={() => setIsOpen(false)}
-                ></div>
-            )}
         </>
     );
 };

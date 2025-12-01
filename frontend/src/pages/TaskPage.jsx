@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { fetchTasks, createTask, updateTask, deleteTask, fetchDepartments, fetchEmployees, fetchUsers } from "../services/tasksService";
 import { fetchBranches } from "../services/branchService";
 import { fetchAccounts } from "../services/accountService";
-import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { format } from "date-fns";
@@ -238,9 +237,8 @@ const handleDeleteTask = async (taskId) => {
 
 
 return (
-    <div className="flex bg-gray-100 min-h-screen">
-    <Sidebar user={user} />
-    <div className="flex-1 p-6 ml-64">
+    <div className="w-full">
+    <div className="flex-1 p-4 sm:p-6 mt-16 md:mt-0">
         <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
 
         <CreateTaskComponent

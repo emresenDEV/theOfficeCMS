@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import Sidebar from "../components/Sidebar";
 import { logoutUser } from "../services/authService"; 
 import SalesChart from "../components/SalesChart";
 import CalendarComponent from "../components/CalendarComponent";
@@ -114,9 +113,8 @@ const Dashboard = ({ user }) => {
     };
 
     return (
-        <div className="flex bg-gray-100 min-h-screen w-full">
-            <Sidebar user={userData} handleLogout={handleLogout} />
-            <div className="flex-1 p-6 ml-64 space-y-6">
+        <div className="w-full">
+            <div className="flex-1 p-4 sm:p-6 space-y-6 mt-16 md:mt-0">
                 <h1 className="text-3xl font-semibold text-gray-900">
                     Hello, {userData.first_name} {userData.last_name}
                 </h1>
@@ -129,7 +127,7 @@ const Dashboard = ({ user }) => {
                     <p className="text-center text-gray-600">Loading Sales Data...</p>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-screen-2xl mx-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full mx-auto">
                     {/* 📅 Calendar takes 2/3 of the grid */}
                     <div className="md:col-span-3">
                         <CalendarComponent 
