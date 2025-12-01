@@ -6,7 +6,9 @@ import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { format } from "date-fns";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
-import CreateTaskComponent from "../components/CreateTaskComponent"; 
+import CreateTaskComponent from "../components/CreateTaskComponent";
+import TaskListMobile from "../components/TaskListMobile";
+import CreateTaskModal from "../components/CreateTaskModal"; 
 
 const TasksPage = ({ user }) => {
 const navigate = useNavigate();
@@ -22,6 +24,18 @@ const [editError, setEditError] = useState(null);
 const [editingTask, setEditingTask] = useState(null);
 const [completingTask, setCompletingTask] = useState({});
 const [confirmDelete, setConfirmDelete] = useState(null);
+const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+const [showCreateModal, setShowCreateModal] = useState(false);
+
+// Handle window resize for mobile detection
+useEffect(() => {
+    const handleResize = () => {
+        setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+}, []);
 
 useEffect(() => {
     if (!user || !user.id) return;
@@ -236,20 +250,88 @@ const handleDeleteTask = async (taskId) => {
 };
 
 
+// Transform tasks to include business names
+const transformedTasks = tasks.map((task) => ({
+    ...task,
+    business_name: task.business_name || "No Account",
+}));
+
+const transformedCompletedTasks = completedTasks.map((task) => ({
+    ...task,
+    business_name: task.business_name || "No Account",
+}));
+
+const handleCreateTask = async (taskPayload) => {
+    try {
+        await createTask(user.id, taskPayload);
+
+        // Reload tasks
+        const fetchedTasks = await fetchTasks(user.id);
+        const fetchedAccounts = await fetchAccounts();
+        const fetchedUsers = await fetchUsers();
+
+        const updatedTasks = fetchedTasks.map((task) => ({
+            ...task,
+            business_name: task.account_id
+                ? fetchedAccounts.find((acc) => acc.account_id === task.account_id)?.business_name || "No Account"
+                : "No Account",
+            assigned_by_username: fetchedUsers.find((u) => u.user_id === task.user_id)?.username || "Unknown",
+        }));
+
+        setTasks(updatedTasks.filter((task) => !task.is_completed));
+        setCompletedTasks(updatedTasks.filter((task) => task.is_completed));
+    } catch (error) {
+        console.error("❌ Error creating task:", error);
+    }
+};
+
 return (
     <div className="w-full">
     <div className="flex-1 p-4 sm:p-6 mt-16 md:mt-0">
         <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
 
-        <CreateTaskComponent
-        user={user}
-        branches={branches}
-        departments={departments}
-        employees={employees}
-        accounts={accounts}
-        onCreateTask={createTask}
-        />
+        {isMobile ? (
+            <>
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="w-full bg-green-600 text-white px-4 py-2 rounded font-medium mt-4 hover:bg-green-700 transition"
+                >
+                    + New Task
+                </button>
+                <div className="mt-6">
+                    <TaskListMobile
+                        tasks={transformedTasks}
+                        completedTasks={transformedCompletedTasks}
+                        onTaskComplete={(task) => handleTaskCompletion(task)}
+                        onTaskUndo={(task) => handleTaskCompletion(task)}
+                        onEditTask={(task) => handleEditTask()}
+                        onDeleteTask={(taskId) => handleDeleteTask(taskId)}
+                        onAccountClick={(accountId) => navigate(`/accounts/details/${accountId}`)}
+                        user={user}
+                    />
+                </div>
+                <CreateTaskModal
+                    isOpen={showCreateModal}
+                    onClose={() => setShowCreateModal(false)}
+                    onCreateTask={handleCreateTask}
+                    accounts={accounts}
+                    employees={employees}
+                    user={user}
+                />
+            </>
+        ) : (
+            <CreateTaskComponent
+            user={user}
+            branches={branches}
+            departments={departments}
+            employees={employees}
+            accounts={accounts}
+            onCreateTask={createTask}
+            />
+        )}
 
+        {!isMobile && (
+        <>
         {/* Active Tasks */}
         <div className="bg-white p-6 rounded-lg shadow-md mt-6">
         <h2 className="text-lg font-semibold mb-3">Active Tasks</h2>
@@ -463,6 +545,8 @@ return (
             </table>
         )}
         </div>
+        </>
+        )}
     </div>
     </div>
 );

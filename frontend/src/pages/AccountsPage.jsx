@@ -3,13 +3,25 @@ import { fetchAccounts } from "../services/accountService";
 import { fetchUsers } from "../services/userService";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import AccountsPageMobile from "../components/AccountsPageMobile";
 
 const AccountsPage = ({ user }) => {
     const [accounts, setAccounts] = useState([]);
     const [users, setUsers] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredAccounts, setFilteredAccounts] = useState([]);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const navigate = useNavigate();
+
+    // Handle window resize for mobile detection
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     useEffect(() => {
         if (!user) return;
@@ -65,7 +77,16 @@ const AccountsPage = ({ user }) => {
     };
     
 
-    return (
+    return isMobile ? (
+        <AccountsPageMobile
+            accounts={accounts}
+            onViewAccount={(accountId) => navigate(`/accounts/details/${accountId}`)}
+            onCreateNew={() => navigate("/accounts/create")}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filteredAccounts={filteredAccounts}
+        />
+    ) : (
         <div className="w-full">
             <div className="flex-1 p-4 sm:p-6 mt-16 md:mt-0">
                 <h1 className="text-2xl font-bold">Accounts</h1>
@@ -81,7 +102,7 @@ const AccountsPage = ({ user }) => {
                         />
                     </div>
                     <div>
-                        <button 
+                        <button
                             className="bg-green-600 text-white px-4 py-2 rounded shadow-lg"
                             onClick={() => navigate("/accounts/create")}
                         >

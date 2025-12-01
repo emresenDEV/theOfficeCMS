@@ -1,13 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
-import { logoutUser } from "../services/authService"; 
+import { logoutUser } from "../services/authService";
 import SalesChart from "../components/SalesChart";
 import CalendarComponent from "../components/CalendarComponent";
 import TasksComponent from "../components/TaskComponent";
 import AccountsTable from "../components/AccountsTable";
 import CreateCalendarEvent from "../components/CreateCalendarEvent";
+import DashboardSalesChartMobile from "../components/DashboardSalesChartMobile";
+import CalendarMobileMini from "../components/CalendarMobileMini";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";
 import { fetchUserProfile } from "../services/userService";
+import { fetchUsers } from "../services/userService";
 import PropTypes from "prop-types";
 
 const Dashboard = ({ user }) => {
@@ -16,6 +19,44 @@ const Dashboard = ({ user }) => {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [allSalesReps, setAllSalesReps] = useState([]);
+    const [userSalesData, setUserSalesData] = useState([]);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    // Handle window resize for mobile detection
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    // Fetch sales data for mobile chart
+    useEffect(() => {
+        if (!userData || !userData.user_id) return;
+
+        async function fetchSalesData() {
+            try {
+                const users = await fetchUsers();
+                setAllSalesReps(users);
+
+                // Transform users to sales data format
+                const salesData = users.map((u) => ({
+                    user_id: u.user_id,
+                    name: `${u.first_name} ${u.last_name}`,
+                    branch_id: u.branch_id,
+                    total_sales: u.total_sales || 0,
+                }));
+                setUserSalesData(salesData);
+            } catch (error) {
+                console.error("❌ Error fetching sales data:", error);
+            }
+        }
+
+        fetchSalesData();
+    }, [userData]);
 
     const refreshDashboardData = useCallback(async (userId) => {
         setLoading(true);
@@ -120,33 +161,49 @@ const Dashboard = ({ user }) => {
                 </h1>
                 <h2 className="text-lg text-gray-600">{userData.role_name || "Loading Role..."} Dashboard</h2>
 
-                {/* 📊 Sales Chart */}
-                {userData.branch_id ? (
+                {/* 📊 Sales Chart - Mobile vs Desktop */}
+                {isMobile ? (
+                    <DashboardSalesChartMobile
+                        userData={userData}
+                        userSalesData={userSalesData}
+                        allSalesReps={allSalesReps}
+                    />
+                ) : userData.branch_id ? (
                     <SalesChart userProfile={userData} />
                 ) : (
                     <p className="text-center text-gray-600">Loading Sales Data...</p>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full mx-auto">
-                    {/* 📅 Calendar takes 2/3 of the grid */}
-                    <div className="md:col-span-3">
-                        <CalendarComponent 
-                            events={events}
-                            userId={userData.user_id}
-                        />
-                    </div>
-
-                    {/* 🗓️ Events Section takes 1/3 of the grid */}
-                    {/* <div className="md:col-span-1">
-                    <EventsSection 
-                        events={events} 
-                        user={userData} 
-                        setEvents={updateEvents}
-                        openCreateModal={() => setShowCreateModal(true)}
+                {/* 📅 Calendar - Mobile vs Desktop */}
+                {isMobile ? (
+                    <CalendarMobileMini
+                        events={events}
+                        onEventClick={(event) => {
+                            console.log("Event clicked:", event);
+                            // Could open event details modal here
+                        }}
                     />
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full mx-auto">
+                        <div className="md:col-span-3">
+                            <CalendarComponent
+                                events={events}
+                                userId={userData.user_id}
+                            />
+                        </div>
 
-                    </div> */}
-                </div>
+                        {/* 🗓️ Events Section takes 1/3 of the grid */}
+                        {/* <div className="md:col-span-1">
+                        <EventsSection
+                            events={events}
+                            user={userData}
+                            setEvents={updateEvents}
+                            openCreateModal={() => setShowCreateModal(true)}
+                        />
+
+                        </div> */}
+                    </div>
+                )}
 
                 <TasksComponent 
                         tasks={tasks}
