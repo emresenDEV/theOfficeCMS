@@ -7,6 +7,7 @@ import AccountsTable from "../components/AccountsTable";
 import CreateCalendarEvent from "../components/CreateCalendarEvent";
 import DashboardSalesChartMobile from "../components/DashboardSalesChartMobile";
 import CalendarMobileMini from "../components/CalendarMobileMini";
+import EventDetailsModal from "../components/EventDetailsModal";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";
 import { fetchUserProfile } from "../services/userService";
@@ -19,6 +20,8 @@ const Dashboard = ({ user }) => {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
     const [allSalesReps, setAllSalesReps] = useState([]);
     const [userSalesData, setUserSalesData] = useState([]);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -179,8 +182,11 @@ const Dashboard = ({ user }) => {
                     <CalendarMobileMini
                         events={events}
                         onEventClick={(event) => {
-                            console.log("Event clicked:", event);
-                            // Could open event details modal here
+                            setSelectedEvent(event);
+                            setShowEventDetailsModal(true);
+                        }}
+                        onCreateEvent={(date) => {
+                            setShowCreateModal(true);
                         }}
                     />
                 ) : (
@@ -214,6 +220,25 @@ const Dashboard = ({ user }) => {
                 
                 <AccountsTable user={userData} />
             </div>
+            {/* EVENT DETAILS MODAL - Mobile */}
+            <EventDetailsModal
+                event={selectedEvent}
+                isOpen={showEventDetailsModal}
+                onClose={() => {
+                    setShowEventDetailsModal(false);
+                    setSelectedEvent(null);
+                }}
+                onEdit={() => {
+                    // Open create form in edit mode
+                    setShowEventDetailsModal(false);
+                    setShowCreateModal(true);
+                }}
+                onSave={(updatedEvent) => {
+                    // Optionally handle save here - would need API call
+                    console.log("Event saved:", updatedEvent);
+                }}
+            />
+
             {/* MODAL FOR CREATE EVENT */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
@@ -221,8 +246,8 @@ const Dashboard = ({ user }) => {
                         <CreateCalendarEvent
                             userId={userData.user_id}
                             setEvents={(newEvents) => {
-                                updateEvents(newEvents);                
-                                refreshDashboardData(userData.user_id); 
+                                updateEvents(newEvents);
+                                refreshDashboardData(userData.user_id);
                             }}
                             closeForm={() => setShowCreateModal(false)}
                         />
