@@ -34,13 +34,13 @@ const Sidebar = ({ user, handleLogout, isOpen, toggleSidebar }) => {
                     )}
                     {/* Navigation */}
                     <nav className="mt-6 space-y-2">
-                        <NavItem to="/" icon={<FiHome />} label="Dashboard" />
-                        <NavItem to="/tasks" icon={<FiClipboard />} label="My Tasks" />
-                        {/* <NavItem to="/calendar" icon={<FiBriefcase />} label="Calendar" /> */}
-                        <NavItem to="/accounts" icon={<FiUsers />} label="Accounts" />
-                        <NavItem to="/commissions" icon={<FiTrendingUp />} label="Commissions" />
-                        {/* <NavItem to="/employee-info" icon={<FiUsers />} label="My Info" /> */}
-                        <NavItem to="/settings" icon={<FiSettings />} label="Settings" />
+                        <NavItem to="/" icon={<FiHome />} label="Dashboard" onNavigate={toggleSidebar} />
+                        <NavItem to="/tasks" icon={<FiClipboard />} label="My Tasks" onNavigate={toggleSidebar} />
+                        {/* <NavItem to="/calendar" icon={<FiBriefcase />} label="Calendar" onNavigate={toggleSidebar} /> */}
+                        <NavItem to="/accounts" icon={<FiUsers />} label="Accounts" onNavigate={toggleSidebar} />
+                        <NavItem to="/commissions" icon={<FiTrendingUp />} label="Commissions" onNavigate={toggleSidebar} />
+                        {/* <NavItem to="/employee-info" icon={<FiUsers />} label="My Info" onNavigate={toggleSidebar} /> */}
+                        <NavItem to="/settings" icon={<FiSettings />} label="Settings" onNavigate={toggleSidebar} />
                     </nav>
                 </div>
 
@@ -59,9 +59,10 @@ const Sidebar = ({ user, handleLogout, isOpen, toggleSidebar }) => {
 };
 
 // Navigation Item Component
-const NavItem = ({ to, icon, label }) => (
+const NavItem = ({ to, icon, label, onNavigate }) => (
     <Link
         to={to}
+        onClick={onNavigate}
         className="flex items-center space-x-3 p-3 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition"
     >
         {icon}
@@ -85,6 +86,7 @@ NavItem.propTypes = {
     to: PropTypes.string.isRequired,
     icon: PropTypes.element.isRequired,
     label: PropTypes.string.isRequired,
+    onNavigate: PropTypes.func,
 };
 
 export default Sidebar;
