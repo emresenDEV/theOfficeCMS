@@ -245,11 +245,9 @@ const Dashboard = ({ user }) => {
                     <div className="bg-white p-6 rounded-lg w-full max-w-3xl shadow-lg">
                         <CreateCalendarEvent
                             userId={userData.user_id}
-                            setEvents={(newEvents) => {
-                                updateEvents(newEvents);
-                                refreshDashboardData(userData.user_id);
-                            }}
+                            setEvents={setEvents}
                             closeForm={() => setShowCreateModal(false)}
+                            refreshDashboardData={refreshDashboardData}
                         />
                     </div>
                 </div>
