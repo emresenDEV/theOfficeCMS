@@ -230,14 +230,8 @@ const Dashboard = ({ user }) => {
                     setShowEventDetailsModal(false);
                     setSelectedEvent(null);
                 }}
-                onEdit={() => {
-                    // Open create form in edit mode
-                    setShowEventDetailsModal(false);
-                    setShowCreateModal(true);
-                }}
-                onSave={(updatedEvent) => {
-                    // Optionally handle save here - would need API call
-                    console.log("Event saved:", updatedEvent);
+                onRefresh={() => {
+                    refreshDashboardData(userData?.user_id);
                 }}
             />
 
