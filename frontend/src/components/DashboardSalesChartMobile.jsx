@@ -104,7 +104,14 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
             setLoading(true);
             try {
                 const data = await fetchBranchSales(selectedYear);
-                console.log("📊 Branch Sales Data:", data);
+                console.log("📊 RAW Branch Sales Data from API:", data);
+                console.log("📊 Data type:", typeof data);
+                console.log("📊 Data keys:", Object.keys(data || {}));
+                if (data && typeof data === 'object') {
+                    Object.entries(data).forEach(([key, value]) => {
+                        console.log(`  - ${key}:`, value, `(type: ${Array.isArray(value) ? 'Array' : typeof value})`);
+                    });
+                }
                 setBranchSalesData(data);
             } catch (error) {
                 console.error("❌ Error loading branch sales:", error);
@@ -128,7 +135,17 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
             try {
                 for (const branchId of selectedBranches) {
                     const data = await fetchBranchUsersSales(branchId, selectedYear);
-                    console.log(`📊 Branch Users Sales Data for Branch ${branchId}:`, data);
+                    console.log(`📊 RAW Branch Users Sales Data for Branch ${branchId}:`, data);
+                    console.log(`📊 Data type:`, typeof data);
+                    console.log(`📊 Data keys:`, Object.keys(data || {}));
+                    if (data && typeof data === 'object') {
+                        Object.entries(data).forEach(([key, value]) => {
+                            console.log(`  - ${key}:`, value, `(type: ${typeof value})`);
+                            if (value && typeof value === 'object') {
+                                console.log(`    Keys in ${key}:`, Object.keys(value));
+                            }
+                        });
+                    }
                 }
             } catch (error) {
                 console.error("❌ Error loading branch users sales:", error);
