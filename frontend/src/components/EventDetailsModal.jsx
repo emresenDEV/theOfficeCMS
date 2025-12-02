@@ -51,6 +51,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
     const [editedEvent, setEditedEvent] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         if (event && isOpen) {
@@ -111,43 +112,42 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
             const result = await updateCalendarEvent(event.event_id, updatedData);
 
             if (result) {
-                alert("Event updated successfully");
+                console.log("✅ Event updated successfully");
                 onRefresh();
                 onClose();
             } else {
-                alert("Failed to update event");
+                console.error("❌ Failed to update event");
             }
         } catch (error) {
             console.error("Error updating event:", error);
-            alert("Error updating event. Check console logs.");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = async () => {
-        if (!window.confirm("Are you sure you want to delete this event?")) {
-            return;
-        }
-
+    const confirmDelete = async () => {
         setLoading(true);
         try {
             console.log("Deleting event:", event.event_id);
             const result = await deleteCalendarEvent(event.event_id);
 
             if (result.success) {
-                alert("Event deleted successfully");
+                console.log("✅ Event deleted successfully");
                 onRefresh();
                 onClose();
             } else {
-                alert("Failed to delete event");
+                console.error("❌ Failed to delete event");
             }
         } catch (error) {
             console.error("Error deleting event:", error);
-            alert("Error deleting event. Check console logs.");
         } finally {
             setLoading(false);
+            setShowDeleteConfirm(false);
         }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
     };
 
     return (
@@ -331,13 +331,32 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                 <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex gap-2 justify-between">
                     <div className="flex gap-2">
                         {!isEditMode && (
-                            <button
-                                onClick={handleDelete}
-                                className="px-3 py-2 rounded bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
-                                disabled={loading}
-                            >
-                                Delete
-                            </button>
+                            showDeleteConfirm ? (
+                                <>
+                                    <button
+                                        onClick={cancelDelete}
+                                        className="px-3 py-2 rounded bg-gray-400 text-white text-sm font-semibold hover:bg-gray-500 disabled:opacity-50"
+                                        disabled={loading}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDelete}
+                                        className="px-3 py-2 rounded bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+                                        disabled={loading}
+                                    >
+                                        {loading ? "Deleting..." : "Yes"}
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    className="px-3 py-2 rounded bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+                                    disabled={loading}
+                                >
+                                    Delete
+                                </button>
+                            )
                         )}
                     </div>
                     <div className="flex gap-2">

@@ -62,8 +62,41 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
     // Navigate to today
     const goToToday = () => {
         setCurrentMonth(DateTime.now());
-        if (view === "month") {
-            setView("month");
+    };
+
+    // Navigate to previous week
+    const goToPrevWeek = () => {
+        setCurrentMonth(currentMonth.minus({ weeks: 1 }));
+    };
+
+    // Navigate to next week
+    const goToNextWeek = () => {
+        setCurrentMonth(currentMonth.plus({ weeks: 1 }));
+    };
+
+    // Navigate to previous day
+    const goToPrevDay = () => {
+        setCurrentMonth(currentMonth.minus({ days: 1 }));
+    };
+
+    // Navigate to next day
+    const goToNextDay = () => {
+        setCurrentMonth(currentMonth.plus({ days: 1 }));
+    };
+
+    // Get formatted date range for current view
+    const getDateRangeLabel = () => {
+        const now = DateTime.now();
+        switch (view) {
+            case "week":
+                const weekStart = currentMonth.startOf("week");
+                const weekEnd = currentMonth.endOf("week");
+                return `${weekStart.toFormat("MMM d")} - ${weekEnd.toFormat("MMM d, yyyy")}`;
+            case "day":
+                return currentMonth.toFormat("MMMM d, yyyy");
+            case "month":
+            default:
+                return currentMonth.toFormat("MMMM yyyy");
         }
     };
 
@@ -146,26 +179,40 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                             </div>
                         </div>
 
-                        {/* Month Navigation */}
-                        {view === "month" && (
-                            <div className="flex justify-between items-center">
-                                <button
-                                    onClick={() => setCurrentMonth(currentMonth.minus({ months: 1 }))}
-                                    className="text-sm px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                                >
-                                    ← Prev
-                                </button>
-                                <h3 className="text-sm font-semibold">
-                                    {currentMonth.toFormat("MMMM yyyy")}
-                                </h3>
-                                <button
-                                    onClick={() => setCurrentMonth(currentMonth.plus({ months: 1 }))}
-                                    className="text-sm px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                                >
-                                    Next →
-                                </button>
-                            </div>
-                        )}
+                        {/* Navigation for all views */}
+                        <div className="flex justify-between items-center">
+                            <button
+                                onClick={() => {
+                                    if (view === "month") {
+                                        setCurrentMonth(currentMonth.minus({ months: 1 }));
+                                    } else if (view === "week") {
+                                        goToPrevWeek();
+                                    } else if (view === "day") {
+                                        goToPrevDay();
+                                    }
+                                }}
+                                className="text-sm px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                            >
+                                ← Prev
+                            </button>
+                            <h3 className="text-sm font-semibold">
+                                {getDateRangeLabel()}
+                            </h3>
+                            <button
+                                onClick={() => {
+                                    if (view === "month") {
+                                        setCurrentMonth(currentMonth.plus({ months: 1 }));
+                                    } else if (view === "week") {
+                                        goToNextWeek();
+                                    } else if (view === "day") {
+                                        goToNextDay();
+                                    }
+                                }}
+                                className="text-sm px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                            >
+                                Next →
+                            </button>
+                        </div>
                     </div>
 
                     {/* Apple-style Calendar Grid */}
@@ -223,7 +270,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                     {/* Events List */}
                     <div>
                         <h3 className="text-sm font-semibold mb-3">
-                            {view === "month" ? "Upcoming Events" : `Events - ${view === "week" ? "This Week" : "Today"}`}
+                            Events - {getDateRangeLabel()}
                         </h3>
 
                         {displayedEvents.length > 0 ? (
