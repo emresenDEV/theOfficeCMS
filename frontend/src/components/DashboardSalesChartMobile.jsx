@@ -25,7 +25,6 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
     const [companySalesData, setCompanySalesData] = useState([]);
     const [userSalesData, setUserSalesData] = useState([]);
     const [branchSalesData, setBranchSalesData] = useState({});
-    const [branchUsersSalesData, setBranchUsersSalesData] = useState({});
     const [loading, setLoading] = useState(false);
 
     // Filter sales reps to only show those with "Sales Representative" role
@@ -105,6 +104,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
             setLoading(true);
             try {
                 const data = await fetchBranchSales(selectedYear);
+                console.log("📊 Branch Sales Data:", data);
                 setBranchSalesData(data);
             } catch (error) {
                 console.error("❌ Error loading branch sales:", error);
@@ -126,15 +126,12 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
 
             setLoading(true);
             try {
-                const allData = {};
                 for (const branchId of selectedBranches) {
                     const data = await fetchBranchUsersSales(branchId, selectedYear);
-                    allData[branchId] = data;
+                    console.log(`📊 Branch Users Sales Data for Branch ${branchId}:`, data);
                 }
-                setBranchUsersSalesData(allData);
             } catch (error) {
                 console.error("❌ Error loading branch users sales:", error);
-                setBranchUsersSalesData({});
             } finally {
                 setLoading(false);
             }
@@ -145,10 +142,8 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
         }
     }, [selectedYear, selectedMetric, selectedBranches]);
 
-    // Convert API data to chart format (month names + sales values)
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
     const chartData = useMemo(() => {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         let dataToChart = [];
         let displayLabel = "";
         let totalSales = 0;
@@ -175,10 +170,10 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                     .filter(Boolean);
 
                 if (selectedBranchNames.length > 0) {
-                    dataToChart = monthNames.map((month, index) => {
+                    dataToChart = monthNames.map((month, monthIndex) => {
                         const monthData = { month };
                         selectedBranchNames.forEach(branchName => {
-                            monthData[branchName] = branchSalesData[branchName]?.[index] || 0;
+                            monthData[branchName] = branchSalesData[branchName]?.[monthIndex] || 0;
                         });
                         return monthData;
                     });
@@ -197,15 +192,15 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                 // Build chart data with selected reps
                 const selectedRepData = {};
                 selectedSalesReps.forEach(repId => {
-                    const rep = salesRepresentatives.find(r => r.user_id === repId);
-                    if (rep) {
-                        selectedRepData[rep.first_name] = rep;
+                    const repData = salesRepresentatives.find(r => r.user_id === repId);
+                    if (repData) {
+                        selectedRepData[repData.first_name] = repData;
                     }
                 });
 
-                dataToChart = monthNames.map((month, index) => {
+                dataToChart = monthNames.map((month) => {
                     const monthData = { month };
-                    Object.entries(selectedRepData).forEach(([name, rep]) => {
+                    Object.entries(selectedRepData).forEach(([name]) => {
                         monthData[name] = 0; // Placeholder - would need individual rep sales data
                     });
                     return monthData;
@@ -223,7 +218,6 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
         branchSalesData,
         selectedBranches,
         selectedSalesReps,
-        monthNames,
         userData,
         branches,
         salesRepresentatives,
