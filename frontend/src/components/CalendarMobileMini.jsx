@@ -110,6 +110,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
 
     // Handle event click to view details
     const handleEventClick = (event) => {
+        console.log("🎯 Event clicked - Full event data:", event);
         if (onEventClick) {
             onEventClick(event);
         }

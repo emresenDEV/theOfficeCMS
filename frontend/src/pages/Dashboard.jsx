@@ -113,6 +113,10 @@ const Dashboard = ({ user }) => {
                 setTasks(tasksData);
 
                 const eventsData = await fetchCalendarEvents(userData.user_id);
+                console.log("📅 Events fetched from API:", eventsData);
+                if (eventsData && eventsData.length > 0) {
+                    console.log("📅 First event sample:", eventsData[0]);
+                }
                 setEvents(eventsData);
             } catch (error) {
                 console.error("❌ Error fetching dashboard data:", error);

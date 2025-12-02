@@ -61,6 +61,8 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                 start_time: event.start_time ? convertTo12HourFormat(event.start_time) : "12:00 AM",
                 end_time: event.end_time ? convertTo12HourFormat(event.end_time) : "1:00 AM",
             };
+            console.log("🔍 Full Event Data in Modal:", event);
+            console.log("📋 Edited Event State:", displayEvent);
             setEditedEvent(displayEvent);
             setIsEditMode(false);
         }
