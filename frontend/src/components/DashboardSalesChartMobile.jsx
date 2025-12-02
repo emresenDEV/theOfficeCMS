@@ -1,17 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import PropTypes from "prop-types";
 import {
-    generateMonthlySalesData,
-    getCurrentYear,
-    getAvailableYears,
-    filterSalesRepsByRole,
-    filterBranchesByNames,
-} from "../utils/salesDataProcessor";
+    fetchCompanySales,
+    fetchUserSales,
+    fetchBranchSales,
+    fetchBranchUsersSales,
+} from "../services/salesService";
+import { filterSalesRepsByRole } from "../utils/salesDataProcessor";
 
-const DashboardSalesChartMobile = ({ userData, userSalesData, allSalesReps }) => {
+const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
     const [selectedMetric, setSelectedMetric] = useState("company");
-    const [selectedYear, setSelectedYear] = useState(getCurrentYear());
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedBranches, setSelectedBranches] = useState(
         userData?.branch_id ? [userData.branch_id] : []
     );
@@ -21,129 +21,212 @@ const DashboardSalesChartMobile = ({ userData, userSalesData, allSalesReps }) =>
     const [showRepDropdown, setShowRepDropdown] = useState(false);
     const [showYearDropdown, setShowYearDropdown] = useState(false);
 
+    // Sales data from API
+    const [companySalesData, setCompanySalesData] = useState([]);
+    const [userSalesData, setUserSalesData] = useState([]);
+    const [branchSalesData, setBranchSalesData] = useState({});
+    const [branchUsersSalesData, setBranchUsersSalesData] = useState({});
+    const [loading, setLoading] = useState(false);
+
     // Filter sales reps to only show those with "Sales Representative" role
     const salesRepresentatives = useMemo(
         () => filterSalesRepsByRole(allSalesReps),
         [allSalesReps]
     );
 
-    // Get available branches from sales data
-    const branches = useMemo(
-        () => filterBranchesByNames(userSalesData),
-        [userSalesData]
-    );
+    // Get branch names from allSalesReps
+    const branches = useMemo(() => {
+        const branchMap = new Map();
+        allSalesReps.forEach(rep => {
+            if (rep.branch_id && rep.branch_name) {
+                if (!branchMap.has(rep.branch_id)) {
+                    branchMap.set(rep.branch_id, {
+                        id: rep.branch_id,
+                        name: rep.branch_name,
+                    });
+                }
+            }
+        });
+        return Array.from(branchMap.values()).sort((a, b) =>
+            a.name.localeCompare(b.name)
+        );
+    }, [allSalesReps]);
 
-    // Get available years
-    const availableYears = useMemo(
-        () => getAvailableYears([]),
-        []
-    );
+    const availableYears = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        return [currentYear, currentYear - 1, currentYear - 2];
+    }, []);
 
-    // Determine which data to display based on selected metric
+    // Fetch company sales data
+    useEffect(() => {
+        const loadCompanySales = async () => {
+            setLoading(true);
+            try {
+                const data = await fetchCompanySales(selectedYear);
+                setCompanySalesData(data);
+            } catch (error) {
+                console.error("❌ Error loading company sales:", error);
+                setCompanySalesData([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (selectedMetric === "company") {
+            loadCompanySales();
+        }
+    }, [selectedYear, selectedMetric]);
+
+    // Fetch current user sales data
+    useEffect(() => {
+        const loadUserSales = async () => {
+            setLoading(true);
+            try {
+                if (userData?.user_id) {
+                    const data = await fetchUserSales(userData.user_id, selectedYear);
+                    setUserSalesData(data);
+                }
+            } catch (error) {
+                console.error("❌ Error loading user sales:", error);
+                setUserSalesData([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (selectedMetric === "company" && userData?.user_id) {
+            loadUserSales();
+        }
+    }, [selectedYear, selectedMetric, userData?.user_id]);
+
+    // Fetch branch sales data
+    useEffect(() => {
+        const loadBranchSales = async () => {
+            setLoading(true);
+            try {
+                const data = await fetchBranchSales(selectedYear);
+                setBranchSalesData(data);
+            } catch (error) {
+                console.error("❌ Error loading branch sales:", error);
+                setBranchSalesData({});
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (selectedMetric === "branch") {
+            loadBranchSales();
+        }
+    }, [selectedYear, selectedMetric]);
+
+    // Fetch sales reps data (for selected branches)
+    useEffect(() => {
+        const loadBranchUsersSales = async () => {
+            if (selectedBranches.length === 0) return;
+
+            setLoading(true);
+            try {
+                const allData = {};
+                for (const branchId of selectedBranches) {
+                    const data = await fetchBranchUsersSales(branchId, selectedYear);
+                    allData[branchId] = data;
+                }
+                setBranchUsersSalesData(allData);
+            } catch (error) {
+                console.error("❌ Error loading branch users sales:", error);
+                setBranchUsersSalesData({});
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (selectedMetric === "branch" && selectedBranches.length > 0) {
+            loadBranchUsersSales();
+        }
+    }, [selectedYear, selectedMetric, selectedBranches]);
+
+    // Convert API data to chart format (month names + sales values)
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
     const chartData = useMemo(() => {
         let dataToChart = [];
         let displayLabel = "";
+        let totalSales = 0;
 
         if (selectedMetric === "company") {
-            // Company view: Company-wide total + current user's sales
-            const companyTotal = userSalesData.reduce(
-                (sum, rep) => sum + (rep.total_sales || 0),
-                0
-            );
-            const currentUserTotal = userSalesData.find(
-                (rep) => rep.user_id === userData?.user_id
-            )?.total_sales || 0;
-
-            // For simplicity, show 2 lines: company average per rep and current user
-            const monthlyCompany = generateMonthlySalesData(
-                userSalesData.map(rep => ({
-                    date: new Date(),
-                    amount: (rep.total_sales || 0) / 12, // Distribute across months
-                })),
-                selectedYear
-            );
-
-            dataToChart = monthlyCompany.map(month => ({
-                month: month.month,
-                "Company Average": Math.round(
-                    (companyTotal / userSalesData.length / 12) * 100
-                ) / 100,
-                [userData?.first_name || "You"]: Math.round(
-                    (currentUserTotal / 12) * 100
-                ) / 100,
-            }));
-
-            displayLabel = "Company Wide Sales";
+            // Company view: Company average + current user
+            if (companySalesData.length === 12 && userSalesData.length === 12) {
+                dataToChart = monthNames.map((month, index) => ({
+                    month,
+                    "Company Total": companySalesData[index] || 0,
+                    [userData?.first_name || "You"]: userSalesData[index] || 0,
+                }));
+                displayLabel = "Company Wide Sales";
+                totalSales = companySalesData.reduce((a, b) => a + b, 0);
+            }
         } else if (selectedMetric === "branch") {
             // Branch view: Show selected branches
             if (selectedBranches.length === 0) {
                 displayLabel = "No branches selected";
             } else {
-                const branchSalesData = userSalesData.filter(rep =>
-                    selectedBranches.includes(rep.branch_id)
-                );
+                // Get data for selected branches
+                const selectedBranchNames = selectedBranches
+                    .map(id => branches.find(b => b.id === id)?.name)
+                    .filter(Boolean);
 
-                dataToChart = generateMonthlySalesData(
-                    branchSalesData.map(rep => ({
-                        date: new Date(),
-                        amount: (rep.total_sales || 0) / 12,
-                    })),
-                    selectedYear
-                ).map(month => ({
-                    month: month.month,
-                    sales: Math.round(month.sales * 100) / 100,
-                }));
+                if (selectedBranchNames.length > 0) {
+                    dataToChart = monthNames.map((month, index) => {
+                        const monthData = { month };
+                        selectedBranchNames.forEach(branchName => {
+                            monthData[branchName] = branchSalesData[branchName]?.[index] || 0;
+                        });
+                        return monthData;
+                    });
 
-                displayLabel = `${selectedBranches.length} Branch${selectedBranches.length > 1 ? "es" : ""}`;
+                    displayLabel = `${selectedBranches.length} Branch${selectedBranches.length > 1 ? "es" : ""}`;
+                    selectedBranchNames.forEach(branchName => {
+                        totalSales += (branchSalesData[branchName] || []).reduce((a, b) => a + b, 0);
+                    });
+                }
             }
         } else if (selectedMetric === "sales-rep") {
-            // Sales Rep view: Show selected sales representatives
+            // Sales Rep view: Show selected sales reps
             if (selectedSalesReps.length === 0) {
                 displayLabel = "No sales reps selected";
             } else {
-                const repNames = selectedSalesReps
-                    .map(
-                        repId =>
-                            allSalesReps.find(rep => rep.user_id === repId)?.first_name ||
-                            `Rep ${repId}`
-                    )
-                    .slice(0, 2); // Show up to 2 names
+                // Build chart data with selected reps
+                const selectedRepData = {};
+                selectedSalesReps.forEach(repId => {
+                    const rep = salesRepresentatives.find(r => r.user_id === repId);
+                    if (rep) {
+                        selectedRepData[rep.first_name] = rep;
+                    }
+                });
 
-                const repSalesData = userSalesData.filter(rep =>
-                    selectedSalesReps.includes(rep.user_id)
-                );
-
-                // Create a line for each selected rep
-                dataToChart = [];
-                const monthlyData = generateMonthlySalesData([], selectedYear);
-
-                monthlyData.forEach(month => {
-                    const monthEntry = { month: month.month };
-                    selectedSalesReps.forEach(repId => {
-                        const rep = repSalesData.find(r => r.user_id === repId);
-                        const repName =
-                            allSalesReps.find(r => r.user_id === repId)?.first_name ||
-                            `Rep ${repId}`;
-                        monthEntry[repName] = Math.round(
-                            ((rep?.total_sales || 0) / 12) * 100
-                        ) / 100;
+                dataToChart = monthNames.map((month, index) => {
+                    const monthData = { month };
+                    Object.entries(selectedRepData).forEach(([name, rep]) => {
+                        monthData[name] = 0; // Placeholder - would need individual rep sales data
                     });
-                    dataToChart.push(monthEntry);
+                    return monthData;
                 });
 
                 displayLabel = `${selectedSalesReps.length} Sales Rep${selectedSalesReps.length > 1 ? "s" : ""}`;
             }
         }
 
-        return { data: dataToChart, label: displayLabel };
+        return { data: dataToChart, label: displayLabel, total: totalSales };
     }, [
         selectedMetric,
-        selectedYear,
+        companySalesData,
+        userSalesData,
+        branchSalesData,
         selectedBranches,
         selectedSalesReps,
-        userSalesData,
+        monthNames,
         userData,
-        allSalesReps,
+        branches,
+        salesRepresentatives,
     ]);
 
     const toggleBranch = (branchId) => {
@@ -161,13 +244,6 @@ const DashboardSalesChartMobile = ({ userData, userSalesData, allSalesReps }) =>
                 : [...prev, userId]
         );
     };
-
-    const totalSales = chartData.data.reduce((sum, month) => {
-        const values = Object.values(month).filter(
-            v => typeof v === "number"
-        );
-        return sum + values.reduce((a, b) => a + b, 0);
-    }, 0);
 
     return (
         <div className="bg-white rounded-lg shadow-md p-4">
@@ -313,88 +389,101 @@ const DashboardSalesChartMobile = ({ userData, userSalesData, allSalesReps }) =>
                             {chartData.label} - {selectedYear}
                         </p>
                         <p className="text-xl sm:text-2xl font-bold text-blue-600">
-                            ${totalSales.toLocaleString()}
+                            ${chartData.total.toLocaleString()}
                         </p>
                     </div>
 
+                    {/* Loading State */}
+                    {loading && (
+                        <div className="flex items-center justify-center h-64 sm:h-80 text-gray-500">
+                            <p>Loading sales data...</p>
+                        </div>
+                    )}
+
                     {/* Chart */}
-                    <div className="w-full h-64 sm:h-80">
-                        {chartData.data.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData.data}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                                    <XAxis
-                                        dataKey="month"
-                                        tick={{ fontSize: 10 }}
-                                    />
-                                    <YAxis tick={{ fontSize: 10 }} />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: "#fff",
-                                            border: "1px solid #ccc",
-                                            borderRadius: "4px",
-                                            fontSize: "12px",
-                                        }}
-                                        formatter={(value) => `$${value.toLocaleString()}`}
-                                    />
-                                    <Legend />
-                                    {selectedMetric === "company" && (
-                                        <>
-                                            <Line
-                                                type="monotone"
-                                                dataKey="Company Average"
-                                                stroke="#3b82f6"
-                                                dot={false}
-                                                strokeWidth={2}
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey={userData?.first_name || "You"}
-                                                stroke="#10b981"
-                                                dot={false}
-                                                strokeWidth={2}
-                                            />
-                                        </>
-                                    )}
-                                    {selectedMetric === "branch" && (
-                                        <Line
-                                            type="monotone"
-                                            dataKey="sales"
-                                            stroke="#3b82f6"
-                                            dot={false}
-                                            strokeWidth={2}
+                    {!loading && (
+                        <div className="w-full h-64 sm:h-80">
+                            {chartData.data.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData.data}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                                        <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                                        <YAxis tick={{ fontSize: 10 }} />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: "#fff",
+                                                border: "1px solid #ccc",
+                                                borderRadius: "4px",
+                                                fontSize: "12px",
+                                            }}
+                                            formatter={(value) => `$${value.toLocaleString()}`}
                                         />
-                                    )}
-                                    {selectedMetric === "sales-rep" &&
-                                        selectedSalesReps.map((_, index) => (
-                                            <Line
-                                                key={index}
-                                                type="monotone"
-                                                dataKey={
-                                                    allSalesReps.find(
-                                                        r =>
-                                                            r.user_id ===
-                                                            selectedSalesReps[index]
-                                                    )?.first_name ||
-                                                    `Rep ${selectedSalesReps[index]}`
-                                                }
-                                                stroke={
-                                                    ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][
-                                                        index % 4
-                                                    ]
-                                                }
-                                                dot={false}
-                                                strokeWidth={2}
-                                            />
-                                        ))}
-                                </LineChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                                No data available
-                            </div>
-                        )}
-                    </div>
+                                        <Legend />
+                                        {selectedMetric === "company" && (
+                                            <>
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="Company Total"
+                                                    stroke="#3b82f6"
+                                                    dot={false}
+                                                    strokeWidth={2}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey={userData?.first_name || "You"}
+                                                    stroke="#10b981"
+                                                    dot={false}
+                                                    strokeWidth={2}
+                                                />
+                                            </>
+                                        )}
+                                        {selectedMetric === "branch" &&
+                                            selectedBranches.map((branchId, index) => {
+                                                const branch = branches.find(b => b.id === branchId);
+                                                return (
+                                                    <Line
+                                                        key={branchId}
+                                                        type="monotone"
+                                                        dataKey={branch?.name}
+                                                        stroke={
+                                                            ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][
+                                                                index % 4
+                                                            ]
+                                                        }
+                                                        dot={false}
+                                                        strokeWidth={2}
+                                                    />
+                                                );
+                                            })}
+                                        {selectedMetric === "sales-rep" &&
+                                            selectedSalesReps.map((repId, index) => {
+                                                const rep = salesRepresentatives.find(
+                                                    r => r.user_id === repId
+                                                );
+                                                return (
+                                                    <Line
+                                                        key={repId}
+                                                        type="monotone"
+                                                        dataKey={rep?.first_name || `Rep ${repId}`}
+                                                        stroke={
+                                                            ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][
+                                                                index % 4
+                                                            ]
+                                                        }
+                                                        dot={false}
+                                                        strokeWidth={2}
+                                                    />
+                                                );
+                                            })}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                                    No data available
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </>
             )}
         </div>
@@ -403,7 +492,6 @@ const DashboardSalesChartMobile = ({ userData, userSalesData, allSalesReps }) =>
 
 DashboardSalesChartMobile.propTypes = {
     userData: PropTypes.object,
-    userSalesData: PropTypes.array.isRequired,
     allSalesReps: PropTypes.array.isRequired,
 };
 
