@@ -31,17 +31,16 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
 
     // Get events to display based on view
     const getDisplayedEvents = () => {
-        const now = DateTime.now();
         let startDate, endDate;
 
         switch (view) {
             case "week":
-                startDate = now.startOf("week");
-                endDate = now.endOf("week");
+                startDate = currentMonth.startOf("week");
+                endDate = currentMonth.endOf("week");
                 break;
             case "day":
-                startDate = now.startOf("day");
-                endDate = now.endOf("day");
+                startDate = currentMonth.startOf("day");
+                endDate = currentMonth.endOf("day");
                 break;
             case "month":
             default:
@@ -86,7 +85,6 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
 
     // Get formatted date range for current view
     const getDateRangeLabel = () => {
-        const now = DateTime.now();
         switch (view) {
             case "week":
                 const weekStart = currentMonth.startOf("week");
@@ -145,9 +143,10 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                 {onCreateEvent && (
                                     <button
                                         onClick={() => onCreateEvent(DateTime.now())}
-                                        className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold"
+                                        className="text-sm px-2.5 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 font-bold"
+                                        title="Create new event"
                                     >
-                                        + Event
+                                        +
                                     </button>
                                 )}
                             </div>
@@ -260,6 +259,43 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                                     )}
                                                 </div>
                                             )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Week View Calendar Grid */}
+                    {view === "week" && (
+                        <div className="mb-6">
+                            {/* Day headers */}
+                            <div className="grid grid-cols-7 gap-1 mb-2">
+                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
+                                    <div key={day} className="text-center text-xs font-semibold text-gray-600 py-1">
+                                        {day}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Week days - clickable blocks */}
+                            <div className="grid grid-cols-7 gap-1">
+                                {Array.from({ length: 7 }).map((_, i) => {
+                                    const weekStart = currentMonth.startOf("week");
+                                    const day = weekStart.plus({ days: i });
+                                    const isToday = day.hasSame(DateTime.now(), "day");
+
+                                    return (
+                                        <div
+                                            key={day.toISO()}
+                                            onClick={() => setCurrentMonth(day)}
+                                            className={`aspect-square flex items-center justify-center text-sm font-bold rounded border cursor-pointer transition ${
+                                                isToday
+                                                    ? "bg-blue-600 text-white border-blue-700"
+                                                    : "bg-white border-gray-200 hover:bg-gray-100 text-gray-900"
+                                            }`}
+                                        >
+                                            {day.day}
                                         </div>
                                     );
                                 })}
