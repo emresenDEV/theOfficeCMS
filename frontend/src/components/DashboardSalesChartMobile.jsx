@@ -25,6 +25,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
     const [companySalesData, setCompanySalesData] = useState([]);
     const [userSalesData, setUserSalesData] = useState([]);
     const [branchSalesData, setBranchSalesData] = useState({});
+    const [branchUsersSalesData, setBranchUsersSalesData] = useState({});
     const [loading, setLoading] = useState(false);
 
     // Filter sales reps to only show those with "Sales Representative" role
@@ -133,28 +134,25 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
 
             setLoading(true);
             try {
+                const combinedData = {};
                 for (const branchId of selectedBranches) {
                     const data = await fetchBranchUsersSales(branchId, selectedYear);
                     console.log(`📊 RAW Branch Users Sales Data for Branch ${branchId}:`, data);
-                    console.log(`📊 Data type:`, typeof data);
-                    console.log(`📊 Data keys:`, Object.keys(data || {}));
+                    // Merge data from all selected branches
                     if (data && typeof data === 'object') {
-                        Object.entries(data).forEach(([key, value]) => {
-                            console.log(`  - ${key}:`, value, `(type: ${typeof value})`);
-                            if (value && typeof value === 'object') {
-                                console.log(`    Keys in ${key}:`, Object.keys(value));
-                            }
-                        });
+                        Object.assign(combinedData, data);
                     }
                 }
+                setBranchUsersSalesData(combinedData);
             } catch (error) {
                 console.error("❌ Error loading branch users sales:", error);
+                setBranchUsersSalesData({});
             } finally {
                 setLoading(false);
             }
         };
 
-        if (selectedMetric === "branch" && selectedBranches.length > 0) {
+        if (selectedMetric === "sales-rep" && selectedBranches.length > 0) {
             loadBranchUsersSales();
         }
     }, [selectedYear, selectedMetric, selectedBranches]);
@@ -206,22 +204,36 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
             if (selectedSalesReps.length === 0) {
                 displayLabel = "No sales reps selected";
             } else {
-                // Build chart data with selected reps
-                const selectedRepData = {};
-                selectedSalesReps.forEach(repId => {
-                    const repData = salesRepresentatives.find(r => r.user_id === repId);
-                    if (repData) {
-                        selectedRepData[repData.first_name] = repData;
-                    }
-                });
+                // Get data for selected sales reps from branchUsersSalesData
+                const selectedRepNames = selectedSalesReps
+                    .map(repId => {
+                        const rep = salesRepresentatives.find(r => r.user_id === repId);
+                        return rep ? `${rep.first_name} ${rep.last_name}` : null;
+                    })
+                    .filter(Boolean);
 
-                dataToChart = monthNames.map((month) => {
-                    const monthData = { month };
-                    Object.entries(selectedRepData).forEach(([name]) => {
-                        monthData[name] = 0; // Placeholder - would need individual rep sales data
+                if (selectedRepNames.length > 0) {
+                    dataToChart = monthNames.map((month, monthIndex) => {
+                        const monthData = { month };
+                        selectedRepNames.forEach(repName => {
+                            const repData = branchUsersSalesData[repName];
+                            if (repData && repData.sales && Array.isArray(repData.sales)) {
+                                monthData[repName] = repData.sales[monthIndex] || 0;
+                            } else {
+                                monthData[repName] = 0;
+                            }
+                        });
+                        return monthData;
                     });
-                    return monthData;
-                });
+
+                    // Calculate total sales for selected reps
+                    selectedRepNames.forEach(repName => {
+                        const repData = branchUsersSalesData[repName];
+                        if (repData && repData.sales && Array.isArray(repData.sales)) {
+                            totalSales += repData.sales.reduce((a, b) => a + b, 0);
+                        }
+                    });
+                }
 
                 displayLabel = `${selectedSalesReps.length} Sales Rep${selectedSalesReps.length > 1 ? "s" : ""}`;
             }
@@ -233,6 +245,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
         companySalesData,
         userSalesData,
         branchSalesData,
+        branchUsersSalesData,
         selectedBranches,
         selectedSalesReps,
         userData,
@@ -471,11 +484,12 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                                                 const rep = salesRepresentatives.find(
                                                     r => r.user_id === repId
                                                 );
+                                                const repFullName = rep ? `${rep.first_name} ${rep.last_name}` : `Rep ${repId}`;
                                                 return (
                                                     <Line
                                                         key={repId}
                                                         type="monotone"
-                                                        dataKey={rep?.first_name || `Rep ${repId}`}
+                                                        dataKey={repFullName}
                                                         stroke={
                                                             ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][
                                                                 index % 4
