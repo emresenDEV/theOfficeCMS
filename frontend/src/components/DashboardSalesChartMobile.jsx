@@ -10,6 +10,8 @@ import {
 import { filterSalesRepsByRole } from "../utils/salesDataProcessor";
 
 const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
+    console.log("🔍 DashboardSalesChartMobile received props:", { userData, allSalesReps: allSalesReps?.length });
+
     const [selectedMetric, setSelectedMetric] = useState("company");
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedBranches, setSelectedBranches] = useState(
@@ -60,9 +62,11 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
     // Fetch company sales data
     useEffect(() => {
         const loadCompanySales = async () => {
+            console.log("📍 Fetching company sales for year:", selectedYear);
             setLoading(true);
             try {
                 const data = await fetchCompanySales(selectedYear);
+                console.log("✅ Company sales data received:", data);
                 setCompanySalesData(data);
             } catch (error) {
                 console.error("❌ Error loading company sales:", error);
@@ -73,7 +77,10 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
         };
 
         if (selectedMetric === "company") {
+            console.log("🔄 selectedMetric is 'company', calling loadCompanySales");
             loadCompanySales();
+        } else {
+            console.log("🔄 selectedMetric is NOT 'company', it's:", selectedMetric);
         }
     }, [selectedYear, selectedMetric]);
 
@@ -268,6 +275,16 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                 : [...prev, userId]
         );
     };
+
+    // Guard: Only render chart when we have all necessary data
+    if (!userData || !userData.user_id || !allSalesReps || allSalesReps.length === 0) {
+        return (
+            <div className="bg-white rounded-lg shadow-md p-4">
+                <h2 className="text-lg font-semibold mb-3">Sales Overview</h2>
+                <p className="text-center text-gray-500">Loading sales data...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white rounded-lg shadow-md p-4">
