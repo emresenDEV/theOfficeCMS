@@ -29,18 +29,6 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
     const [branchUsersSales, setBranchUsersSales] = useState({});
     const [loading, setLoading] = useState(false);
 
-    // Get unique branches from allSalesReps
-    const allBranches = useMemo(() => {
-        const branchMap = new Map();
-        allSalesReps.forEach(rep => {
-            if (rep.branch_id && rep.branch_name) {
-                if (!branchMap.has(rep.branch_id)) {
-                    branchMap.set(rep.branch_id, rep.branch_name);
-                }
-            }
-        });
-        return Array.from(branchMap.values()).sort();
-    }, [allSalesReps]);
 
 
     const availableYears = useMemo(() => {
@@ -77,14 +65,22 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
     // Fetch branch sales
     useEffect(() => {
         const loadBranchData = async () => {
+            console.log("🔄 Fetching branch sales for year:", selectedYear);
             setLoading(true);
             try {
                 const branches = await fetchBranchSales(selectedYear);
+                console.log("✅ Branch Sales Data from API:", branches);
+                console.log("✅ Branch names available:", branches ? Object.keys(branches) : []);
+                console.log("✅ Number of branches:", branches ? Object.keys(branches).length : 0);
                 setBranchSales(branches || {});
 
-                // Initialize selected branch if not set
+                // Initialize selected branch if not set and we have branch data
                 if (!selectedBranch && branches && Object.keys(branches).length > 0) {
-                    setSelectedBranch(Object.keys(branches)[0]);
+                    const firstBranch = Object.keys(branches)[0];
+                    console.log("✅ Auto-selecting first branch:", firstBranch);
+                    setSelectedBranch(firstBranch);
+                } else if (branches && Object.keys(branches).length === 0) {
+                    console.warn("⚠️ No branches returned from API");
                 }
             } catch (error) {
                 console.error("❌ Error loading branch sales:", error);
@@ -95,7 +91,10 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
         };
 
         if (activeTab === "branch") {
+            console.log("🟢 Branch tab is active, calling loadBranchData");
             loadBranchData();
+        } else {
+            console.log("🟡 Branch tab NOT active, activeTab =", activeTab);
         }
     }, [selectedYear, activeTab, selectedBranch]);
 
@@ -241,7 +240,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                                 className="w-full text-sm px-2 py-1 border rounded bg-white"
                             >
                                 <option value="">-- Select a branch --</option>
-                                {allBranches.map(branch => (
+                                {Object.keys(branchSales).map(branch => (
                                     <option key={branch} value={branch}>{branch}</option>
                                 ))}
                             </select>
