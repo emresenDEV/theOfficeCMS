@@ -338,24 +338,31 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                                         {event.event_title}
                                                     </div>
 
-                                                    {/* Location */}
-                                                    {event.location && (
-                                                        <div className="text-xs text-gray-600">
-                                                            📍 {event.location}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Contact */}
+                                                    {/* Contact Name (Priority 1) */}
                                                     {event.contact_name && (
                                                         <div className="text-xs text-gray-600">
                                                             👤 {event.contact_name}
                                                         </div>
                                                     )}
 
-                                                    {/* Details (moved to last line) */}
-                                                    {event.event_details && (
+                                                    {/* Phone Number (Priority 2 - show if contact exists) */}
+                                                    {event.contact_name && event.phone_number && (
+                                                        <div className="text-xs text-gray-600">
+                                                            📱 {event.phone_number}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Notes/Details (Priority 3 - show if no contact) */}
+                                                    {!event.contact_name && event.event_details && (
                                                         <div className="text-xs text-gray-500 line-clamp-1">
                                                             {event.event_details}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Location (Priority 4 - show if no contact and no details) */}
+                                                    {!event.contact_name && !event.event_details && event.location && (
+                                                        <div className="text-xs text-gray-600">
+                                                            📍 {event.location}
                                                         </div>
                                                     )}
                                                 </div>

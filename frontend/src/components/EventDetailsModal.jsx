@@ -272,17 +272,32 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 />
                             </div>
 
-                            {/* Event Details */}
+                            {/* Phone Number */}
                             <div>
                                 <label className="text-sm font-semibold text-gray-700 block mb-1">
-                                    Details
+                                    Phone Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editedEvent.phone_number || ""}
+                                    onChange={(e) => handleInputChange("phone_number", e.target.value)}
+                                    className="w-full px-3 py-2 border rounded text-sm"
+                                    placeholder="Enter phone number"
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            {/* Event Details / Notes */}
+                            <div>
+                                <label className="text-sm font-semibold text-gray-700 block mb-1">
+                                    Notes
                                 </label>
                                 <textarea
                                     value={editedEvent.event_details || ""}
                                     onChange={(e) => handleInputChange("event_details", e.target.value)}
                                     className="w-full px-3 py-2 border rounded text-sm resize-none"
                                     rows="4"
-                                    placeholder="Enter event details"
+                                    placeholder="Enter notes"
                                     disabled={loading}
                                 />
                             </div>
@@ -302,13 +317,6 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                     <p className="text-gray-600">{formattedDate} at {formattedTime}</p>
                                 </div>
 
-                                {event.location && (
-                                    <div>
-                                        <span className="font-semibold">📍 Location:</span>
-                                        <p className="text-gray-600">{event.location}</p>
-                                    </div>
-                                )}
-
                                 {event.contact_name && (
                                     <div>
                                         <span className="font-semibold">👤 Contact:</span>
@@ -316,9 +324,23 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                     </div>
                                 )}
 
+                                {event.phone_number && (
+                                    <div>
+                                        <span className="font-semibold">📱 Phone:</span>
+                                        <p className="text-gray-600">{event.phone_number}</p>
+                                    </div>
+                                )}
+
+                                {event.location && (
+                                    <div>
+                                        <span className="font-semibold">📍 Location:</span>
+                                        <p className="text-gray-600">{event.location}</p>
+                                    </div>
+                                )}
+
                                 {event.event_details && (
                                     <div>
-                                        <span className="font-semibold">Details:</span>
+                                        <span className="font-semibold">Notes:</span>
                                         <p className="text-gray-600">{event.event_details}</p>
                                     </div>
                                 )}
@@ -381,20 +403,12 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 </button>
                             </>
                         ) : (
-                            <>
-                                <button
-                                    onClick={onClose}
-                                    className="px-4 py-2 rounded bg-gray-300 text-gray-900 text-sm font-semibold hover:bg-gray-400"
-                                >
-                                    Close
-                                </button>
-                                <button
-                                    onClick={() => setIsEditMode(true)}
-                                    className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
-                                >
-                                    Edit
-                                </button>
-                            </>
+                            <button
+                                onClick={() => setIsEditMode(true)}
+                                className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                            >
+                                Edit
+                            </button>
                         )}
                     </div>
                 </div>
@@ -413,6 +427,7 @@ EventDetailsModal.propTypes = {
         end_time: PropTypes.string,
         location: PropTypes.string,
         contact_name: PropTypes.string,
+        phone_number: PropTypes.string,
         event_details: PropTypes.string,
     }),
     isOpen: PropTypes.bool.isRequired,
