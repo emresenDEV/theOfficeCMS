@@ -7,276 +7,151 @@ import {
     fetchBranchSales,
     fetchBranchUsersSales,
 } from "../services/salesService";
-import { filterSalesRepsByRole } from "../utils/salesDataProcessor";
+
+const MONTH_LABELS = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
-    console.log("🔍 DashboardSalesChartMobile received props:", { userData, allSalesReps: allSalesReps?.length });
-
-    const [selectedMetric, setSelectedMetric] = useState("company");
+    const [activeTab, setActiveTab] = useState("company");
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-    const [selectedBranches, setSelectedBranches] = useState(
-        userData?.branch_id ? [userData.branch_id] : []
-    );
+    const [selectedBranch, setSelectedBranch] = useState("");
     const [selectedSalesReps, setSelectedSalesReps] = useState([]);
-    const [isExpanded, setIsExpanded] = useState(true);
-    const [showBranchDropdown, setShowBranchDropdown] = useState(false);
-    const [showRepDropdown, setShowRepDropdown] = useState(false);
-    const [showYearDropdown, setShowYearDropdown] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     // Sales data from API
-    const [companySalesData, setCompanySalesData] = useState([]);
-    const [userSalesData, setUserSalesData] = useState([]);
-    const [branchSalesData, setBranchSalesData] = useState({});
-    const [branchUsersSalesData, setBranchUsersSalesData] = useState({});
+    const [companySales, setCompanySales] = useState([]);
+    const [userSales, setUserSales] = useState([]);
+    const [branchSales, setBranchSales] = useState({});
+    const [branchUsersSales, setBranchUsersSales] = useState({});
     const [loading, setLoading] = useState(false);
 
-    // Filter sales reps to only show those with "Sales Representative" role
-    const salesRepresentatives = useMemo(
-        () => filterSalesRepsByRole(allSalesReps),
-        [allSalesReps]
-    );
-
-    // Get branch names from allSalesReps
-    const branches = useMemo(() => {
+    // Get unique branches from allSalesReps
+    const allBranches = useMemo(() => {
         const branchMap = new Map();
         allSalesReps.forEach(rep => {
             if (rep.branch_id && rep.branch_name) {
                 if (!branchMap.has(rep.branch_id)) {
-                    branchMap.set(rep.branch_id, {
-                        id: rep.branch_id,
-                        name: rep.branch_name,
-                    });
+                    branchMap.set(rep.branch_id, rep.branch_name);
                 }
             }
         });
-        return Array.from(branchMap.values()).sort((a, b) =>
-            a.name.localeCompare(b.name)
-        );
+        return Array.from(branchMap.values()).sort();
     }, [allSalesReps]);
+
 
     const availableYears = useMemo(() => {
         const currentYear = new Date().getFullYear();
         return [currentYear, currentYear - 1, currentYear - 2];
     }, []);
 
-    // Fetch company sales data
+    // Fetch company and user sales
     useEffect(() => {
-        const loadCompanySales = async () => {
-            console.log("📍 Fetching company sales for year:", selectedYear);
+        const loadCompanyData = async () => {
             setLoading(true);
             try {
-                const data = await fetchCompanySales(selectedYear);
-                console.log("✅ Company sales data received:", data);
-                setCompanySalesData(data);
+                const company = await fetchCompanySales(selectedYear);
+                setCompanySales(company || Array(12).fill(0));
+
+                if (userData?.user_id) {
+                    const user = await fetchUserSales(userData.user_id, selectedYear);
+                    setUserSales(user || Array(12).fill(0));
+                }
             } catch (error) {
                 console.error("❌ Error loading company sales:", error);
-                setCompanySalesData([]);
+                setCompanySales(Array(12).fill(0));
+                setUserSales(Array(12).fill(0));
             } finally {
                 setLoading(false);
             }
         };
 
-        if (selectedMetric === "company") {
-            console.log("🔄 selectedMetric is 'company', calling loadCompanySales");
-            loadCompanySales();
-        } else {
-            console.log("🔄 selectedMetric is NOT 'company', it's:", selectedMetric);
+        if (activeTab === "company") {
+            loadCompanyData();
         }
-    }, [selectedYear, selectedMetric]);
+    }, [selectedYear, activeTab, userData?.user_id]);
 
-    // Fetch current user sales data
+    // Fetch branch sales
     useEffect(() => {
-        const loadUserSales = async () => {
+        const loadBranchData = async () => {
             setLoading(true);
             try {
-                if (userData?.user_id) {
-                    const data = await fetchUserSales(userData.user_id, selectedYear);
-                    setUserSalesData(data);
-                }
-            } catch (error) {
-                console.error("❌ Error loading user sales:", error);
-                setUserSalesData([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+                const branches = await fetchBranchSales(selectedYear);
+                setBranchSales(branches || {});
 
-        if (selectedMetric === "company" && userData?.user_id) {
-            loadUserSales();
-        }
-    }, [selectedYear, selectedMetric, userData?.user_id]);
-
-    // Fetch branch sales data
-    useEffect(() => {
-        const loadBranchSales = async () => {
-            setLoading(true);
-            try {
-                const data = await fetchBranchSales(selectedYear);
-                console.log("📊 RAW Branch Sales Data from API:", data);
-                console.log("📊 Data type:", typeof data);
-                console.log("📊 Data keys:", Object.keys(data || {}));
-                if (data && typeof data === 'object') {
-                    Object.entries(data).forEach(([key, value]) => {
-                        console.log(`  - ${key}:`, value, `(type: ${Array.isArray(value) ? 'Array' : typeof value})`);
-                    });
+                // Initialize selected branch if not set
+                if (!selectedBranch && branches && Object.keys(branches).length > 0) {
+                    setSelectedBranch(Object.keys(branches)[0]);
                 }
-                setBranchSalesData(data);
             } catch (error) {
                 console.error("❌ Error loading branch sales:", error);
-                setBranchSalesData({});
+                setBranchSales({});
             } finally {
                 setLoading(false);
             }
         };
 
-        if (selectedMetric === "branch") {
-            loadBranchSales();
+        if (activeTab === "branch") {
+            loadBranchData();
         }
-    }, [selectedYear, selectedMetric]);
+    }, [selectedYear, activeTab, selectedBranch]);
 
-    // Fetch sales reps data (for selected branches)
+    // Fetch branch users sales (for sales reps)
     useEffect(() => {
-        const loadBranchUsersSales = async () => {
-            if (selectedBranches.length === 0) return;
-
+        const loadBranchUsersData = async () => {
+            if (!userData?.branch_id) return;
             setLoading(true);
             try {
-                const combinedData = {};
-                for (const branchId of selectedBranches) {
-                    const data = await fetchBranchUsersSales(branchId, selectedYear);
-                    console.log(`📊 RAW Branch Users Sales Data for Branch ${branchId}:`, data);
-                    // Merge data from all selected branches
-                    if (data && typeof data === 'object') {
-                        Object.assign(combinedData, data);
-                    }
-                }
-                setBranchUsersSalesData(combinedData);
+                const reps = await fetchBranchUsersSales(userData.branch_id, selectedYear);
+                setBranchUsersSales(reps || {});
             } catch (error) {
                 console.error("❌ Error loading branch users sales:", error);
-                setBranchUsersSalesData({});
+                setBranchUsersSales({});
             } finally {
                 setLoading(false);
             }
         };
 
-        if (selectedMetric === "sales-rep" && selectedBranches.length > 0) {
-            loadBranchUsersSales();
+        if (activeTab === "branchUsers") {
+            loadBranchUsersData();
         }
-    }, [selectedYear, selectedMetric, selectedBranches]);
+    }, [selectedYear, activeTab, userData?.branch_id]);
 
+    // Build chart data based on active tab
     const chartData = useMemo(() => {
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        let dataToChart = [];
-        let displayLabel = "";
-        let totalSales = 0;
+        const data = MONTH_LABELS.map((label) => ({ month: label }));
 
-        if (selectedMetric === "company") {
-            // Company view: Company average + current user
-            if (companySalesData.length === 12 && userSalesData.length === 12) {
-                dataToChart = monthNames.map((month, index) => ({
-                    month,
-                    "Company Total": companySalesData[index] || 0,
-                    [userData?.first_name || "You"]: userSalesData[index] || 0,
-                }));
-                displayLabel = "Company Wide Sales";
-                totalSales = companySalesData.reduce((a, b) => a + b, 0);
-            }
-        } else if (selectedMetric === "branch") {
-            // Branch view: Show selected branches
-            if (selectedBranches.length === 0) {
-                displayLabel = "No branches selected";
-            } else {
-                // Get data for selected branches
-                const selectedBranchNames = selectedBranches
-                    .map(id => branches.find(b => b.id === id)?.name)
-                    .filter(Boolean);
-
-                if (selectedBranchNames.length > 0) {
-                    dataToChart = monthNames.map((month, monthIndex) => {
-                        const monthData = { month };
-                        selectedBranchNames.forEach(branchName => {
-                            monthData[branchName] = branchSalesData[branchName]?.[monthIndex] || 0;
-                        });
-                        return monthData;
-                    });
-
-                    displayLabel = `${selectedBranches.length} Branch${selectedBranches.length > 1 ? "es" : ""}`;
-                    selectedBranchNames.forEach(branchName => {
-                        totalSales += (branchSalesData[branchName] || []).reduce((a, b) => a + b, 0);
+        if (activeTab === "company") {
+            // Company tab: Company sales + User sales
+            data.forEach((item, i) => {
+                item["Company Sales"] = companySales[i] || 0;
+                item[userData?.first_name || "You"] = userSales[i] || 0;
+            });
+        } else if (activeTab === "branch" && selectedBranch) {
+            // Branch tab: Selected branch sales
+            const branchData = branchSales[selectedBranch] || Array(12).fill(0);
+            data.forEach((item, i) => {
+                item[selectedBranch] = branchData[i] || 0;
+            });
+        } else if (activeTab === "branchUsers") {
+            // Sales reps tab: Selected sales reps
+            selectedSalesReps.forEach(repName => {
+                const repData = branchUsersSales[repName];
+                if (repData && repData.sales) {
+                    data.forEach((item, i) => {
+                        item[repName] = repData.sales[i] || 0;
                     });
                 }
-            }
-        } else if (selectedMetric === "sales-rep") {
-            // Sales Rep view: Show selected sales reps
-            if (selectedSalesReps.length === 0) {
-                displayLabel = "No sales reps selected";
-            } else {
-                // Get data for selected sales reps from branchUsersSalesData
-                const selectedRepNames = selectedSalesReps
-                    .map(repId => {
-                        const rep = salesRepresentatives.find(r => r.user_id === repId);
-                        return rep ? `${rep.first_name} ${rep.last_name}` : null;
-                    })
-                    .filter(Boolean);
-
-                if (selectedRepNames.length > 0) {
-                    dataToChart = monthNames.map((month, monthIndex) => {
-                        const monthData = { month };
-                        selectedRepNames.forEach(repName => {
-                            const repData = branchUsersSalesData[repName];
-                            if (repData && repData.sales && Array.isArray(repData.sales)) {
-                                monthData[repName] = repData.sales[monthIndex] || 0;
-                            } else {
-                                monthData[repName] = 0;
-                            }
-                        });
-                        return monthData;
-                    });
-
-                    // Calculate total sales for selected reps
-                    selectedRepNames.forEach(repName => {
-                        const repData = branchUsersSalesData[repName];
-                        if (repData && repData.sales && Array.isArray(repData.sales)) {
-                            totalSales += repData.sales.reduce((a, b) => a + b, 0);
-                        }
-                    });
-                }
-
-                displayLabel = `${selectedSalesReps.length} Sales Rep${selectedSalesReps.length > 1 ? "s" : ""}`;
-            }
+            });
         }
 
-        return { data: dataToChart, label: displayLabel, total: totalSales };
-    }, [
-        selectedMetric,
-        companySalesData,
-        userSalesData,
-        branchSalesData,
-        branchUsersSalesData,
-        selectedBranches,
-        selectedSalesReps,
-        userData,
-        branches,
-        salesRepresentatives,
-    ]);
+        return data;
+    }, [activeTab, companySales, userSales, branchSales, selectedBranch, branchUsersSales, selectedSalesReps, userData]);
 
-    const toggleBranch = (branchId) => {
-        setSelectedBranches(prev =>
-            prev.includes(branchId)
-                ? prev.filter(id => id !== branchId)
-                : [...prev, branchId]
-        );
-    };
-
-    const toggleSalesRep = (userId) => {
-        setSelectedSalesReps(prev =>
-            prev.includes(userId)
-                ? prev.filter(id => id !== userId)
-                : [...prev, userId]
-        );
-    };
-
-    // Guard: Only render chart when we have all necessary data
+    // Guard: Only render when we have necessary data
     if (!userData || !userData.user_id || !allSalesReps || allSalesReps.length === 0) {
         return (
             <div className="bg-white rounded-lg shadow-md p-4">
@@ -290,54 +165,38 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
         <div className="bg-white rounded-lg shadow-md p-4">
             {/* Collapsible Header */}
             <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex justify-between items-center mb-3"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="w-full flex justify-between items-center mb-4"
             >
                 <h2 className="text-lg font-semibold">Sales Overview</h2>
-                <span className="text-xl">{isExpanded ? "−" : "+"}</span>
+                <span className="text-xl">{isCollapsed ? "+" : "−"}</span>
             </button>
 
-            {isExpanded && (
+            {!isCollapsed && (
                 <>
                     {/* Year Selector */}
-                    <div className="mb-4 flex gap-2">
-                        <label className="text-xs font-semibold text-gray-700">Year:</label>
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowYearDropdown(!showYearDropdown)}
-                                className="text-xs px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                            >
-                                {selectedYear}
-                            </button>
-                            {showYearDropdown && (
-                                <div className="absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-10">
-                                    {availableYears.map(year => (
-                                        <button
-                                            key={year}
-                                            onClick={() => {
-                                                setSelectedYear(year);
-                                                setShowYearDropdown(false);
-                                            }}
-                                            className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                                        >
-                                            {year}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                    <div className="mb-4 flex gap-2 items-center">
+                        <label className="text-sm font-semibold text-gray-700">Year:</label>
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                            className="text-sm px-2 py-1 border rounded bg-white"
+                        >
+                            {availableYears.map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
                     </div>
 
-                    {/* Metric Buttons */}
+                    {/* Tab Buttons */}
                     <div className="flex gap-2 mb-4 flex-wrap">
                         <button
                             onClick={() => {
-                                setSelectedMetric("company");
-                                setShowBranchDropdown(false);
-                                setShowRepDropdown(false);
+                                setActiveTab("company");
+                                setSelectedSalesReps([]);
                             }}
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
-                                selectedMetric === "company"
+                                activeTab === "company"
                                     ? "bg-blue-600 text-white"
                                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                             }`}
@@ -346,12 +205,11 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                         </button>
                         <button
                             onClick={() => {
-                                setSelectedMetric("branch");
-                                setShowRepDropdown(false);
-                                setShowBranchDropdown(!showBranchDropdown);
+                                setActiveTab("branch");
+                                setSelectedSalesReps([]);
                             }}
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
-                                selectedMetric === "branch"
+                                activeTab === "branch"
                                     ? "bg-blue-600 text-white"
                                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                             }`}
@@ -360,12 +218,11 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                         </button>
                         <button
                             onClick={() => {
-                                setSelectedMetric("sales-rep");
-                                setShowBranchDropdown(false);
-                                setShowRepDropdown(!showRepDropdown);
+                                setActiveTab("branchUsers");
+                                setSelectedBranch("");
                             }}
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
-                                selectedMetric === "sales-rep"
+                                activeTab === "branchUsers"
                                     ? "bg-blue-600 text-white"
                                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                             }`}
@@ -375,68 +232,53 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                     </div>
 
                     {/* Branch Dropdown */}
-                    {showBranchDropdown && selectedMetric === "branch" && (
-                        <div className="mb-4 p-3 bg-gray-50 rounded border">
-                            <p className="text-xs font-semibold text-gray-700 mb-2">
-                                Select Branches:
-                            </p>
-                            <div className="space-y-2">
-                                {branches.map(branch => (
-                                    <label
-                                        key={branch.id}
-                                        className="flex items-center text-sm cursor-pointer"
+                    {activeTab === "branch" && (
+                        <div className="mb-4">
+                            <label className="text-sm font-semibold text-gray-700 block mb-2">Select Branch:</label>
+                            <select
+                                value={selectedBranch}
+                                onChange={(e) => setSelectedBranch(e.target.value)}
+                                className="w-full text-sm px-2 py-1 border rounded bg-white"
+                            >
+                                <option value="">-- Select a branch --</option>
+                                {allBranches.map(branch => (
+                                    <option key={branch} value={branch}>{branch}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Sales Reps Toggle Buttons */}
+                    {activeTab === "branchUsers" && (
+                        <div className="mb-4">
+                            <p className="text-sm font-semibold text-gray-700 mb-2">Select Sales Representatives:</p>
+                            <div className="flex flex-wrap gap-1">
+                                {Object.keys(branchUsersSales).map((repName) => (
+                                    <button
+                                        key={repName}
+                                        onClick={() => {
+                                            setSelectedSalesReps(prev =>
+                                                prev.includes(repName)
+                                                    ? prev.filter(r => r !== repName)
+                                                    : [...prev, repName]
+                                            );
+                                        }}
+                                        className={`text-xs px-2 py-1 rounded transition ${
+                                            selectedSalesReps.includes(repName)
+                                                ? "bg-purple-600 text-white"
+                                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                        }`}
                                     >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedBranches.includes(branch.id)}
-                                            onChange={() => toggleBranch(branch.id)}
-                                            className="mr-2"
-                                        />
-                                        {branch.name}
-                                    </label>
+                                        {repName}
+                                    </button>
                                 ))}
                             </div>
                         </div>
                     )}
-
-                    {/* Sales Rep Dropdown */}
-                    {showRepDropdown && selectedMetric === "sales-rep" && (
-                        <div className="mb-4 p-3 bg-gray-50 rounded border max-h-48 overflow-y-auto">
-                            <p className="text-xs font-semibold text-gray-700 mb-2">
-                                Select Sales Representatives:
-                            </p>
-                            <div className="space-y-2">
-                                {salesRepresentatives.map(rep => (
-                                    <label
-                                        key={rep.user_id}
-                                        className="flex items-center text-sm cursor-pointer"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedSalesReps.includes(rep.user_id)}
-                                            onChange={() => toggleSalesRep(rep.user_id)}
-                                            className="mr-2"
-                                        />
-                                        {rep.first_name} {rep.last_name}
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Current Metric Display */}
-                    <div className="bg-blue-50 rounded p-3 mb-4 border-l-4 border-blue-600">
-                        <p className="text-xs text-gray-600">
-                            {chartData.label} - {selectedYear}
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold text-blue-600">
-                            ${chartData.total.toLocaleString()}
-                        </p>
-                    </div>
 
                     {/* Loading State */}
                     {loading && (
-                        <div className="flex items-center justify-center h-64 sm:h-80 text-gray-500">
+                        <div className="flex items-center justify-center h-64 text-gray-500">
                             <p>Loading sales data...</p>
                         </div>
                     )}
@@ -444,9 +286,9 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                     {/* Chart */}
                     {!loading && (
                         <div className="w-full h-64 sm:h-80">
-                            {chartData.data.length > 0 ? (
+                            {chartData.length > 0 && (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData.data}>
+                                    <LineChart data={chartData}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                                         <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                                         <YAxis tick={{ fontSize: 10 }} />
@@ -455,74 +297,55 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                                                 backgroundColor: "#fff",
                                                 border: "1px solid #ccc",
                                                 borderRadius: "4px",
-                                                fontSize: "12px",
+                                                fontSize: "11px",
                                             }}
                                             formatter={(value) => `$${value.toLocaleString()}`}
                                         />
                                         <Legend />
-                                        {selectedMetric === "company" && (
+                                        {activeTab === "company" && (
                                             <>
                                                 <Line
                                                     type="monotone"
-                                                    dataKey="Company Total"
-                                                    stroke="#3b82f6"
+                                                    dataKey="Company Sales"
+                                                    stroke={COLORS[0]}
                                                     dot={false}
                                                     strokeWidth={2}
+                                                    isAnimationActive={false}
                                                 />
                                                 <Line
                                                     type="monotone"
                                                     dataKey={userData?.first_name || "You"}
-                                                    stroke="#10b981"
+                                                    stroke={COLORS[1]}
                                                     dot={false}
                                                     strokeWidth={2}
+                                                    isAnimationActive={false}
                                                 />
                                             </>
                                         )}
-                                        {selectedMetric === "branch" &&
-                                            selectedBranches.map((branchId, index) => {
-                                                const branch = branches.find(b => b.id === branchId);
-                                                return (
-                                                    <Line
-                                                        key={branchId}
-                                                        type="monotone"
-                                                        dataKey={branch?.name}
-                                                        stroke={
-                                                            ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][
-                                                                index % 4
-                                                            ]
-                                                        }
-                                                        dot={false}
-                                                        strokeWidth={2}
-                                                    />
-                                                );
-                                            })}
-                                        {selectedMetric === "sales-rep" &&
-                                            selectedSalesReps.map((repId, index) => {
-                                                const rep = salesRepresentatives.find(
-                                                    r => r.user_id === repId
-                                                );
-                                                const repFullName = rep ? `${rep.first_name} ${rep.last_name}` : `Rep ${repId}`;
-                                                return (
-                                                    <Line
-                                                        key={repId}
-                                                        type="monotone"
-                                                        dataKey={repFullName}
-                                                        stroke={
-                                                            ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"][
-                                                                index % 4
-                                                            ]
-                                                        }
-                                                        dot={false}
-                                                        strokeWidth={2}
-                                                    />
-                                                );
-                                            })}
+                                        {activeTab === "branch" && selectedBranch && (
+                                            <Line
+                                                type="monotone"
+                                                dataKey={selectedBranch}
+                                                stroke={COLORS[0]}
+                                                dot={false}
+                                                strokeWidth={2}
+                                                isAnimationActive={false}
+                                            />
+                                        )}
+                                        {activeTab === "branchUsers" &&
+                                            selectedSalesReps.map((repName, index) => (
+                                                <Line
+                                                    key={repName}
+                                                    type="monotone"
+                                                    dataKey={repName}
+                                                    stroke={COLORS[index % COLORS.length]}
+                                                    dot={false}
+                                                    strokeWidth={2}
+                                                    isAnimationActive={false}
+                                                />
+                                            ))}
                                     </LineChart>
                                 </ResponsiveContainer>
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                                    No data available
-                                </div>
                             )}
                         </div>
                     )}
@@ -533,7 +356,11 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
 };
 
 DashboardSalesChartMobile.propTypes = {
-    userData: PropTypes.object,
+    userData: PropTypes.shape({
+        user_id: PropTypes.number.isRequired,
+        first_name: PropTypes.string,
+        branch_id: PropTypes.number,
+    }).isRequired,
     allSalesReps: PropTypes.array.isRequired,
 };
 
