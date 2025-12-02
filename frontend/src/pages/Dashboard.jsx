@@ -22,6 +22,7 @@ const Dashboard = ({ user }) => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(null);
     const [allSalesReps, setAllSalesReps] = useState([]);
     const [userSalesData, setUserSalesData] = useState([]);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -186,6 +187,7 @@ const Dashboard = ({ user }) => {
                             setShowEventDetailsModal(true);
                         }}
                         onCreateEvent={(date) => {
+                            setSelectedDate(date);
                             setShowCreateModal(true);
                         }}
                     />
@@ -246,8 +248,12 @@ const Dashboard = ({ user }) => {
                         <CreateCalendarEvent
                             userId={userData.user_id}
                             setEvents={setEvents}
-                            closeForm={() => setShowCreateModal(false)}
+                            closeForm={() => {
+                                setShowCreateModal(false);
+                                setSelectedDate(null);
+                            }}
                             refreshDashboardData={refreshDashboardData}
+                            selectedDate={selectedDate}
                         />
                     </div>
                 </div>

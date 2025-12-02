@@ -21,7 +21,8 @@ const addOneHour = (time) => {
     return `${newHour}:${minute} ${newPeriod}`;
 };
 
-const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardData }) => {
+const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardData, selectedDate = null }) => {
+    const initialDate = selectedDate ? selectedDate.toISODate() : getCurrentDate();
     const initialStartTime = getCurrentTime();
     const initialEndTime = addOneHour(initialStartTime);
 
@@ -31,13 +32,14 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
         contact_name: "",
         phone_number: "",
         location: "",
-        start_date: getCurrentDate(),
+        start_date: initialDate,
         start_time: initialStartTime,
-        end_date: getCurrentDate(),
+        end_date: initialDate,
         end_time: initialEndTime,
         notes: "",
         user_id: userId,
         end_time_modified: false,
+        start_date_modified: false,
     });
 
     const [accounts, setAccounts] = useState([]);
@@ -72,7 +74,18 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
     /** Handle Input Change */
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setNewEvent(prevEvent => ({ ...prevEvent, [name]: value }));
+        setNewEvent(prevEvent => {
+            const updated = { ...prevEvent, [name]: value };
+            // When start_date changes, automatically update end_date to same day
+            if (name === "start_date" && !prevEvent.start_date_modified) {
+                updated.end_date = value;
+            }
+            // Mark start_date as modified if user changes it
+            if (name === "start_date") {
+                updated.start_date_modified = true;
+            }
+            return updated;
+        });
     };
 
     /** Handle Time Change */
@@ -153,10 +166,15 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
                 end_time: convertTo24HourFormat(newEvent.end_time),
             };
 
+            console.log("📝 Creating event with data:", formattedEvent);
             const createdEvent = await createCalendarEvent(formattedEvent);
+            console.log("✅ Event created successfully:", createdEvent);
+
             if (createdEvent) {
-                setEvents(prev => [...prev, createdEvent]);
-                refreshDashboardData(userId);  
+                // Refresh dashboard data to get updated events list
+                if (refreshDashboardData && typeof refreshDashboardData === 'function') {
+                    await refreshDashboardData(userId);
+                }
                 closeForm();
             }
         } catch (error) {
@@ -301,6 +319,7 @@ CreateCalendarEvent.propTypes = {
     setEvents: PropTypes.func.isRequired,
     closeForm: PropTypes.func.isRequired,
     refreshDashboardData: PropTypes.func.isRequired,
+    selectedDate: PropTypes.object,
 };
 
 export default CreateCalendarEvent;
