@@ -81,12 +81,17 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
             setEditedEvent(displayEvent);
             setIsEditMode(false);
 
-            // Load selected account if event has account_id
-            if (event.account_id) {
+            // Load selected account if event has account_id and accounts are loaded
+            if (event.account_id && accounts.length > 0) {
                 const account = accounts.find(a => a.account_id === event.account_id);
                 if (account) {
+                    console.log("✅ Found account for event:", account);
                     setSelectedAccount(account);
                     setAccountSearch(account.business_name);
+                } else {
+                    console.warn("⚠️ Account not found for account_id:", event.account_id);
+                    setSelectedAccount(null);
+                    setAccountSearch("");
                 }
             } else {
                 setSelectedAccount(null);
@@ -170,10 +175,11 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                 contact_name: editedEvent.contact_name || "",
                 phone_number: editedEvent.phone_number || "",
                 notes: editedEvent.notes || "",
+                account_id: editedEvent.account_id || null,
                 user_id: editedEvent.user_id,
             };
 
-            console.log("Updating event:", updatedData);
+            console.log("📝 Updating event with data:", updatedData);
             const result = await updateCalendarEvent(event.event_id, updatedData);
 
             if (result) {
@@ -405,9 +411,18 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
 
                             <div className="space-y-3 text-sm text-gray-700">
                                 <div>
-                                    <span className="font-semibold">📅 Date & Time:</span>
+                                    <span className="font-semibold">📅 Start Date & Time:</span>
                                     <p className="text-gray-600">{formattedDate} at {formattedTime}</p>
                                 </div>
+
+                                {event.end_date && event.end_time && (
+                                    <div>
+                                        <span className="font-semibold">📅 End Date & Time:</span>
+                                        <p className="text-gray-600">
+                                            {DateTime.fromISO(`${event.end_date}T${event.end_time}`).toFormat("MMMM d, yyyy")} at {DateTime.fromISO(`${event.end_date}T${event.end_time}`).toFormat("h:mm a")}
+                                        </p>
+                                    </div>
+                                )}
 
                                 {event.contact_name && (
                                     <div>
@@ -432,7 +447,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
 
                                 {event.notes && (
                                     <div>
-                                        <span className="font-semibold">Notes:</span>
+                                        <span className="font-semibold">📝 Notes:</span>
                                         <p className="text-gray-600">{event.notes}</p>
                                     </div>
                                 )}
