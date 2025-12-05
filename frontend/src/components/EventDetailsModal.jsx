@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { DateTime } from "luxon";
 import PropTypes from "prop-types";
 import { updateCalendarEvent, deleteCalendarEvent } from "../services/calendarService";
+import { fetchAccounts } from "../services/accountService";
+import CustomTimePicker from "./CustomTimePicker";
 
 // Add one hour to time
 const addOneHour = (time) => {
@@ -52,6 +54,19 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
     const [isEditMode, setIsEditMode] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [accounts, setAccounts] = useState([]);
+    const [accountSearch, setAccountSearch] = useState("");
+    const [filteredAccounts, setFilteredAccounts] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [selectedAccount, setSelectedAccount] = useState(null);
+
+    useEffect(() => {
+        async function loadAccounts() {
+            const fetchedAccounts = await fetchAccounts();
+            setAccounts(fetchedAccounts);
+        }
+        loadAccounts();
+    }, []);
 
     useEffect(() => {
         if (event && isOpen) {
@@ -65,8 +80,20 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
             console.log("📋 Edited Event State:", displayEvent);
             setEditedEvent(displayEvent);
             setIsEditMode(false);
+
+            // Load selected account if event has account_id
+            if (event.account_id) {
+                const account = accounts.find(a => a.account_id === event.account_id);
+                if (account) {
+                    setSelectedAccount(account);
+                    setAccountSearch(account.business_name);
+                }
+            } else {
+                setSelectedAccount(null);
+                setAccountSearch("");
+            }
         }
-    }, [event, isOpen]);
+    }, [event, isOpen, accounts]);
 
     if (!isOpen || !event) return null;
 
@@ -83,6 +110,34 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
             }
             return updated;
         });
+    };
+
+    const handleAccountSearch = (value) => {
+        setAccountSearch(value);
+        if (value.trim() === "") {
+            setFilteredAccounts([]);
+            setShowDropdown(false);
+            return;
+        }
+        const matches = accounts.filter(account =>
+            account.business_name.toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredAccounts(matches);
+        setShowDropdown(matches.length > 0);
+    };
+
+    const handleSelectAccount = (account) => {
+        setSelectedAccount(account);
+        setEditedEvent(prevEvent => ({
+            ...prevEvent,
+            account_id: account.account_id,
+            contact_name: account.contact_name || "",
+            phone_number: account.phone_number || "",
+            location: `${account.address}, ${account.city}, ${account.state} ${account.zip_code}`,
+        }));
+        setAccountSearch(account.business_name);
+        setFilteredAccounts([]);
+        setShowDropdown(false);
     };
 
     const handleTimeChange = (field, value) => {
@@ -196,6 +251,39 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 />
                             </div>
 
+                            {/* Account Search */}
+                            <div>
+                                <label className="text-sm font-semibold text-gray-700 block mb-1">
+                                    Search for an Account
+                                </label>
+                                <input
+                                    type="text"
+                                    value={accountSearch}
+                                    onChange={(e) => handleAccountSearch(e.target.value)}
+                                    placeholder="Search by account name..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    disabled={loading}
+                                />
+                                {showDropdown && (
+                                    <ul className="bg-white border border-gray-300 w-full mt-1 rounded shadow-lg max-h-48 overflow-y-auto z-50">
+                                        {filteredAccounts.map(account => (
+                                            <li
+                                                key={account.account_id}
+                                                onClick={() => handleSelectAccount(account)}
+                                                className="p-2 hover:bg-gray-200 cursor-pointer text-sm"
+                                            >
+                                                {account.business_name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                {selectedAccount && (
+                                    <p className="text-xs text-green-600 mt-1">
+                                        ✓ Selected: {selectedAccount.business_name}
+                                    </p>
+                                )}
+                            </div>
+
                             {/* Date */}
                             <div>
                                 <label className="text-sm font-semibold text-gray-700 block mb-1">
@@ -228,13 +316,9 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 <label className="text-sm font-semibold text-gray-700 block mb-1">
                                     Start Time
                                 </label>
-                                <input
-                                    type="text"
-                                    value={editedEvent.start_time || ""}
-                                    onChange={(e) => handleTimeChange("start_time", e.target.value)}
-                                    className="w-full px-3 py-2 border rounded text-sm"
-                                    placeholder="12:00 AM"
-                                    disabled={loading}
+                                <CustomTimePicker
+                                    value={editedEvent.start_time || "12:00 AM"}
+                                    onChange={(value) => handleTimeChange("start_time", value)}
                                 />
                             </div>
 
@@ -242,13 +326,11 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 <label className="text-sm font-semibold text-gray-700 block mb-1">
                                     End Time
                                 </label>
-                                <input
-                                    type="text"
-                                    value={editedEvent.end_time || ""}
-                                    onChange={(e) => handleInputChange("end_time", e.target.value)}
-                                    className="w-full px-3 py-2 border rounded text-sm"
-                                    placeholder="1:00 AM"
-                                    disabled={loading}
+                                <CustomTimePicker
+                                    value={editedEvent.end_time || "1:00 AM"}
+                                    onChange={(value) => handleInputChange("end_time", value)}
+                                    isEndTime={true}
+                                    startTime={editedEvent.start_time}
                                 />
                             </div>
 
@@ -355,6 +437,37 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Associated Account Section */}
+                            {selectedAccount && (
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <h4 className="font-semibold text-gray-900 mb-3">Associated Account</h4>
+                                    <div className="space-y-2 text-sm bg-blue-50 p-3 rounded-lg">
+                                        <div>
+                                            <span className="font-semibold text-gray-700">Business:</span>
+                                            <p className="text-gray-600">{selectedAccount.business_name}</p>
+                                        </div>
+                                        {selectedAccount.address && (
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Address:</span>
+                                                <p className="text-gray-600">{selectedAccount.address}, {selectedAccount.city}, {selectedAccount.state} {selectedAccount.zip_code}</p>
+                                            </div>
+                                        )}
+                                        {selectedAccount.contact_name && (
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Contact:</span>
+                                                <p className="text-gray-600">{selectedAccount.contact_name}</p>
+                                            </div>
+                                        )}
+                                        {selectedAccount.phone_number && (
+                                            <div>
+                                                <span className="font-semibold text-gray-700">Phone:</span>
+                                                <p className="text-gray-600">{selectedAccount.phone_number}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>
