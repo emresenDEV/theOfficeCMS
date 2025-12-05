@@ -48,15 +48,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
         loadData();
     }, [user]);
 
-    // Parse date string in format "YYYY-MM-DD HH:MM:SS" or ISO format
-    const parseTaskDate = (dateString) => {
-        if (!dateString) return null;
-        // Replace space with T for ISO parsing
-        const isoString = dateString.replace(" ", "T");
-        return new Date(isoString);
-    };
-
-    // Process and filter tasks
+    // Process and filter tasks - use same logic as standard TasksComponent
     useEffect(() => {
         console.log("📋 TasksMobileMini - Received tasks:", tasks);
 
@@ -77,40 +69,26 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                 return false;
             }
 
-            const taskDate = parseTaskDate(task.due_date);
-            console.log(`📋 Task "${task.task_description}": due_date="${task.due_date}" → parsed="${taskDate}" valid=${taskDate && !isNaN(taskDate.getTime())}`);
+            // Use same date parsing as standard TasksComponent
+            const taskDate = new Date(task.due_date);
+            console.log(`📋 Task "${task.task_description}": due_date="${task.due_date}" → isToday=${isToday(taskDate)}, withinInterval=${isWithinInterval(taskDate, { start: today, end: weekAhead })}`);
 
-            if (!taskDate || isNaN(taskDate.getTime())) {
-                console.warn("⚠️ Invalid task date:", task.due_date);
-                return false;
-            }
-
-            const isCompleted = task.is_completed;
-            const isTodayOrWithin = isToday(taskDate) || isWithinInterval(taskDate, { start: today, end: weekAhead });
-            const shouldInclude = !isCompleted && isTodayOrWithin;
-
-            if (!shouldInclude) {
-                console.log(`  ❌ Excluded - completed=${isCompleted}, isToday=${isToday(taskDate)}, withinInterval=${isWithinInterval(taskDate, { start: today, end: weekAhead })}`);
-            } else {
-                console.log(`  ✅ Included`);
-            }
-
-            return shouldInclude;
+            return !task.is_completed && (
+                isToday(taskDate) || isWithinInterval(taskDate, { start: today, end: weekAhead })
+            );
         });
 
-        // Sort tasks by due date (ascending)
-        filteredTasks.sort((a, b) => {
-            const dateA = parseTaskDate(a.due_date) || new Date();
-            const dateB = parseTaskDate(b.due_date) || new Date();
-            return dateA - dateB;
-        });
+        console.log("📌 Filtered Tasks Count:", filteredTasks.length);
+
+        // Sort tasks by due date (ascending) - same as standard
+        filteredTasks.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
 
         // Enrich task data
         const updatedTasks = filteredTasks.map(task => ({
             ...task,
             assigned_by_full_name: getUserFullName(task.user_id),
             business_name: getBusinessName(task.account_id),
-            isPastDue: isPast(parseTaskDate(task.due_date)) && !isToday(parseTaskDate(task.due_date)),
+            isPastDue: isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date)),
         }));
 
         console.log("📌 Updated Visible Tasks (Mobile):", updatedTasks);
