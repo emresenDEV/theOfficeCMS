@@ -33,6 +33,7 @@ def get_calendar_events():
             "notes": event.notes or "",
             "contact_name": event.contact_name or "",
             "phone_number": event.phone_number or "",
+            "account_id": event.account_id,
             "user_id": event.user_id
         }
         for event in events
