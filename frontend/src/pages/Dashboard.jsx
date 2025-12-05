@@ -7,6 +7,7 @@ import AccountsTable from "../components/AccountsTable";
 import CreateCalendarEvent from "../components/CreateCalendarEvent";
 import DashboardSalesChartMobile from "../components/DashboardSalesChartMobile";
 import CalendarMobileMini from "../components/CalendarMobileMini";
+import TasksMobileMini from "../components/TasksMobileMini";
 import EventDetailsModal from "../components/EventDetailsModal";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";
@@ -217,12 +218,21 @@ const Dashboard = ({ user }) => {
                     </div>
                 )}
 
-                <TasksComponent 
+                {/* 📋 Tasks - Mobile vs Desktop */}
+                {isMobile ? (
+                    <TasksMobileMini
                         tasks={tasks}
-                        user={userData} 
+                        user={userData}
+                        refreshTasks={handleRefreshTasks}
+                    />
+                ) : (
+                    <TasksComponent
+                        tasks={tasks}
+                        user={userData}
                         toggleTaskCompletion={toggleTaskCompletion}
                         refreshTasks={handleRefreshTasks}
                     />
+                )}
                 
                 <AccountsTable user={userData} />
             </div>
