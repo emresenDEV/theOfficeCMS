@@ -58,7 +58,10 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
 
     // Process and filter tasks
     useEffect(() => {
+        console.log("📋 TasksMobileMini - Received tasks:", tasks);
+
         if (!tasks.length) {
+            console.log("📋 No tasks provided");
             setVisibleTasks([]);
             return;
         }
@@ -66,18 +69,33 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
         const today = new Date();
         const weekAhead = addDays(today, 7);
 
+        console.log("📋 Filtering tasks - Today:", today, "Week Ahead:", weekAhead);
+
         let filteredTasks = tasks.filter(task => {
-            if (!task.due_date) return false;
+            if (!task.due_date) {
+                console.log("⚠️ Task missing due_date:", task);
+                return false;
+            }
+
             const taskDate = parseTaskDate(task.due_date);
+            console.log(`📋 Task "${task.task_description}": due_date="${task.due_date}" → parsed="${taskDate}" valid=${taskDate && !isNaN(taskDate.getTime())}`);
 
             if (!taskDate || isNaN(taskDate.getTime())) {
                 console.warn("⚠️ Invalid task date:", task.due_date);
                 return false;
             }
 
-            return !task.is_completed && (
-                isToday(taskDate) || isWithinInterval(taskDate, { start: today, end: weekAhead })
-            );
+            const isCompleted = task.is_completed;
+            const isTodayOrWithin = isToday(taskDate) || isWithinInterval(taskDate, { start: today, end: weekAhead });
+            const shouldInclude = !isCompleted && isTodayOrWithin;
+
+            if (!shouldInclude) {
+                console.log(`  ❌ Excluded - completed=${isCompleted}, isToday=${isToday(taskDate)}, withinInterval=${isWithinInterval(taskDate, { start: today, end: weekAhead })}`);
+            } else {
+                console.log(`  ✅ Included`);
+            }
+
+            return shouldInclude;
         });
 
         // Sort tasks by due date (ascending)

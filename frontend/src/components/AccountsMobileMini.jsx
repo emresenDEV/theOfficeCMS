@@ -15,23 +15,26 @@ const AccountsMobileMini = ({ user }) => {
 
     // Fetch accounts and metrics
     useEffect(() => {
-        if (!user || !user.user_id) return;
+        if (!user || !user.user_id) {
+            console.log("🔍 AccountsMobileMini - No user");
+            return;
+        }
 
-        console.log("🔍 Fetching accounts for sales_rep_id:", user.user_id);
+        console.log("🔍 AccountsMobileMini Fetching accounts for sales_rep_id:", user.user_id);
 
         fetchAssignedAccounts(user.user_id)
             .then((data) => {
-                console.log("✅ Fetched Accounts:", data);
+                console.log("✅ AccountsMobileMini Fetched Accounts:", data);
                 setAccounts(data);
             })
-            .catch((error) => console.error("❌ Error fetching accounts:", error));
+            .catch((error) => console.error("❌ AccountsMobileMini Error fetching accounts:", error));
 
         fetchAccountMetrics(user.user_id)
             .then((metrics) => {
-                console.log("📊 Account Metrics:", metrics);
+                console.log("📊 AccountsMobileMini Account Metrics:", metrics);
                 setAccountMetrics(metrics);
             })
-            .catch((error) => console.error("❌ Error fetching account metrics:", error));
+            .catch((error) => console.error("❌ AccountsMobileMini Error fetching account metrics:", error));
     }, [user]);
 
     // Merge accounts with metrics
@@ -40,28 +43,33 @@ const AccountsMobileMini = ({ user }) => {
         return { ...acc, ...metrics };
     });
 
-    // Search filter - supports business, phone (with/without dashes), city, state, contact, address, industry
-    const normalizePhoneNumber = (phone) => {
-        return phone ? phone.replace(/\D/g, "") : "";
-    };
+    // Log merged accounts
+    console.log(`📦 AccountsMobileMini Merged ${mergedAccounts.length} accounts from ${accounts.length} accounts + ${accountMetrics.length} metrics`);
 
+    // Search filter - matches standard view logic
     const filteredAccounts = mergedAccounts.filter(acc => {
         const searchText = searchQuery.toLowerCase();
-        const searchTextNoFormatting = normalizePhoneNumber(searchQuery);
-
-        return (
+        const matchesSearch =
             acc.business_name.toLowerCase().includes(searchText) ||
             (acc.contact_name && acc.contact_name.toLowerCase().includes(searchText)) ||
-            (acc.phone_number && (
-                acc.phone_number.toLowerCase().includes(searchText) ||
-                normalizePhoneNumber(acc.phone_number).includes(searchTextNoFormatting)
-            )) ||
+            (acc.email && acc.email.toLowerCase().includes(searchText)) ||
+            (acc.phone_number && acc.phone_number.toLowerCase().includes(searchText)) ||
             (acc.address && acc.address.toLowerCase().includes(searchText)) ||
             (acc.city && acc.city.toLowerCase().includes(searchText)) ||
             (acc.state && acc.state.toLowerCase().includes(searchText)) ||
-            (acc.industry_name && acc.industry_name.toLowerCase().includes(searchText))
-        );
+            (acc.industry_name && acc.industry_name.toLowerCase().includes(searchText)) ||
+            (acc.account_id && acc.account_id.toString().includes(searchText));
+
+        return matchesSearch;
     });
+
+    // Debug logging
+    if (searchQuery) {
+        console.log(`🔍 AccountsMobileMini Search: "${searchQuery}" → ${filteredAccounts.length} results from ${mergedAccounts.length} total`);
+        if (filteredAccounts.length === 0) {
+            console.log("   No matches found. Sample account data:", mergedAccounts.slice(0, 2));
+        }
+    }
 
     // Sorting logic
     const getSortedAccounts = () => {
