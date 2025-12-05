@@ -353,15 +353,15 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                                         </div>
                                                     )}
 
-                                                    {/* Notes/Details (Priority 3 - show if no contact) */}
-                                                    {!event.contact_name && event.event_details && (
+                                                    {/* Notes (Priority 3 - show if no contact) */}
+                                                    {!event.contact_name && event.notes && (
                                                         <div className="text-xs text-gray-500 line-clamp-1">
-                                                            {event.event_details}
+                                                            {event.notes}
                                                         </div>
                                                     )}
 
-                                                    {/* Location (Priority 4 - show if no contact and no details) */}
-                                                    {!event.contact_name && !event.event_details && event.location && (
+                                                    {/* Location (Priority 4 - show if no contact and no notes) */}
+                                                    {!event.contact_name && !event.notes && event.location && (
                                                         <div className="text-xs text-gray-600">
                                                             📍 {event.location}
                                                         </div>

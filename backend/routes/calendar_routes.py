@@ -31,7 +31,9 @@ def get_calendar_events():
             "start_date": event.start_date.strftime('%Y-%m-%d'),
             "end_date": event.end_date.strftime('%Y-%m-%d'),
             "notes": event.notes or "",
-            "user_id": event.user_id 
+            "contact_name": event.contact_name or "",
+            "phone_number": event.phone_number or "",
+            "user_id": event.user_id
         }
         for event in events
     ])

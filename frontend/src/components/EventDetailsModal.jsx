@@ -105,9 +105,17 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
         setLoading(true);
         try {
             const updatedData = {
-                ...editedEvent,
+                event_id: editedEvent.event_id,
+                event_title: editedEvent.event_title,
+                start_date: editedEvent.start_date,
+                end_date: editedEvent.end_date,
                 start_time: convertTo24HourFormat(editedEvent.start_time),
                 end_time: convertTo24HourFormat(editedEvent.end_time),
+                location: editedEvent.location,
+                contact_name: editedEvent.contact_name || "",
+                phone_number: editedEvent.phone_number || "",
+                notes: editedEvent.notes || "",
+                user_id: editedEvent.user_id,
             };
 
             console.log("Updating event:", updatedData);
@@ -289,14 +297,14 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 />
                             </div>
 
-                            {/* Event Details / Notes */}
+                            {/* Notes */}
                             <div>
                                 <label className="text-sm font-semibold text-gray-700 block mb-1">
                                     Notes
                                 </label>
                                 <textarea
-                                    value={editedEvent.event_details || ""}
-                                    onChange={(e) => handleInputChange("event_details", e.target.value)}
+                                    value={editedEvent.notes || ""}
+                                    onChange={(e) => handleInputChange("notes", e.target.value)}
                                     className="w-full px-3 py-2 border rounded text-sm resize-none"
                                     rows="4"
                                     placeholder="Enter notes"
@@ -340,10 +348,10 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                     </div>
                                 )}
 
-                                {event.event_details && (
+                                {event.notes && (
                                     <div>
                                         <span className="font-semibold">Notes:</span>
-                                        <p className="text-gray-600">{event.event_details}</p>
+                                        <p className="text-gray-600">{event.notes}</p>
                                     </div>
                                 )}
                             </div>
@@ -430,7 +438,8 @@ EventDetailsModal.propTypes = {
         location: PropTypes.string,
         contact_name: PropTypes.string,
         phone_number: PropTypes.string,
-        event_details: PropTypes.string,
+        notes: PropTypes.string,
+        user_id: PropTypes.number,
     }),
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
