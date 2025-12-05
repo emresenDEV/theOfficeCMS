@@ -48,6 +48,14 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
         loadData();
     }, [user]);
 
+    // Parse date string in format "YYYY-MM-DD HH:MM:SS" or ISO format
+    const parseTaskDate = (dateString) => {
+        if (!dateString) return null;
+        // Replace space with T for ISO parsing
+        const isoString = dateString.replace(" ", "T");
+        return new Date(isoString);
+    };
+
     // Process and filter tasks
     useEffect(() => {
         if (!tasks.length) {
@@ -60,7 +68,12 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
 
         let filteredTasks = tasks.filter(task => {
             if (!task.due_date) return false;
-            const taskDate = new Date(task.due_date);
+            const taskDate = parseTaskDate(task.due_date);
+
+            if (!taskDate || isNaN(taskDate.getTime())) {
+                console.warn("⚠️ Invalid task date:", task.due_date);
+                return false;
+            }
 
             return !task.is_completed && (
                 isToday(taskDate) || isWithinInterval(taskDate, { start: today, end: weekAhead })
@@ -68,14 +81,18 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
         });
 
         // Sort tasks by due date (ascending)
-        filteredTasks.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+        filteredTasks.sort((a, b) => {
+            const dateA = parseTaskDate(a.due_date) || new Date();
+            const dateB = parseTaskDate(b.due_date) || new Date();
+            return dateA - dateB;
+        });
 
         // Enrich task data
         const updatedTasks = filteredTasks.map(task => ({
             ...task,
             assigned_by_full_name: getUserFullName(task.user_id),
             business_name: getBusinessName(task.account_id),
-            isPastDue: isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date)),
+            isPastDue: isPast(parseTaskDate(task.due_date)) && !isToday(parseTaskDate(task.due_date)),
         }));
 
         console.log("📌 Updated Visible Tasks (Mobile):", updatedTasks);
@@ -130,19 +147,25 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
         <div className="bg-white rounded-lg shadow-md p-4">
             {/* Header with Title and Create Button */}
             <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
-                    <h2 className="text-lg font-semibold">My Tasks</h2>
-                    <span className="text-xl">{isCollapsed ? "+" : "−"}</span>
-                </div>
-                {!isCollapsed && (
+                <h2 className="text-lg font-semibold">My Tasks</h2>
+                <div className="flex items-center gap-2">
+                    {!isCollapsed && (
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="text-sm px-2.5 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 font-bold"
+                            title="Create new task"
+                        >
+                            +
+                        </button>
+                    )}
                     <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="text-sm px-2.5 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 font-bold"
-                        title="Create new task"
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="text-xl cursor-pointer"
+                        title={isCollapsed ? "Expand" : "Collapse"}
                     >
-                        +
+                        {isCollapsed ? "+" : "−"}
                     </button>
-                )}
+                </div>
             </div>
 
             {/* Task Cards List */}

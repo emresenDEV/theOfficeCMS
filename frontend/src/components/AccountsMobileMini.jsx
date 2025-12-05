@@ -65,7 +65,10 @@ const AccountsMobileMini = ({ user }) => {
 
     // Sorting logic
     const getSortedAccounts = () => {
-        const [sortField, sortOrder] = sortBy.split("_");
+        // Split on the last underscore to handle field names with underscores
+        const lastUnderscoreIndex = sortBy.lastIndexOf("_");
+        const sortField = sortBy.substring(0, lastUnderscoreIndex);
+        const sortOrder = sortBy.substring(lastUnderscoreIndex + 1);
         const isAsc = sortOrder === "asc";
 
         return [...filteredAccounts].sort((a, b) => {
@@ -190,6 +193,13 @@ const AccountsMobileMini = ({ user }) => {
                             </div>
                         )}
                     </div>
+
+                    {/* Debug Info */}
+                    {searchQuery && (
+                        <div className="text-xs text-gray-500 mb-2">
+                            Found {sortedAccounts.length} account(s) matching "{searchQuery}"
+                        </div>
+                    )}
 
                     {/* Accounts List */}
                     <div className="space-y-3">
