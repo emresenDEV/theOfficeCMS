@@ -8,6 +8,7 @@ import CreateCalendarEvent from "../components/CreateCalendarEvent";
 import DashboardSalesChartMobile from "../components/DashboardSalesChartMobile";
 import CalendarMobileMini from "../components/CalendarMobileMini";
 import TasksMobileMini from "../components/TasksMobileMini";
+import AccountsMobileMini from "../components/AccountsMobileMini";
 import EventDetailsModal from "../components/EventDetailsModal";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks, updateTask } from "../services/tasksService";
@@ -233,8 +234,13 @@ const Dashboard = ({ user }) => {
                         refreshTasks={handleRefreshTasks}
                     />
                 )}
-                
-                <AccountsTable user={userData} />
+
+                {/* 🏢 Accounts - Mobile vs Desktop */}
+                {isMobile ? (
+                    <AccountsMobileMini user={userData} />
+                ) : (
+                    <AccountsTable user={userData} />
+                )}
             </div>
             {/* EVENT DETAILS MODAL - Mobile */}
             <EventDetailsModal
