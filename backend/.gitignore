@@ -3,7 +3,8 @@
 .env
 DEPLOYMENT_GUIDE.md
 QUICK_REFERENCE.md
-# LAUNCHD_SETUP.md
+MBP_SSH_to_Mini_Guide.md
+LAUNCHD_SETUP.md
 
 config.py
 database.py
