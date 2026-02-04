@@ -141,20 +141,20 @@ const handleSubmit = async (e) => {
     };
 
 
-if (!account) return <p className="ml-64 p-6">Loading...</p>;
+if (!account) return <p className="p-6 text-slate-500 dark:text-slate-400">Loading...</p>;
 
 const totals = calculateTotals();
 
 return (
-    <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-lg ml-64">
+    <div className="p-6 max-w-6xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg">
     <div className="flex justify-between mb-6">
         <button
         onClick={() => navigate(`/accounts/details/${accountId}`)}
-        className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+        className="bg-slate-300 dark:bg-slate-700 text-slate-900 dark:text-slate-100 px-4 py-2 rounded hover:bg-slate-400 dark:hover:bg-slate-600"
         >
         ← Back to Account
         </button>
-        <h1 className="text-3xl font-bold">Create Invoice</h1>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Create Invoice</h1>
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-left">
@@ -172,9 +172,9 @@ return (
 
         {/* RIGHT: Sales Rep */}
         <div>
-        <label className="block font-bold text-sm mb-1 text-right">Sales Representative</label>
+        <label className="block font-bold text-sm mb-1 text-right text-slate-700 dark:text-slate-300">Sales Representative</label>
         <select
-            className="w-full border p-2 rounded mb-2 text-right"
+            className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded mb-2 text-right"
             value={form.sales_rep_id}
             onChange={(e) => handleFormChange("sales_rep_id", e.target.value)}
         >

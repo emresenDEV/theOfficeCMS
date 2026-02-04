@@ -88,8 +88,8 @@ const AccountsPage = ({ user }) => {
         />
     ) : (
         <div className="w-full">
-            <div className="flex-1 p-4 sm:p-6 mt-16 md:mt-0">
-                <h1 className="text-2xl font-bold">Accounts</h1>
+            <div className="flex-1 p-4 sm:p-6">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Accounts</h1>
                 {/* Search Bar and New Account Button*/}
                 <div className="flex justify-between items-center gap-4">
                     <div className="flex-grow">
@@ -98,7 +98,7 @@ const AccountsPage = ({ user }) => {
                             placeholder="Search Accounts"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full p-2 border rounded my-4"
+                            className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded my-4"
                         />
                     </div>
                     <div>
@@ -115,24 +115,24 @@ const AccountsPage = ({ user }) => {
                     {filteredAccounts.map(account => (
                         <div 
                             key={account.account_id} 
-                            className="border p-4 rounded-lg shadow flex justify-between items-center bg-white"
+                            className="border border-slate-200 dark:border-slate-800 p-4 rounded-lg shadow flex justify-between items-center bg-white dark:bg-slate-900"
                         >
                             {/* Account Details (Left-aligned) */}
                             <div className="text-left">
-                                <h2 className="text-lg font-semibold">{account.business_name}</h2>
-                                <p className="text-gray-600">
+                                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{account.business_name}</h2>
+                                <p className="text-slate-600 dark:text-slate-400">
                                     <span className="font-medium">Contact:</span> {account.contact_name} | 
                                     <span className="font-medium"> Phone:</span> {account.phone_number}
                                 </p>
-                                <p className="text-gray-500"><span className="font-medium">Email:</span> {account.email}</p>
-                                <p className="text-gray-500"><span className="font-medium">Address:</span> {account.address}, {account.city}, {account.state} {account.zip_code}</p>
+                                <p className="text-slate-500 dark:text-slate-400"><span className="font-medium">Email:</span> {account.email}</p>
+                                <p className="text-slate-500 dark:text-slate-400"><span className="font-medium">Address:</span> {account.address}, {account.city}, {account.state} {account.zip_code}</p>
                                 {/* Sales Representative Section */}
                                 {account.sales_rep ? (
-                                    <p className="text-gray-700">
+                                    <p className="text-slate-700 dark:text-slate-200">
                                         <span className="font-medium">Sales Representative:</span> {account.sales_rep?.first_name || "Unassigned"} {account.sales_rep?.last_name || ""}
                                     </p>
                                 ) : (
-                                    <p className="text-gray-500">No assigned sales representative.</p>
+                                    <p className="text-slate-500 dark:text-slate-400">No assigned sales representative.</p>
                                 )}
                             </div>
 

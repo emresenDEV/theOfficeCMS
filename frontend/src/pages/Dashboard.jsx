@@ -1,7 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { logoutUser } from "../services/authService";
 import SalesChart from "../components/SalesChart";
-import CalendarComponent from "../components/CalendarComponent";
 import TasksComponent from "../components/TaskComponent";
 import AccountsTable from "../components/AccountsTable";
 import CreateCalendarEvent from "../components/CreateCalendarEvent";
@@ -10,8 +8,10 @@ import CalendarMobileMini from "../components/CalendarMobileMini";
 import TasksMobileMini from "../components/TasksMobileMini";
 import AccountsMobileMini from "../components/AccountsMobileMini";
 import EventDetailsModal from "../components/EventDetailsModal";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { DashboardCalendarSection } from "../components/DashboardCalendarSection";
 import { fetchCalendarEvents } from "../services/calendarService";
-import { fetchTasks, updateTask } from "../services/tasksService";
+import { fetchTasks } from "../services/tasksService";
 import { fetchUserProfile } from "../services/userService";
 import { fetchUsers } from "../services/userService";
 import PropTypes from "prop-types";
@@ -130,22 +130,12 @@ const Dashboard = ({ user }) => {
         fetchData();
     }, [userData, refreshDashboardData]);
 
-    const updateEvents = useCallback((newEvents) => {
-        setEvents(newEvents);
-    }, []);
-
-
-    const handleLogout = async () => {
-        await logoutUser();
-        window.location.href = "/login";
-    };
-
     if (!userData) {
-        return <p className="text-center text-gray-600">Loading user profile...</p>;
+        return <p className="text-center text-slate-500 dark:text-slate-400">Loading user profile...</p>;
     }
 
     if (loading) {
-        return <p className="text-center text-gray-600">Loading dashboard...</p>;
+        return <p className="text-center text-slate-500 dark:text-slate-400">Loading dashboard...</p>;
     }
 
     const handleRefreshTasks = async () => {
@@ -153,23 +143,13 @@ const Dashboard = ({ user }) => {
         setTasks(updatedTasks);
     };
 
-    const toggleTaskCompletion = async (task) => {
-        const updatedTask = { ...task, is_completed: !task.is_completed };
-        setTasks(prevTasks => prevTasks.map(t => t.task_id === task.task_id ? updatedTask : t));
-        try {
-            await updateTask(task.task_id, updatedTask);
-        } catch (error) {
-            console.error("❌ Error updating task:", error); //debugging
-        }
-    };
-
     return (
         <div className="w-full">
-            <div className="flex-1 p-4 sm:p-6 space-y-6 mt-16 md:mt-0">
-                <h1 className="text-3xl font-semibold text-gray-900">
-                    Hello, {userData.first_name} {userData.last_name}
-                </h1>
-                <h2 className="text-lg text-gray-600">{userData.role_name || "Loading Role..."} Dashboard</h2>
+            <div className="flex-1 p-4 sm:p-6 space-y-6">
+                <DashboardHeader
+                    userName={`${userData.first_name} ${userData.last_name}`}
+                    roleName={userData.role_name || "Sales"}
+                />
 
                 {/* 📊 Sales Chart - Mobile vs Desktop */}
                 {isMobile ? (
@@ -181,7 +161,7 @@ const Dashboard = ({ user }) => {
                 ) : userData.branch_id ? (
                     <SalesChart userProfile={userData} />
                 ) : (
-                    <p className="text-center text-gray-600">Loading Sales Data...</p>
+                    <p className="text-center text-slate-500 dark:text-slate-400">Loading Sales Data...</p>
                 )}
 
                 {/* 📅 Calendar - Mobile vs Desktop */}
@@ -198,25 +178,17 @@ const Dashboard = ({ user }) => {
                         }}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full mx-auto">
-                        <div className="md:col-span-3">
-                            <CalendarComponent
-                                events={events}
-                                userId={userData.user_id}
-                            />
-                        </div>
-
-                        {/* 🗓️ Events Section takes 1/3 of the grid */}
-                        {/* <div className="md:col-span-1">
-                        <EventsSection
-                            events={events}
-                            user={userData}
-                            setEvents={updateEvents}
-                            openCreateModal={() => setShowCreateModal(true)}
-                        />
-
-                        </div> */}
-                    </div>
+                    <DashboardCalendarSection
+                        events={events}
+                        onAddEvent={(date) => {
+                            setSelectedDate(date);
+                            setShowCreateModal(true);
+                        }}
+                        onEventClick={(event) => {
+                            setSelectedEvent(event);
+                            setShowEventDetailsModal(true);
+                        }}
+                    />
                 )}
 
                 {/* 📋 Tasks - Mobile vs Desktop */}
@@ -230,7 +202,6 @@ const Dashboard = ({ user }) => {
                     <TasksComponent
                         tasks={tasks}
                         user={userData}
-                        toggleTaskCompletion={toggleTaskCompletion}
                         refreshTasks={handleRefreshTasks}
                     />
                 )}

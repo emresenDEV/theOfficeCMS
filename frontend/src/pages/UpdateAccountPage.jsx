@@ -321,12 +321,12 @@ const UpdateAccountPage = () => {
     
     
     if (!isDataLoaded) {
-        return <p className="text-gray-600 text-center">Loading account details...</p>;
+        return <p className="text-slate-500 dark:text-slate-400 text-center">Loading account details...</p>;
     }
     
 
     return (
-        <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg ml-64">
+        <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg">
             {/* 🔙 Back Button */}
             <div className="flex justify-between items-center mb-4">
                 <button
@@ -545,4 +545,3 @@ UpdateAccountPage.propTypes = {
 };
 
 export default UpdateAccountPage;
-

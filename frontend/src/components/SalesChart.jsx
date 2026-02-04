@@ -15,7 +15,9 @@ import {
     fetchBranchSales, 
     fetchBranchUsersSales 
 } from "../services/salesService";
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid"; 
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "./ui/button";
+import { cn } from "../lib/utils";
 import PropTypes from "prop-types";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
@@ -110,74 +112,111 @@ const SalesChart = ({ userProfile }) => {
         }
     };
 
-    if (!userProfile || !userProfile.branch_id) return <p className="text-center text-gray-600">Waiting for user profile data...</p>;
-    if (loading) return <p className="text-center text-gray-600">Loading Sales Data...</p>;
+    if (!userProfile || !userProfile.branch_id) return <p className="text-center text-slate-500 dark:text-slate-400">Waiting for user profile data...</p>;
+    if (loading) return <p className="text-center text-slate-500 dark:text-slate-400">Loading Sales Data...</p>;
 
     return (
-        <div className="bg-white shadow-md p-6 rounded-lg">
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-700">📈 Sales Chart</h3>
-                <button onClick={() => setIsCollapsed(prev => !prev)}>
-                    {isCollapsed ? <ChevronDownIcon className="w-6 h-6 text-gray-500" /> : <ChevronUpIcon className="w-6 h-6 text-gray-500" />}
-                </button>
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div
+                className="flex items-center justify-between px-4 py-3 cursor-pointer"
+                onClick={() => setIsCollapsed((prev) => !prev)}
+            >
+                <div className="flex items-center gap-4">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Sales Performance</h3>
+                    <div className="flex gap-1">
+                        {["company", "branch", "branchUsers"].map((tab) => (
+                        <Button
+                            key={tab}
+                            size="sm"
+                            variant={activeTab === tab ? "default" : "ghost"}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTab(tab);
+                                }}
+                                className="text-xs capitalize"
+                            >
+                                {tab === "branchUsers" ? "Sales Reps" : tab}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <select
+                        id="yearSelect"
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                        {[...Array(5)].map((_, i) => {
+                            const year = CURRENT_YEAR - i;
+                            return (
+                                <option key={year} value={year}>
+                                    {year}
+                                </option>
+                            );
+                        })}
+                    </select>
+                    {isCollapsed ? (
+                        <ChevronDown className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    ) : (
+                        <ChevronUp className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    )}
+                </div>
             </div>
 
             {!isCollapsed && (
-                <>
-                    <div className="flex justify-start items-center mb-4">
-                        <label htmlFor="yearSelect" className="mr-2 text-lg font-bold">Select Year:</label>
-                        <select
-                            id="yearSelect"
-                            value={selectedYear}
-                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                            className="border p-2 rounded-md text-lg"
-                        >
-                            {[...Array(5)].map((_, i) => {
-                                const year = CURRENT_YEAR - i;
-                                return <option key={year} value={year}>{year}</option>;
-                            })}
-                        </select>
-                    </div>
-
-                    <div className="flex space-x-4 mb-4">
-                        <button className={`px-4 py-2 rounded-md text-lg ${activeTab === "company" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setActiveTab("company")}>Company</button>
-                        <button className={`px-4 py-2 rounded-md text-lg ${activeTab === "branch" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setActiveTab("branch")}>Branch</button>
-                        <button className={`px-4 py-2 rounded-md text-lg ${activeTab === "branchUsers" ? "bg-blue-500 text-white" : "bg-gray-300"}`} onClick={() => setActiveTab("branchUsers")}>{userProfile.branch_name} Sales</button>
-                    </div>
-
+                <div className="px-4 pb-4">
                     {activeTab === "branch" && (
-                        <div className="mb-4">
-                            <label htmlFor="branchSelect" className="font-bold text-lg">Select Branch:</label>
+                        <div className="mb-4 flex items-center gap-2">
+                            <label htmlFor="branchSelect" className="text-sm font-semibold text-slate-600 dark:text-slate-400">
+                                Select Branch:
+                            </label>
                             <select
                                 id="branchSelect"
                                 value={selectedBranch}
                                 onChange={(e) => setSelectedBranch(e.target.value)}
-                                className="border p-2 rounded-md text-lg"
+                                className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                             >
-                                {allBranches.map(branch => <option key={branch} value={branch}>{branch}</option>)}
+                                {allBranches.map((branch) => (
+                                    <option key={branch} value={branch}>
+                                        {branch}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     )}
 
                     {activeTab === "branchUsers" && (
                         <div className="mb-4">
-                            <p className="font-bold text-lg">Select Sales Representatives:</p>
-                            <div className="flex flex-wrap">
-                                {salesReps.map((rep, i) => (
-                                    <button
+                            <p className="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-400">Select Sales Representatives:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {salesReps.map((rep) => (
+                                    <Button
                                         key={rep.name}
-                                        className={`m-1 px-3 py-1 rounded-md ${selectedSalesReps.includes(rep.name) ? "bg-purple-500 text-white" : "bg-gray-200"}`}
-                                        onClick={() => setSelectedSalesReps(prev => prev.includes(rep.name) ? prev.filter(r => r !== rep.name) : [...prev, rep.name])}
+                                        size="sm"
+                                        variant={selectedSalesReps.includes(rep.name) ? "default" : "ghost"}
+                                        className={cn("text-xs")}
+                                        onClick={() =>
+                                            setSelectedSalesReps((prev) =>
+                                                prev.includes(rep.name)
+                                                    ? prev.filter((r) => r !== rep.name)
+                                                    : [...prev, rep.name]
+                                            )
+                                        }
                                     >
                                         {rep.name}
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    <Line data={{ labels: MONTH_LABELS, datasets: renderChartData() }} options={{ responsive: true, plugins: { legend: { display: true }, tooltip: { enabled: true } } }} />
-                </>
+                    <Line
+                        data={{ labels: MONTH_LABELS, datasets: renderChartData() }}
+                        options={{ responsive: true, plugins: { legend: { display: true }, tooltip: { enabled: true } } }}
+                    />
+                </div>
             )}
         </div>
     );

@@ -147,7 +147,7 @@ const AccountsMobileMini = ({ user }) => {
     ];
 
     return (
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-md p-4">
             {/* Header */}
             <div className="flex justify-between items-center mb-4 cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
                 <h2 className="text-lg font-semibold">My Accounts</h2>
@@ -163,7 +163,7 @@ const AccountsMobileMini = ({ user }) => {
                             placeholder="Search by business, contact, phone, city, state, address, industry..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         />
                     </div>
 
@@ -171,18 +171,18 @@ const AccountsMobileMini = ({ user }) => {
                     <div className="mb-4 relative">
                         <button
                             onClick={() => setShowSortDropdown(!showSortDropdown)}
-                            className="w-full p-2 border border-gray-300 rounded-lg bg-white text-left text-sm font-medium text-gray-700 hover:bg-gray-50 flex justify-between items-center"
+                            className="w-full p-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-left text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex justify-between items-center"
                         >
                             <span>Sort by: {sortOptions.find(opt => opt.value === sortBy)?.label}</span>
                             <span>{showSortDropdown ? "▲" : "▼"}</span>
                         </button>
 
                         {showSortDropdown && (
-                            <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 mt-1">
+                            <div className="absolute top-full left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg z-10 mt-1">
                                 {sortOptions.map(option => (
                                     <label
                                         key={option.value}
-                                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                                        className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-200 dark:border-slate-800 last:border-b-0"
                                     >
                                         <input
                                             type="radio"
@@ -195,7 +195,7 @@ const AccountsMobileMini = ({ user }) => {
                                             }}
                                             className="w-4 h-4"
                                         />
-                                        <span className="text-sm text-gray-700">{option.label}</span>
+                                        <span className="text-sm text-slate-700 dark:text-slate-200">{option.label}</span>
                                     </label>
                                 ))}
                             </div>
@@ -204,7 +204,7 @@ const AccountsMobileMini = ({ user }) => {
 
                     {/* Debug Info */}
                     {searchQuery && (
-                        <div className="text-xs text-gray-500 mb-2">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
                             Found {sortedAccounts.length} account(s) matching "{searchQuery}"
                         </div>
                     )}
@@ -215,7 +215,7 @@ const AccountsMobileMini = ({ user }) => {
                             sortedAccounts.map(account => (
                                 <div
                                     key={account.account_id}
-                                    className="border rounded p-3 hover:shadow-md transition bg-gray-50 hover:bg-gray-100"
+                                    className="border border-slate-200 dark:border-slate-800 rounded p-3 hover:shadow-md transition bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
                                 >
                                     {/* Row 1: Business Name | Last Invoice Date */}
                                     <div className="flex justify-between items-start mb-2">
@@ -225,7 +225,7 @@ const AccountsMobileMini = ({ user }) => {
                                         >
                                             {account.business_name}
                                         </button>
-                                        <div className="text-xs text-gray-600 whitespace-nowrap ml-2">
+                                        <div className="text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap ml-2">
                                             Last Invoice: {account.last_invoice_date
                                                 ? format(new Date(account.last_invoice_date), "MM/dd/yyyy")
                                                 : "N/A"
@@ -235,11 +235,11 @@ const AccountsMobileMini = ({ user }) => {
 
                                     {/* Row 2: Contact Name | Total Revenue */}
                                     <div className="flex justify-between items-start mb-2">
-                                        <div className="text-xs text-gray-700 flex-1">
+                                        <div className="text-xs text-slate-700 dark:text-slate-200 flex-1">
                                             <span className="font-semibold">Contact: </span>
                                             {account.contact_name || "N/A"}
                                         </div>
-                                        <div className="text-xs text-gray-700 whitespace-nowrap ml-2">
+                                        <div className="text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap ml-2">
                                             <span className="font-semibold">Total Revenue: </span>
                                             ${account.total_revenue ? account.total_revenue.toFixed(2) : "0.00"}
                                         </div>
@@ -247,11 +247,11 @@ const AccountsMobileMini = ({ user }) => {
 
                                     {/* Row 3: Industry | Open Tasks */}
                                     <div className="flex justify-between items-start">
-                                        <div className="text-xs text-gray-700 flex-1">
+                                        <div className="text-xs text-slate-700 dark:text-slate-200 flex-1">
                                             <span className="font-semibold">Industry: </span>
                                             {account.industry_name || "N/A"}
                                         </div>
-                                        <div className="text-xs text-gray-700 whitespace-nowrap ml-2">
+                                        <div className="text-xs text-slate-700 dark:text-slate-200 whitespace-nowrap ml-2">
                                             <span className="font-semibold">Open Tasks: </span>
                                             {account.task_count || 0}
                                         </div>
@@ -259,7 +259,7 @@ const AccountsMobileMini = ({ user }) => {
                                 </div>
                             ))
                         ) : (
-                            <p className="text-xs text-gray-500 text-center py-4">No accounts found</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">No accounts found</p>
                         )}
                     </div>
                 </>

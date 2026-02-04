@@ -102,12 +102,12 @@ const CreateTaskMobileForm = ({ user, closeForm, refreshTasks }) => {
 
     return (
         <div className="text-left">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Create New Task</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Create New Task</h2>
 
             <form onSubmit={handleCreateTask} className="space-y-4">
                 {/* Task Description */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Task Description
                     </label>
                     <input
@@ -115,28 +115,28 @@ const CreateTaskMobileForm = ({ user, closeForm, refreshTasks }) => {
                         value={taskDescription}
                         onChange={(e) => setTaskDescription(e.target.value)}
                         placeholder="Enter task description"
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={loading}
                     />
                 </div>
 
                 {/* Due Date */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Due Date
                     </label>
                     <input
                         type="date"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={loading}
                     />
                 </div>
 
                 {/* Account Search */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Search for an Account (Optional)
                     </label>
                     <div className="relative">
@@ -145,16 +145,16 @@ const CreateTaskMobileForm = ({ user, closeForm, refreshTasks }) => {
                             value={searchAccount}
                             onChange={(e) => setSearchAccount(e.target.value)}
                             placeholder="Search by account name..."
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             disabled={loading}
                         />
                         {showDropdown && (
-                            <ul className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50 mt-1">
+                            <ul className="absolute top-full left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50 mt-1">
                                 {filteredAccounts.map(account => (
                                     <li
                                         key={account.account_id}
                                         onClick={() => handleSelectAccount(account)}
-                                        className="p-2 hover:bg-gray-200 cursor-pointer text-sm"
+                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
                                     >
                                         {account.business_name}
                                     </li>
@@ -174,7 +174,7 @@ const CreateTaskMobileForm = ({ user, closeForm, refreshTasks }) => {
                     <button
                         type="button"
                         onClick={closeForm}
-                        className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                        className="flex-1 bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600 transition-colors"
                         disabled={loading}
                     >
                         Cancel

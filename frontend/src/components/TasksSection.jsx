@@ -120,15 +120,15 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
     };
 
     return (
-        <div className="mt-6 border p-4 rounded-lg">
-            <h2 className="text-xl font-semibold">Tasks</h2>
+        <div className="mt-6 border border-slate-200 dark:border-slate-800 p-4 rounded-lg bg-white dark:bg-slate-900">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Tasks</h2>
 
             {/* Task Filter/Search */}
             <div className="flex justify-between items-center mb-3">
                 <input
                     type="text"
                     placeholder="Search tasks..."
-                    className="border p-2 rounded w-1/3 flex-grow"
+                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-1/3 flex-grow"
                     value={searchTasks}
                     onChange={(e) => setSearchTasks(e.target.value)}
                 />
@@ -159,7 +159,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 <input
                     type="text"
                     placeholder="New task..."
-                    className="border p-2 rounded flex-grow"
+                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded flex-grow"
                     value={newTaskDescription}
                     onChange={(e) => setNewTaskDescription(e.target.value)}
                 />
@@ -167,16 +167,16 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                     <input
                         type="text"
                         placeholder="Assigned To (search by name/username)"
-                        className="border p-2 rounded w-full"
+                        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full"
                         value={assignedToSearch}
                         onChange={(e) => handleAssigneeSearch(e.target.value)}
                     />
                     {filteredUsers.length > 0 && (
-                        <div className="absolute bg-white border w-full mt-1 rounded-lg shadow-lg z-50 max-h-40 overflow-y-scroll">
+                        <div className="absolute bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full mt-1 rounded-lg shadow-lg z-50 max-h-40 overflow-y-scroll">
                             {filteredUsers.map((user) => (
                                 <div
                                     key={user.user_id}
-                                    className="p-2 cursor-pointer hover:bg-gray-100"
+                                    className="p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
                                     onClick={() => handleAssigneeSelect(user)}
                                 >
                                     {user.first_name} {user.last_name} ({user.username})
@@ -187,7 +187,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 </div>
                 <input
                     type="date"
-                    className="border p-2 rounded w-1/4"
+                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-1/4"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                 />
@@ -200,24 +200,26 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
             </div>
 
             {/* ✅ Tasks Table */}
-            <div className="overflow-y-auto h-48 border rounded-lg">
+            <div className="overflow-y-auto h-48 border border-slate-200 dark:border-slate-800 rounded-lg">
                 {filteredTasks.length > 0 ? (
-                    <table className="w-full">
-                        <thead className="sticky top-0 bg-white shadow-sm">
+                    <table className="w-full text-slate-700 dark:text-slate-200">
+                        <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm">
                             <tr>
-                                <th className="font-bold p-2 border-b border-r text-left">Date</th>
-                                <th className="font-bold p-2 border-b border-r text-left">Created By</th>
-                                <th className="font-bold p-2 border-b border-r text-left">Assigned To</th>
-                                <th className="font-bold p-2 border-b border-r text-left">Description</th>
-                                <th className="font-bold p-2 border-b border-r text-left">Due Date</th>
-                                <th className="font-bold p-2 border-b text-center">Status</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Date</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Created By</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Assigned To</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Description</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Due Date</th>
+                                <th className="font-bold p-2 border-b text-center text-slate-600 dark:text-slate-300">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredTasks.map((task, index) => (
                                 <tr
                                     key={task.task_id}
-                                    className={`hover:bg-gray-50 ${index % 2 === 0 ? "bg-blue-50" : "bg-white"}`}
+                                    className={`hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                                        index % 2 === 0 ? "bg-blue-50 dark:bg-slate-900/60" : "bg-white dark:bg-slate-900"
+                                    }`}
                                 >
                                     <td className="p-2 border-b border-r text-left">{formatDate(task.date_created)}</td>
                                     <td className="p-2 border-b border-r text-left">{getCreatedByUsername(task.created_by || task.user_id)}</td>
@@ -229,14 +231,14 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                                         onClick={() => toggleTaskStatus(task.task_id, task.is_completed)}
                                     >
                                         {task.is_completed ? "✅ Completed" : "❌ Incomplete"}
-                                        <span className="block text-xs text-gray-400">Click to update</span>
+                                        <span className="block text-xs text-slate-400">Click to update</span>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 ) : (
-                    <p className="text-gray-500 text-center mt-2">
+                    <p className="text-slate-500 dark:text-slate-400 text-center mt-2">
                         No tasks available. Create a task to add one.
                     </p>
                 )}

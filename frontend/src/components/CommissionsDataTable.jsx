@@ -15,10 +15,10 @@ const CommissionsDataTable = ({ viewMode, data }) => {
 
     return (
         <div className="mt-6">
-            <h2 className="text-lg font-bold mb-2">📊 Commission Breakdown</h2>
-            <div className="border rounded-md overflow-hidden bg-white shadow">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-100 text-sm uppercase">
+            <h2 className="text-lg font-bold mb-2 text-slate-900 dark:text-slate-100">📊 Commission Breakdown</h2>
+            <div className="border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden bg-white dark:bg-slate-900 shadow">
+                <table className="w-full text-left text-slate-700 dark:text-slate-200">
+                    <thead className="bg-slate-100 dark:bg-slate-800 text-sm uppercase">
                         <tr>
                             <th className="px-4 py-2">Period</th>
                             <th className="px-4 py-2 text-right">Commission ($)</th>

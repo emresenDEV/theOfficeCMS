@@ -184,36 +184,36 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
     };
 
     return (
-        <div className="mt-4 p-4 bg-white rounded-lg shadow-md border border-gray-300 text-left">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Create Event</h2>
+        <div className="mt-4 p-4 bg-white dark:bg-slate-900 rounded-lg shadow-md border border-slate-200 dark:border-slate-800 text-left">
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">Create Event</h2>
 
             {/* Event Title */}
-            <label className="block text-sm font-medium text-gray-700">Event Title</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Event Title</label>
             <input
                 type="text"
                 name="event_title"
                 value={newEvent.event_title}
                 onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-lg mb-4"
+                className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg mb-4"
                 placeholder="Enter event title"
             />
 
             {/* Account Search */}
-            <label className="block text-sm font-medium text-gray-700">Search for an Account</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Search for an Account</label>
             <input
                 type="text"
                 value={accountSearch}
                 onChange={(e) => setAccountSearch(e.target.value)}
                 placeholder="Search by account name..."
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg"
             />
             {showDropdown && (
-                <ul className="absolute bg-white border border-gray-300 w-full mt-1 rounded shadow-lg max-h-48 overflow-y-auto z-50">
+                <ul className="absolute bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full mt-1 rounded shadow-lg max-h-48 overflow-y-auto z-50">
                     {filteredAccounts.map(account => (
                         <li
                             key={account.account_id}
                             onClick={() => handleSelectAccount(account)} 
-                            className="p-2 hover:bg-gray-200 cursor-pointer"
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-200"
                         >
                             {account.business_name}
                         </li>
@@ -223,34 +223,34 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
 
 
             {/* Location, Contact Name, Phone Number */}
-            <label className="block text-sm font-medium text-gray-700 mt-2">Location</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mt-2">Location</label>
             <input
                 type="text"
                 name="location"
                 value={newEvent.location}
                 onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-lg"
+                className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg"
                 placeholder="Enter or select location"
             />
             <div className="grid grid-cols-2 gap-4 mt-4">
                 <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 mt-2">Contact Name</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mt-2">Contact Name</label>
                     <input
                         type="text"
                         name="contact_name"
                         value={newEvent.contact_name}
                         onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg"
                     />
                     </div>
                 <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 mt-4">Phone Number</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mt-4">Phone Number</label>
                     <input
                         type="text"
                         name="phone_number"
                         value={newEvent.phone_number}
                         onChange={handlePhoneNumberChange}  
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg"
                         placeholder="Enter phone number"
                         maxLength="12"  
                     />
@@ -259,42 +259,42 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
             {/* Start Date, End Date */}
             <div className="grid grid-cols-2 gap-4 mt-4">
                 <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                    <FiCalendar className="absolute top-3 right-3 text-gray-400" />
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Start Date</label>
+                    <FiCalendar className="absolute top-3 right-3 text-slate-400 dark:text-slate-500" />
                     <input 
                         type="date" 
                         name="start_date" 
                         value={newEvent.start_date} 
                         onChange={handleInputChange} 
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg"
                     />
                 </div>
 
                 <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700">End Date</label>
-                    <FiCalendar className="absolute top-3 right-3 text-gray-400" />
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">End Date</label>
+                    <FiCalendar className="absolute top-3 right-3 text-slate-400 dark:text-slate-500" />
                     <input 
                         type="date" 
                         name="end_date" 
                         value={newEvent.end_date} 
                         onChange={handleInputChange} 
-                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg"
                     />
                 </div>
             </div>
             {/* Start Time, End Time */}
             <div className="grid grid-cols-2 gap-4 mt-4">
                 <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700">Start Time</label>
-                    <FiClock className="absolute top-3 right-3 text-gray-400" />
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Start Time</label>
+                    <FiClock className="absolute top-3 right-3 text-slate-400 dark:text-slate-500" />
                         <CustomTimePicker 
                             value={newEvent.start_time} 
                             onChange={(value) => handleTimeChange("start_time", value)} 
                         />
                 </div>
                 <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700">End Time</label>
-                    <FiClock className="absolute top-3 right-3 text-gray-400" />
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">End Time</label>
+                    <FiClock className="absolute top-3 right-3 text-slate-400 dark:text-slate-500" />
                         <CustomTimePicker 
                             value={newEvent.end_time} 
                             onChange={handleEndTimeChange} 
@@ -302,12 +302,12 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
                 </div>
             </div>
 
-            <label className="block text-sm font-medium text-gray-700 mt-4">Notes</label>
-            <textarea name="notes" value={newEvent.notes} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-lg" rows="3"></textarea>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mt-4">Notes</label>
+            <textarea name="notes" value={newEvent.notes} onChange={handleInputChange} className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg" rows="3"></textarea>
 
             {/* Buttons */}
             <div className="flex justify-between mt-4">
-                <button className="bg-gray-500 text-white px-4 py-2 rounded-lg" onClick={closeForm}>Cancel</button>
+                <button className="bg-slate-500 text-white px-4 py-2 rounded-lg" onClick={closeForm}>Cancel</button>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-lg" onClick={handleCreateEvent}>Save</button>
             </div>
         </div>

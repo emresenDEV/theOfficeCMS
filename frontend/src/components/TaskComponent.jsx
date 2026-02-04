@@ -5,7 +5,11 @@ import { updateTask, createTask, fetchTasks } from "../services/tasksService";
 import { fetchAccounts } from "../services/accountService";
 import { fetchUsers } from "../services/userService";
 import { useNavigate } from "react-router-dom";
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
+import { Calendar, Check, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Badge } from "./ui/badge";
+import { cn } from "../lib/utils";
 
 const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
     const navigate = useNavigate();
@@ -170,44 +174,71 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
     };
 
     return (
-        <div className={`bg-white shadow-lg rounded-lg transition-all duration-300 ${isCollapsed ? "h-14 overflow-hidden" : "h-auto"}`}>
-            <div className="flex justify-between items-center px-4 py-3 cursor-pointer" onClick={() => setIsCollapsed(prev => !prev)}>
-                <h3 className="text-lg font-bold text-gray-700">📋 My Tasks</h3>
-                <button>
-                    {isCollapsed ? <ChevronDownIcon className="w-6 h-6 text-gray-500" /> : <ChevronUpIcon className="w-6 h-6 text-gray-500" />}
-                </button>
+        <div
+            className={cn(
+                "rounded-xl border border-slate-200 bg-white shadow-sm transition-all dark:border-slate-800 dark:bg-slate-900",
+                isCollapsed && "overflow-hidden"
+            )}
+        >
+            <div
+                className="flex items-center justify-between px-4 py-3 cursor-pointer"
+                onClick={() => setIsCollapsed((prev) => !prev)}
+            >
+                <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Tasks</h3>
+                    <Badge variant="secondary" className="font-medium">
+                        {visibleTasks.length} pending
+                    </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                        }}
+                    >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Task
+                    </Button>
+                    {isCollapsed ? (
+                        <ChevronDown className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    ) : (
+                        <ChevronUp className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    )}
+                </div>
             </div>
 
             {!isCollapsed && (
-                <div className="p-4">
+                <div className="px-4 pb-4">
                     {/* New Task Inputs */}
-                    <div className="grid grid-cols-12 gap-4 items-center mb-4">
-                        <input
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-center mb-4">
+                        <Input
                             type="text"
                             placeholder="New task..."
-                            className="border p-2 rounded-lg col-span-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="md:col-span-4"
                             value={newTaskDescription}
                             onChange={(e) => setNewTaskDescription(e.target.value)}
                         />
-                        <input
+                        <Input
                             type="date"
-                            className="border p-2 rounded-lg col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="md:col-span-2"
                             value={dueDate}
                             onChange={(e) => setDueDate(e.target.value)}
                         />
-                        <div className="relative col-span-4">
-                            <input
+                        <div className="relative md:col-span-4">
+                            <Input
                                 type="text"
-                                placeholder="Search by Business Name"
-                                className="border p-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Search by account"
                                 value={searchAccount}
                                 onChange={(e) => setSearchAccount(e.target.value)}
                             />
                             {searchAccount.trim() && filteredAccounts.length > 0 && (
-                                <div className="absolute bg-white border w-full mt-1 rounded-lg shadow-lg max-h-40 overflow-y-scroll z-10">
-                                    {filteredAccounts.map(acc => (
-                                        <div key={acc.account_id}
-                                            className="p-2 cursor-pointer hover:bg-gray-100"
+                                <div className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                                    {filteredAccounts.map((acc) => (
+                                        <div
+                                            key={acc.account_id}
+                                            className="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
                                             onClick={() => {
                                                 setSelectedAccount(acc);
                                                 setSearchAccount(acc.business_name);
@@ -220,56 +251,91 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                                 </div>
                             )}
                         </div>
-                        <button
+                        <Button
                             onClick={handleCreateTask}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-colors col-span-2"
+                            className="md:col-span-2"
                         >
                             Create
-                        </button>
+                        </Button>
                     </div>
 
                     {/* Tasks Table */}
-                    <div className="overflow-y-auto max-h-[300px]">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="sticky top-0 bg-gray-100 shadow-sm">
+                    <div className="max-h-[350px] overflow-y-auto">
+                        <table className="w-full">
+                            <thead className="sticky top-0 bg-slate-50">
                                 <tr>
-                                    <th className="p-3 border-b text-gray-700">Task</th>
-                                    <th className="p-3 border-b text-gray-700">Due Date</th>
-                                    <th className="p-3 border-b text-gray-700">Assigned By</th>
-                                    <th className="p-3 border-b text-gray-700">Account</th>
-                                    <th className="p-3 border-b text-gray-700 text-center">Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Task
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Due Date
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Assigned By
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Account
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Status
+                                    </th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {visibleTasks.map(task => (
-                                    <tr key={task.task_id} className="border-b hover:bg-gray-50 transition-colors">
-                                        <td className="p-3 text-gray-800">{task.task_description}</td>
-                                        <td className="p-3 text-gray-700">{format(new Date(task.due_date), "MM/dd/yyyy")}</td>
-                                        <td className="p-3 text-gray-700">{task.assigned_by_username || "N/A"}</td>
-                                        <td className="p-3">
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {visibleTasks.map((task) => (
+                                    <tr key={task.task_id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                                            {task.task_description}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                                <Calendar className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                                                {format(new Date(task.due_date), "MMM d, yyyy")}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                                            {task.assigned_by_username || "N/A"}
+                                        </td>
+                                        <td className="px-4 py-3">
                                             {task.account_id && task.business_name ? (
-                                                <button 
+                                                <Button
+                                                    variant="link"
+                                                    className="h-auto p-0 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200"
                                                     onClick={() => navigate(`/accounts/details/${task.account_id}`)}
-                                                    className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition-colors">
+                                                >
                                                     {task.business_name}
-                                                </button>
+                                                </Button>
                                             ) : (
-                                                <span className="text-gray-500">No Account</span>
+                                                <span className="text-sm text-slate-400 dark:text-slate-500">No Account</span>
                                             )}
                                         </td>
-
-                                        <td className="p-3 text-center">
-                                            <button onClick={() => handleTaskCompletion(task)}
-                                                className={`px-3 py-1 rounded-lg transition-colors ${
-                                                    completingTask[task.task_id] ? "bg-red-500 hover:bg-red-600 text-white" : "bg-green-500 hover:bg-green-600 text-white"
-                                                }`}>
-                                                {completingTask[task.task_id] ? `Undo (${completingTask[task.task_id]}s)` : "Complete"}
-                                            </button>
+                                        <td className="px-4 py-3 text-right">
+                                            <Button
+                                                size="sm"
+                                                variant={completingTask[task.task_id] ? "destructive" : "success"}
+                                                className={cn("min-w-[110px]")}
+                                                onClick={() => handleTaskCompletion(task)}
+                                            >
+                                                {completingTask[task.task_id] ? (
+                                                    `Undo (${completingTask[task.task_id]}s)`
+                                                ) : (
+                                                    <>
+                                                        <Check className="h-4 w-4 mr-1" />
+                                                        Complete
+                                                    </>
+                                                )}
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+
+                        {visibleTasks.length === 0 && (
+                            <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                                No tasks scheduled
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

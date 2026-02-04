@@ -1,4 +1,5 @@
 import axios from "axios";
+import { mockAdapter } from "./mockApi";
 
 // Base URL for Flask API
 let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://macmini.tailced3de.ts.net";
@@ -8,12 +9,19 @@ if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
     API_BASE_URL = API_BASE_URL.replace(/^http:/, 'https:');
 }
 
+const isMockMode = import.meta.env.VITE_MOCK_MODE === "true";
+
 // Axios instance for API requests
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: { "Content-Type": "application/json" },
     withCredentials: true,
+    ...(isMockMode ? { adapter: mockAdapter } : {}),
 });
+
+if (isMockMode) {
+    console.info("🧪 Mock mode enabled: API calls are served locally.");
+}
 
 // Fetch all accounts EXPLAINED:
 // EXPORT: exports the fetchDataTable function so it can be used in other parts of the app.

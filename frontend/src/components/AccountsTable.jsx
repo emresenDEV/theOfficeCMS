@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { fetchAssignedAccounts, fetchAccountMetrics } from "../services/accountService"; 
+import { fetchAssignedAccounts, fetchAccountMetrics } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns"; 
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
+import { format } from "date-fns";
+import { ArrowUpDown, Building2, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Badge } from "./ui/badge";
+import { cn } from "../lib/utils";
 
 export const AccountsTable = ({ user }) => {
     const [accounts, setAccounts] = useState([]);
@@ -11,8 +15,6 @@ export const AccountsTable = ({ user }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [sortColumn, setSortColumn] = useState("business_name");
     const [sortOrder, setSortOrder] = useState("asc");
-    const [industries, setIndustries] = useState([]);
-    const [filterIndustry, setFilterIndustry] = useState("all");
     const [isCollapsed, setIsCollapsed] = useState(false);
     const navigate = useNavigate();
 
@@ -36,21 +38,6 @@ export const AccountsTable = ({ user }) => {
             .catch((error) => console.error("❌ Error fetching account metrics:", error));
 
     }, [user]);
-
-        // Extract unique industries (remove empty values)
-        useEffect(() => {
-            if (accounts.length === 0) return;
-        
-            // Extract unique industries, ensuring no duplicates and filtering out null/empty values
-            const uniqueIndustries = Array.from(
-                new Set(accounts.map(acc => acc.industry_name).filter(industry => industry && industry.trim() !== ""))
-            );
-        
-            console.log("📊 Extracted Industries:", uniqueIndustries); // Debugging log
-        
-            setIndustries(uniqueIndustries);
-        }, [accounts]);
-        
 
     // Merging account data with metrics
     const mergedAccounts = accounts.map(acc => {
@@ -99,84 +86,133 @@ export const AccountsTable = ({ user }) => {
             (acc.address && acc.address.toLowerCase().includes(searchText)) ||
             (acc.account_id && acc.account_id.toString().includes(searchText));
 
-        const matchesIndustry = filterIndustry === "all" || acc.industry_name === filterIndustry;
-        return matchesSearch && matchesIndustry;
+        return matchesSearch;
     });
 
+    const SortableHeader = ({ label, sortKeyName }) => (
+        <th
+            className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-slate-900 transition-colors"
+            onClick={() => toggleSortOrder(sortKeyName)}
+        >
+            <div className="flex items-center gap-1">
+                {label}
+                <ArrowUpDown
+                    className={cn(
+                        "h-3 w-3",
+                        sortColumn === sortKeyName ? "text-slate-900" : "text-slate-400"
+                    )}
+                />
+                {sortColumn === sortKeyName && (
+                    <span className="text-xs">{sortOrder === "asc" ? "↑" : "↓"}</span>
+                )}
+            </div>
+        </th>
+    );
+
     return (
-        <div className={`bg-white shadow-lg rounded-lg transition-all duration-300 ${isCollapsed ? "h-14 overflow-hidden" : "h-auto"}`}>
-            {/* Toggle Button */}
-            <div className="flex justify-between items-center px-4 py-3 cursor-pointer" onClick={() => setIsCollapsed(prev => !prev)}>
-                <h3 className="text-lg font-bold text-gray-700">🏢 My Accounts</h3>
-                <button>
-                    {isCollapsed ? <ChevronDownIcon className="w-6 h-6 text-gray-500" /> : <ChevronUpIcon className="w-6 h-6 text-gray-500" />}
-                </button>
+        <div
+            className={cn(
+                "rounded-xl border border-slate-200 bg-white shadow-sm transition-all dark:border-slate-800 dark:bg-slate-900",
+                isCollapsed && "overflow-hidden"
+            )}
+        >
+            {/* Header */}
+            <div
+                className="flex items-center justify-between px-4 py-3 cursor-pointer"
+                onClick={() => setIsCollapsed((prev) => !prev)}
+            >
+                <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Your Accounts</h3>
+                    <Badge variant="secondary" className="font-medium">
+                        {filteredAccounts.length} accounts
+                    </Badge>
+                </div>
+                {isCollapsed ? (
+                    <ChevronDown className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                ) : (
+                    <ChevronUp className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                )}
             </div>
 
             {!isCollapsed && (
-                <div className="p-4">
-                    {/* Search & Filters */}
-                    <div className="grid grid-cols-5 gap-4 mb-4">
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 col-span-4"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        
-                        <button
-                            className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors col-span-1"
-                            onClick={() => {
-                                setSearchQuery("");
-                                setFilterIndustry("all");
-                                setSortColumn("business_name");
-                                setSortOrder("asc");
-                            }}
-                        >
-                            Clear Filters
-                        </button>
+                <div>
+                    {/* Search */}
+                    <div className="px-4 pb-4 flex items-center gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                            <Input
+                                placeholder="Search accounts..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        {searchQuery && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setSearchQuery("");
+                                    setSortColumn("business_name");
+                                    setSortOrder("asc");
+                                }}
+                            >
+                                Clear
+                            </Button>
+                        )}
                     </div>
 
                     {/* Table */}
-                    <div className="overflow-y-auto max-h-[600px]"> {/* Scrollable Table */}
-                        <table className="w-full text-left border-collapse">
-                            <thead className="sticky top-0 bg-gray-100 shadow-md z-10">
+                    <div className="max-h-[450px] overflow-y-auto">
+                        <table className="w-full">
+                            <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
                                 <tr>
-                                    {["business_name", "contact_name", "industry_name", "task_count", "total_revenue", "last_invoice_date"].map((col) => (
-                                        <th 
-                                            key={col} 
-                                            className="p-3 border-b cursor-pointer hover:bg-gray-200"
-                                            onClick={() => toggleSortOrder(col)}
-                                        >
-                                            {col.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} 
-                                            {sortColumn === col ? (sortOrder === "asc" ? " ↑" : " ↓") : ""}
-                                        </th>
-                                    ))}
+                                    <SortableHeader label="Business Name" sortKeyName="business_name" />
+                                    <SortableHeader label="Contact" sortKeyName="contact_name" />
+                                    <SortableHeader label="Industry" sortKeyName="industry_name" />
+                                    <SortableHeader label="Tasks" sortKeyName="task_count" />
+                                    <SortableHeader label="Revenue" sortKeyName="total_revenue" />
+                                    <SortableHeader label="Last Invoice" sortKeyName="last_invoice_date" />
                                 </tr>
                             </thead>
-                            <tbody>
-                            {filteredAccounts.map(acc => (
-                                    <tr key={acc.account_id} className="border-b hover:bg-gray-50 transition-colors">
-                                        <td className="p-3 text-gray-800">
-                                            <button 
-                                                className="bg-blue-600 text-white font-semibold px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {filteredAccounts.map((acc) => (
+                                    <tr key={acc.account_id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <td className="px-4 py-3">
+                                            <Button
+                                                variant="link"
+                                                className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200"
                                                 onClick={() => navigate(`/accounts/details/${acc.account_id}`)}
                                             >
+                                                <Building2 className="h-4 w-4 mr-2" />
                                                 {acc.business_name}
-                                            </button>
+                                            </Button>
                                         </td>
-                                        <td className="p-3 text-gray-700">{acc.contact_name}</td>
-                                        <td className="p-3 text-gray-700">{acc.industry_name}</td>
-                                        <td className="p-3 text-gray-700">{acc.task_count || 0}</td>
-                                        <td className="p-3 text-gray-700">${acc.total_revenue ? acc.total_revenue.toFixed(2) : "0.00"}</td>
-                                        <td className="p-3 text-gray-700">
-                                            {acc.last_invoice_date ? format(new Date(acc.last_invoice_date), "MM/dd/yyyy") : "N/A"}
+                                        <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{acc.contact_name}</td>
+                                        <td className="px-4 py-3">
+                                            <Badge variant="outline" className="font-normal">
+                                                {acc.industry_name || "Unspecified"}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            {acc.task_count || 0}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                                            {acc.total_revenue ? `$${acc.total_revenue.toFixed(2)}` : "$0.00"}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                                            {acc.last_invoice_date ? format(new Date(acc.last_invoice_date), "MMM d, yyyy") : "N/A"}
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+
+                        {filteredAccounts.length === 0 && (
+                            <div className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                                No accounts found
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

@@ -101,38 +101,38 @@ const EditInvoice = ({ user }) => {
     }
   };
 
-  if (loading) return <p>Loading invoice details...</p>;
+  if (loading) return <p className="text-slate-500 dark:text-slate-400">Loading invoice details...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-white rounded shadow-md ml-64">
+    <div className="p-6 max-w-3xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-md">
       {/* Header with Back and Edit buttons */}
       <div className="flex items-center justify-between mb-6">
         <button
           type="button"
-          className="bg-gray-500 text-white px-4 py-2 rounded"
+          className="bg-slate-500 text-white px-4 py-2 rounded"
           onClick={() => navigate(`/invoice/${invoiceId}`)}
         >
           Back to Invoice #{invoiceId} Details
         </button>
-        <h2 className="text-2xl font-bold">Edit Invoice #{invoiceId}</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Edit Invoice #{invoiceId}</h2>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Service */}
         <div className="flex items-center">
-          <label className="w-1/3 text-lg font-bold text-left">Service:</label>
+          <label className="w-1/3 text-lg font-bold text-left text-slate-700 dark:text-slate-300">Service:</label>
           <input
             type="text"
             name="service"
             value={formData.service}
             onChange={handleChange}
-            className="w-2/3 border p-2 rounded"
+            className="w-2/3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded"
             required
           />
         </div>
         {/* Amount */}
         <div className="flex items-center">
-          <label className="w-1/3 text-lg font-bold text-left">Amount:</label>
+          <label className="w-1/3 text-lg font-bold text-left text-slate-700 dark:text-slate-300">Amount:</label>
           <input
             type="number"
             name="amount"

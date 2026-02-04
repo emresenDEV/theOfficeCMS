@@ -18,6 +18,55 @@
     --color-button-hover-dark: #1C3FAF; /* Slightly darker blue */
     }
 
+@layer base {
+    body {
+        @apply bg-slate-50 text-slate-900;
+    }
+    .dark body {
+        @apply bg-slate-950 text-slate-100;
+    }
+    .dark table thead {
+        @apply bg-slate-800 text-slate-200;
+    }
+    .dark table th,
+    .dark table td {
+        @apply border-slate-800;
+    }
+    .dark .bg-white {
+        @apply bg-slate-900;
+    }
+    .dark .bg-gray-50 {
+        @apply bg-slate-900;
+    }
+    .dark .bg-gray-100 {
+        @apply bg-slate-800;
+    }
+    .dark .bg-gray-200 {
+        @apply bg-slate-800;
+    }
+    .dark .bg-gray-300 {
+        @apply bg-slate-700;
+    }
+    .dark .text-gray-900 {
+        @apply text-slate-100;
+    }
+    .dark .text-gray-700 {
+        @apply text-slate-300;
+    }
+    .dark .text-gray-600 {
+        @apply text-slate-400;
+    }
+    .dark .text-gray-500 {
+        @apply text-slate-400;
+    }
+    .dark .border-gray-200 {
+        @apply border-slate-800;
+    }
+    .dark .border-gray-300 {
+        @apply border-slate-700;
+    }
+}
+
 /* Apply CSS variables to Tailwind classes */
 @layer components {
     .text-theme {

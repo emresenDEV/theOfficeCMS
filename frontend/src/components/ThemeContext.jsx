@@ -1,13 +1,32 @@
 // src/components/ThemeContext.jsx
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import PropTypes from "prop-types"; // Import PropTypes
 
 // Create the ThemeContext
 const ThemeContext = createContext();
 
+const applyThemeClass = (themeValue) => {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const shouldUseDark = themeValue === "dark" || (themeValue === "system" && prefersDark);
+    document.documentElement.classList.toggle("dark", shouldUseDark);
+};
+
 // ThemeProvider component
 export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "system");
+
+    useEffect(() => {
+        applyThemeClass(theme);
+        localStorage.setItem("theme", theme);
+
+        if (theme !== "system") return;
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        const handler = (event) => {
+            document.documentElement.classList.toggle("dark", event.matches);
+        };
+        mediaQuery.addEventListener?.("change", handler);
+        return () => mediaQuery.removeEventListener?.("change", handler);
+    }, [theme]);
 
     return (
         <ThemeContext.Provider value={{ theme, setTheme }}>

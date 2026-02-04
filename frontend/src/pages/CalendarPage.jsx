@@ -6,7 +6,6 @@ import {
 } from "../services/calendarService";
 import { fetchBranches } from "../services/branchService";
 // import { fetchUserProfile } from "../services/userService"; 
-import Sidebar from "../components/Sidebar";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -217,22 +216,17 @@ const CalendarPage = ({ user }) => {
 
     
     return (
-        <div className="flex bg-gray-100 min-h-screen">
-            <div className="w-64 fixed left-0 top-0 h-full">
-                <Sidebar user={user} />
-            </div>
-
-            <div className="flex-1 p-6 ml-64">
-                <h1 className="text-2xl font-bold text-gray-700 pb-4">📅 Calendar</h1>
+        <div className="bg-slate-50 dark:bg-slate-950 min-h-screen p-6">
+                <h1 className="text-2xl font-bold text-slate-700 dark:text-slate-100 pb-4">📅 Calendar</h1>
 
                 {/* ✅ Branch, Department, and Employee Selection */}
                 <div className="grid grid-cols-3 gap-4 mt-4">
                     <div>
-                        <label className="block text-gray-700">Select Branch:</label>
+                        <label className="block text-slate-700 dark:text-slate-300">Select Branch:</label>
                         <select 
                             value={selectedBranch}
                             onChange={(e) => setSelectedBranch(e.target.value)}
-                            className="border p-2 rounded w-full mt-2"
+                            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full mt-2"
                             
                         >
                             {branches.map(branch => (
@@ -246,11 +240,11 @@ const CalendarPage = ({ user }) => {
                     </div>
 
                     <div>
-                        <label className="block text-gray-700">Select Department:</label>
+                        <label className="block text-slate-700 dark:text-slate-300">Select Department:</label>
                         <select 
                             value={selectedDepartment}
                             onChange={(e) => setSelectedDepartment(e.target.value)}
-                            className="border p-2 rounded w-full mt-2"
+                            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full mt-2"
                             
                         >
                             {filteredDepartments.map(dept => (
@@ -264,11 +258,11 @@ const CalendarPage = ({ user }) => {
                     </div>
 
                     <div>
-                        <label className="block text-gray-700">Select Employee:</label>
+                        <label className="block text-slate-700 dark:text-slate-300">Select Employee:</label>
                         <select 
                             value={filteredUsers.length > 0 ? selectedUserId : ""}
                             onChange={(e) => setSelectedUserId(parseInt(e.target.value, 10))}
-                            className="border p-2 rounded w-full mt-2"
+                            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full mt-2"
                             
                         >
                             {filteredUsers.length > 0 ? (
@@ -288,7 +282,7 @@ const CalendarPage = ({ user }) => {
                 </div>
 
                 {/* ✅ Full Calendar Component */}
-                <div className="p-6 bg-white rounded-lg shadow-md mt-6">
+                <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-md mt-6">
                     <FullCalendar
                         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                         initialView={calendarView}
@@ -326,8 +320,8 @@ const CalendarPage = ({ user }) => {
                 )}
 
                 {/* ✅ Display Events for Selected Date or Today */}
-                <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-lg font-bold text-gray-700 mb-4">
+                <div className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md">
+                    <h2 className="text-lg font-bold text-slate-700 dark:text-slate-100 mb-4">
                         📅 Events on {selectedDate === format(new Date(), "yyyy-MM-dd") 
                             ? "Today" 
                             : format(new Date(selectedDate), "MM/dd/yyyy")} 
@@ -356,7 +350,7 @@ const CalendarPage = ({ user }) => {
                             )
                         ))
                     ) : (
-                        <p className="text-gray-500 text-sm italic">No events on this day.</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm italic">No events on this day.</p>
                     )}
                 </div>
 

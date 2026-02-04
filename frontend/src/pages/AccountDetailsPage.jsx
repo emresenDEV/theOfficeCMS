@@ -108,26 +108,26 @@ const AccountDetailsPage = ({ user }) => {
 
 
 
-    if (loading) return <p className="text-gray-600 text-center">Loading account details...</p>;
+    if (loading) return <p className="text-slate-500 dark:text-slate-400 text-center">Loading account details...</p>;
     if (!account) return <p className="text-red-600 text-center">Account not found.</p>;
 
     return (
-        <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-lg ml-64">
+        <div className="p-6 max-w-6xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg">
             {/* Header Section */}
             <div className="flex justify-between items-start">
                 <div className="w-1/2">
-                    <h1 className="text-3xl font-bold text-blue-700 text-left">{account.business_name}</h1>
-                    <p className="text-gray-500 text-left">
+                    <h1 className="text-3xl font-bold text-blue-700 dark:text-blue-300 text-left">{account.business_name}</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-left">
                         <strong>Created:</strong> {formatDate(account.date_created)} <strong>| Updated: </strong>{formatDate(account.date_updated)}
                     </p>
-                    <p className="text-gray-700 text-left"><strong>Contact:</strong> {account.contact_name}</p>
-                    <p className="text-gray-700 text-left"><strong>Phone:</strong> {account.phone_number}</p>
-                    <p className="text-gray-700 text-left"><strong>Email:</strong> {account.email}</p>
-                    <p className="text-gray-700 text-left"><strong>Address:</strong> {account.address}</p>
-                    <p className="text-gray-700 text-left">{account.city}, {account.state} {account.zip_code}</p>
-                    <p className="text-gray-700 text-left"><strong>Industry:</strong> {account.industry || "N/A"}</p>
+                    <p className="text-slate-700 dark:text-slate-200 text-left"><strong>Contact:</strong> {account.contact_name}</p>
+                    <p className="text-slate-700 dark:text-slate-200 text-left"><strong>Phone:</strong> {account.phone_number}</p>
+                    <p className="text-slate-700 dark:text-slate-200 text-left"><strong>Email:</strong> {account.email}</p>
+                    <p className="text-slate-700 dark:text-slate-200 text-left"><strong>Address:</strong> {account.address}</p>
+                    <p className="text-slate-700 dark:text-slate-200 text-left">{account.city}, {account.state} {account.zip_code}</p>
+                    <p className="text-slate-700 dark:text-slate-200 text-left"><strong>Industry:</strong> {account.industry || "N/A"}</p>
                 </div>
-                <div className="w-1/2 text-right">
+                <div className="w-1/2 text-right text-slate-700 dark:text-slate-200">
                     <p className="text-lg font-semibold">Account Number: {account.account_id}</p>
                     {/* Update Account Button - `user` is passed via state */}
                     <button

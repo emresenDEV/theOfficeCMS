@@ -287,8 +287,8 @@ const handleCreateTask = async (taskPayload) => {
 
 return (
     <div className="w-full">
-    <div className="flex-1 p-4 sm:p-6 mt-16 md:mt-0">
-        <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
+    <div className="flex-1 p-4 sm:p-6">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">My Tasks</h1>
 
         {isMobile ? (
             <>
@@ -333,10 +333,10 @@ return (
         {!isMobile && (
         <>
         {/* Active Tasks */}
-        <div className="bg-white p-6 rounded-lg shadow-md mt-6">
-        <h2 className="text-lg font-semibold mb-3">Active Tasks</h2>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md mt-6">
+        <h2 className="text-lg font-semibold mb-3 text-slate-900 dark:text-slate-100">Active Tasks</h2>
         <table className="w-full border-collapse">
-            <thead className="bg-gray-200">
+            <thead className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
             <tr>
                 <th className="p-3 text-left">Task</th>
                 <th className="p-3 text-left">Due Date</th>
@@ -483,9 +483,9 @@ return (
         </div>
 
         {/* Completed Tasks */}
-        <div className="bg-white p-6 rounded-lg shadow-md mt-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md mt-6">
         <button
-            className="flex items-center text-lg font-semibold w-full text-left"
+            className="flex items-center text-lg font-semibold w-full text-left text-slate-900 dark:text-slate-100"
             onClick={() => setShowCompleted(!showCompleted)}
         >
             {showCompleted ? <FiChevronUp className="mr-2" /> : <FiChevronDown className="mr-2" />}
@@ -493,7 +493,7 @@ return (
         </button>
         {showCompleted && (
             <table className="w-full border-collapse mt-4">
-            <thead className="bg-gray-200">
+            <thead className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                 <tr>
                 <th className="p-3 text-left">Task</th>
                 <th className="p-3 text-left">Due Date</th>

@@ -112,8 +112,8 @@ const DnDCalendar = withDragAndDrop(Calendar);
     };
 
     return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold text-gray-700 mb-4">📅 My Calendar</h2>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-lg">
+        <h2 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-4">📅 My Calendar</h2>
         <DnDCalendar
             localizer={localizer}
             events={events}

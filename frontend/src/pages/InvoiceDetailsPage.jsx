@@ -347,10 +347,10 @@ const handleAddServiceSave = async () => {
 };
 
 if (!invoice)
-    return <p className="text-center text-gray-600">Loading invoice details...</p>;
+    return <p className="text-center text-slate-500 dark:text-slate-400">Loading invoice details...</p>;
 
     return (
-        <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-lg ml-64">
+        <div className="p-6 max-w-6xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg">
             <div className="flex justify-between items-center mb-4">
                 <button
                     onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}

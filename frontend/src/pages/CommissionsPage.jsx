@@ -15,11 +15,9 @@ import CommissionsDataTable from "../components/CommissionsDataTable";
 import SummaryCards from "../components/SummaryCards";
 import Filters from "../components/Filters";
 import RelatedAccounts from "../components/RelatedAccounts";
-import { useTheme } from "../components/ThemeContext";
 import PropTypes from "prop-types";
 
 const CommissionsPage = ({ user }) => {
-    const { theme } = useTheme();
     const [commissions, setCommissions] = useState([]);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -117,10 +115,10 @@ const CommissionsPage = ({ user }) => {
     console.log("📄 Related Accounts Data:", commissions);  //debugging
 
 return (
-    <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} p-6`}>
+    <div className="bg-white dark:bg-slate-950 p-6">
         <div className="flex min-h-screen">
-            <div className="flex-1 ml-64">
-                <h1 className="text-2xl font-bold text-gray-900 pb-4">Commissions</h1>
+            <div className="flex-1">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 pb-4">Commissions</h1>
 
                 {/* Filters */}
                 <Filters {...{ viewMode, setViewMode, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, fromYear, setFromYear, toYear, setToYear, yearRange }} />

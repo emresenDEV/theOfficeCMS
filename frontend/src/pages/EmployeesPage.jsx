@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import Sidebar from "../components/Sidebar";
-import { logoutUser } from "../services/authService";
 import PropTypes from "prop-types";
 import { fetchUserProfile } from "../services/userService";
 
@@ -32,18 +30,13 @@ const EmployeesPage = ({ user }) => {
         fetchData();
     }, [user.user_id]);
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div>Error: {error}</div>;
+    if (loading) return <div className="text-slate-500 dark:text-slate-400">Loading...</div>;
+    if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (
-        <div className="flex">
-            {/* Sidebar */}
-            <Sidebar user={user} handleLogout={logoutUser} />
-
-            {/* Main Content */}
-            <div className="flex-1 p-6 ml-64">
-                <h1 className="text-2xl font-bold mb-6">My Info</h1>
-                <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="p-6">
+            <h1 className="text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100">My Info</h1>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md text-slate-700 dark:text-slate-200">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Personal Information */}
                         <div>
@@ -89,7 +82,6 @@ const EmployeesPage = ({ user }) => {
                         <p><span className="font-medium">Last Updated:</span> {new Date(userData.date_updated).toLocaleDateString()}</p>
                     </div>
                 </div>
-            </div>
         </div>
     );
 };

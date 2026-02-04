@@ -82,13 +82,13 @@ const CreateTaskModal = ({
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
-            <div className="bg-white rounded-t-lg sm:rounded-lg w-full sm:max-w-md shadow-lg">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-lg sm:rounded-lg w-full sm:max-w-md shadow-lg">
                 {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-lg font-semibold">Create Task</h2>
+                <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-800">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Create Task</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-600 hover:text-gray-800 text-xl"
+                        className="text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 text-xl"
                     >
                         ✕
                     </button>
@@ -105,7 +105,7 @@ const CreateTaskModal = ({
 
                     {/* Task Description */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                             Task Description
                         </label>
                         <textarea
@@ -115,14 +115,14 @@ const CreateTaskModal = ({
                                 setError("");
                             }}
                             placeholder="Enter task description..."
-                            className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             rows="3"
                         />
                     </div>
 
                     {/* Due Date */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                             Due Date
                         </label>
                         <input

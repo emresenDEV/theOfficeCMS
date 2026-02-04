@@ -67,15 +67,15 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
     };
 
     return (
-        <div className="mt-6 border p-4 rounded-lg">
-            <h2 className="text-xl font-semibold">Invoices</h2>
+        <div className="mt-6 border border-slate-200 dark:border-slate-800 p-4 rounded-lg bg-white dark:bg-slate-900">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Invoices</h2>
             
             {/* Search and Filter Controls */}
             <div className="flex justify-between items-center mb-3">
                 <input 
                     type="text" 
                     placeholder="Search invoices..." 
-                    className="border p-2 rounded w-1/3 flex-grow"
+                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-1/3 flex-grow"
                     value={searchInvoices}
                     onChange={(e) => setSearchInvoices(e.target.value)}
                 />
@@ -131,16 +131,16 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
             </div>
 
             {/* ✅ Invoices Table */}
-            <div className="overflow-y-auto h-48 border rounded-lg">
-                <table className="w-full">
-                    <thead className="sticky top-0 bg-white shadow-sm">
+            <div className="overflow-y-auto h-48 border border-slate-200 dark:border-slate-800 rounded-lg">
+                <table className="w-full text-slate-700 dark:text-slate-200">
+                    <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm">
                         <tr>
-                            <th className="font-bold p-2 border-b border-r text-left">ID</th>
-                            <th className="font-bold p-2 border-b border-r text-left">Date</th>
-                            <th className="font-bold p-2 border-b border-r text-left">Due Date</th>
-                            <th className="font-bold p-2 border-b border-r text-left">Total</th>
-                            <th className="font-bold p-2 border-b border-r text-left">Status</th>
-                            <th className="font-bold p-2 border-b text-center">Action</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">ID</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Date</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Due Date</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Total</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Status</th>
+                            <th className="font-bold p-2 border-b text-center text-slate-600 dark:text-slate-300">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -148,7 +148,9 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             filteredInvoices.map((inv, index) => (
                                 <tr
                                     key={inv.invoice_id}
-                                    className={`hover:bg-gray-50 ${index % 2 === 0 ? "bg-blue-50" : "bg-white"}`}
+                                    className={`hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                                        index % 2 === 0 ? "bg-blue-50 dark:bg-slate-900/60" : "bg-white dark:bg-slate-900"
+                                    }`}
                                 >
                                     <td className="p-2 border-b border-r text-left">{inv.invoice_id}</td>
                                     <td className="p-2 border-b border-r text-left">{formatDueDate(inv.date_created)}</td>
@@ -170,7 +172,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" className="p-4 text-center text-gray-500">No invoices available</td>
+                                <td colSpan="6" className="p-4 text-center text-slate-500 dark:text-slate-400">No invoices available</td>
                             </tr>
                         )}
                     </tbody>

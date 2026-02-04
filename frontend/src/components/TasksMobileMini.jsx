@@ -140,10 +140,10 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-md p-4">
             {/* Header with Title and Create Button */}
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">My Tasks</h2>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">My Tasks</h2>
                 <div className="flex items-center gap-2">
                     {!isCollapsed && (
                         <button
@@ -171,17 +171,17 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                         visibleTasks.map(task => (
                             <div
                                 key={task.task_id}
-                                className="border rounded p-3 cursor-pointer hover:shadow-md transition bg-gray-50 hover:bg-gray-100 flex justify-between items-start"
+                            className="border border-slate-200 dark:border-slate-800 rounded p-3 cursor-pointer hover:shadow-md transition bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 flex justify-between items-start"
                             >
                                 {/* Left Side - Task Details */}
                                 <div className="flex-1">
                                     {/* Task Description - Bold */}
-                                    <div className="text-sm font-bold text-gray-900 mb-2">
+                                    <div className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2">
                                         {task.task_description}
                                     </div>
 
                                     {/* Due Date - Red if past due, Green if future */}
-                                    <div className={`text-xs mb-1 ${getDueDateColor(task)}`}>
+                                    <div className={`text-xs mb-1 ${getDueDateColor(task)} dark:text-slate-300`}>
                                         Due: {format(new Date(task.due_date), "MMM d, yyyy")}
                                     </div>
 
@@ -199,13 +199,13 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="text-xs mb-1 text-gray-500">
+                                        <div className="text-xs mb-1 text-slate-500 dark:text-slate-400">
                                             Account: None
                                         </div>
                                     )}
 
                                     {/* Assigned By - Full name */}
-                                    <div className="text-xs text-gray-600">
+                                    <div className="text-xs text-slate-600 dark:text-slate-400">
                                         Assigned by: {task.assigned_by_full_name}
                                     </div>
                                 </div>
@@ -218,7 +218,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                                         className={`w-6 h-6 flex items-center justify-center rounded border-2 transition-colors ${
                                             completingTask[task.task_id]
                                                 ? "bg-green-500 border-green-500 text-white"
-                                                : "border-gray-300 hover:border-gray-400"
+                                                : "border-slate-300 hover:border-slate-400 dark:border-slate-600 dark:hover:border-slate-500"
                                         }`}
                                         title={completingTask[task.task_id] ? `Undo (${completingTask[task.task_id]}s)` : "Mark complete"}
                                     >
@@ -247,7 +247,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                                         className={`text-xs px-2 py-1 rounded transition-colors ${
                                             canEditTask(task)
                                                 ? "bg-blue-500 text-white hover:bg-blue-600"
-                                                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                : "bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:text-slate-400"
                                         }`}
                                         title={canEditTask(task) ? "Edit task" : "Only creator can edit"}
                                     >
@@ -257,7 +257,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                             </div>
                         ))
                     ) : (
-                        <p className="text-xs text-gray-500 text-center py-4">No tasks scheduled</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">No tasks scheduled</p>
                     )}
                 </div>
             )}
@@ -265,7 +265,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
             {/* Create Task Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-                    <div className="bg-white p-6 rounded-lg w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-lg w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
                         <CreateTaskMobileForm
                             user={user}
                             closeForm={() => setShowCreateModal(false)}

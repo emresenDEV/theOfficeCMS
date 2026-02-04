@@ -135,13 +135,13 @@ const CreateNewAccountPage = () => {
     
 
     return (
-        <div className="p-6 max-w-4xl mx-auto bg-white shadow-lg rounded-lg ml-64">
-            <h1 className="text-2xl font-bold">Create New Account</h1>
+        <div className="p-6 max-w-4xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Create New Account</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
             <input
                     type="text"
                     placeholder="Business Name"
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded"
                     value={accountData.business_name}
                     onChange={(e) => setAccountData({ ...accountData, business_name: e.target.value })}
                     required
@@ -149,21 +149,21 @@ const CreateNewAccountPage = () => {
                 <input
                     type="text"
                     placeholder="Contact Name"
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded"
                     value={accountData.contact_name}
                     onChange={(e) => setAccountData({ ...accountData, contact_name: e.target.value })}
                 />
                 <input
                     type="text"
                     placeholder="Phone Number"
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded"
                     value={accountData.phone_number}
                     onChange={(e) => setAccountData({ ...accountData, phone_number: e.target.value })}
                 />
                 <input
                     type="email"
                     placeholder="Email"
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded"
                     value={accountData.email}
                     onChange={(e) => setAccountData({ ...accountData, email: e.target.value })}
                 />
@@ -239,7 +239,7 @@ const CreateNewAccountPage = () => {
 
                 {/* Sales Representative Selection */}
                 <select
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded"
                     value={accountData.user_id || ""}
                     // onChange={(e) => setAccountData({ ...accountData, user_id: e.target.value || null})}
                     onChange={handleSalesRepChange}

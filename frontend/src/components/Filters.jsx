@@ -18,9 +18,9 @@ const Filters = ({
             <div className="flex gap-4">
                 {viewMode === "weekly" && (
                     <>
-                        <label className="text-sm font-medium">Month</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Month</label>
                         <select
-                            className="border p-2 w-40 shadow-lg rounded"
+                            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 w-40 shadow-lg rounded"
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
                         >
@@ -36,9 +36,9 @@ const Filters = ({
                 {viewMode === "yearly" ? (
                     <div className="flex gap-4">
                         <div>
-                            <label className="text-sm font-medium p-2">From Year</label>
+                            <label className="text-sm font-medium p-2 text-slate-700 dark:text-slate-300">From Year</label>
                             <select
-                                className="border p-2 w-40 shadow-lg rounded"
+                                className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 w-40 shadow-lg rounded"
                                 value={fromYear}
                                 onChange={(e) => setFromYear(parseInt(e.target.value))}
                             >
@@ -50,9 +50,9 @@ const Filters = ({
                             </select>
                         </div>
                         <div>
-                            <label className="text-sm font-medium p-2">To Year</label>
+                            <label className="text-sm font-medium p-2 text-slate-700 dark:text-slate-300">To Year</label>
                             <select
-                                className="border p-2 w-40 shadow-lg rounded"
+                                className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 w-40 shadow-lg rounded"
                                 value={toYear}
                                 onChange={(e) => setToYear(parseInt(e.target.value))}
                             >
@@ -68,9 +68,9 @@ const Filters = ({
                     </div>
                 ) : (
                     <div>
-                        <label className="text-sm font-medium">Year</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Year</label>
                         <select
-                            className="border p-2 w-40 shadow-lg rounded"
+                            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 w-40 shadow-lg rounded"
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                         >
@@ -87,7 +87,7 @@ const Filters = ({
             <div className="flex gap-2">
                 <button
                     className={`px-4 py-2 rounded ${
-                        viewMode === "yearly" ? "bg-blue-500 text-white" : "bg-gray-200"
+                        viewMode === "yearly" ? "bg-blue-500 text-white" : "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     }`}
                     onClick={() => setViewMode("yearly")}
                 >
@@ -95,7 +95,7 @@ const Filters = ({
                 </button>
                 <button
                     className={`px-4 py-2 rounded ${
-                        viewMode === "monthly" ? "bg-blue-500 text-white" : "bg-gray-200"
+                        viewMode === "monthly" ? "bg-blue-500 text-white" : "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     }`}
                     onClick={() => setViewMode("monthly")}
                 >
@@ -103,7 +103,7 @@ const Filters = ({
                 </button>
                 <button
                     className={`px-4 py-2 rounded ${
-                        viewMode === "weekly" ? "bg-blue-500 text-white" : "bg-gray-200"
+                        viewMode === "weekly" ? "bg-blue-500 text-white" : "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     }`}
                     onClick={() => setViewMode("weekly")}
                 >

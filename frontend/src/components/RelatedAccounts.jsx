@@ -7,7 +7,7 @@ const RelatedAccounts = ({ commissions }) => {
 
     if (!Array.isArray(commissions) || commissions.length === 0) {
         console.warn("⚠️ No commissions available.");
-        return <p className="text-center text-gray-500">No commission data available.</p>;
+        return <p className="text-center text-slate-500 dark:text-slate-400">No commission data available.</p>;
     }
 
     //  Group invoices by account
@@ -55,7 +55,7 @@ const RelatedAccounts = ({ commissions }) => {
             <h2 className="text-xl font-bold mb-4">Related Accounts & Invoices</h2>
             {Object.keys(groupedAccounts).length > 0 ? (
                 Object.values(groupedAccounts).map((account, index) => (
-                    <div key={index} className="border rounded-lg p-4 mb-4 bg-white shadow-lg">
+                    <div key={index} className="border border-slate-200 dark:border-slate-800 rounded-lg p-4 mb-4 bg-white dark:bg-slate-900 shadow-lg">
                         <div className="flex justify-between items-center">
                             <h2 className="text-lg font-bold">
                                 <button 
@@ -93,30 +93,30 @@ const RelatedAccounts = ({ commissions }) => {
                                                     #{invoice.invoiceId}
                                                 </button>
                                             </p>
-                                            <p className="text-gray-600 text-xs">
+                                            <p className="text-slate-600 dark:text-slate-400 text-xs">
                                                 <span className="font-semibold">Total:</span> ${invoice.finalTotal} |
                                                 <span className="text-green-600 font-semibold"> Commission:</span> ${invoice.commissionAmount}
                                             </p>
-                                            <p className="text-gray-500 text-xs text-left">
+                                            <p className="text-slate-500 dark:text-slate-400 text-xs text-left">
                                                 <span className="font-semibold">Date Paid:</span> {invoice.datePaid}
                                             </p>
                                         </div>
                                         <button
                                             onClick={() => navigate(`/invoice/${invoice.invoiceId}`)}
-                                            className="px-3 py-1 bg-gray-200 rounded shadow"
+                                            className="px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded shadow"
                                         >
                                             View Invoice
                                         </button>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-center text-gray-500">No paid invoices available.</p>
+                                <p className="text-center text-slate-500 dark:text-slate-400">No paid invoices available.</p>
                             )}
                         </div>
                     </div>
                 ))
             ) : (
-                <p className="text-center text-gray-500">No commission data available.</p>
+                <p className="text-center text-slate-500 dark:text-slate-400">No commission data available.</p>
             )}
         </div>
     );

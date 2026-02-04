@@ -71,13 +71,13 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
             <button
                 type="button"
                 onClick={() => setShowDropdown(prev => !prev)}
-                className="w-full p-2 border border-gray-300 rounded-lg bg-white text-left hover:border-blue-400 focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-900 text-left text-slate-900 dark:text-slate-100 hover:border-blue-400 focus:ring-2 focus:ring-blue-500"
                 >
                 {`${selectedHour}:${selectedMinute} ${selectedPeriod}`}
             </button>
 
             {showDropdown && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto p-2">
+                <div className="absolute z-10 mt-1 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg max-h-60 overflow-y-auto p-2">
                     <div className="flex">
                         {/* Hour Selection */}
                         <div className="flex-1 overflow-y-auto max-h-48 pr-2">
@@ -87,7 +87,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
                                     className={`p-2 text-center rounded-lg cursor-pointer ${
                                         selectedHour === String(hour)
                                             ? "bg-blue-500 text-white"
-                                            : "hover:bg-gray-100"
+                                            : "hover:bg-slate-100 dark:hover:bg-slate-800"
                                     }`}
                                     onClick={() => handleTimeChange(String(hour), selectedMinute, selectedPeriod)}
                                 >
@@ -104,7 +104,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
                                     className={`p-2 text-center rounded-lg cursor-pointer ${
                                         selectedMinute === minute
                                             ? "bg-blue-500 text-white"
-                                            : "hover:bg-gray-100"
+                                            : "hover:bg-slate-100 dark:hover:bg-slate-800"
                                     }`}
                                     onClick={() => handleTimeChange(selectedHour, minute, selectedPeriod)}
                                 >
@@ -119,7 +119,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
                                 className={`p-2 text-center rounded-lg cursor-pointer ${
                                     selectedPeriod === "AM"
                                         ? "bg-blue-500 text-white"
-                                        : "hover:bg-gray-100"
+                                        : "hover:bg-slate-100 dark:hover:bg-slate-800"
                                 }`}
                                 onClick={() => handleTimeChange(selectedHour, selectedMinute, "AM")}
                             >
@@ -129,7 +129,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
                                 className={`p-2 text-center rounded-lg cursor-pointer ${
                                     selectedPeriod === "PM"
                                         ? "bg-blue-500 text-white"
-                                        : "hover:bg-gray-100"
+                                        : "hover:bg-slate-100 dark:hover:bg-slate-800"
                                 }`}
                                 onClick={() => handleTimeChange(selectedHour, selectedMinute, "PM")}
                             >

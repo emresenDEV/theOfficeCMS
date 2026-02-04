@@ -30,9 +30,9 @@ const LoginPage = ({ setUser }) => {
     
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="bg-white p-6 rounded shadow-md w-96">
-                <h2 className="text-2xl font-semibold text-center mb-4">Login</h2>
+        <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded shadow-md w-96">
+                <h2 className="text-2xl font-semibold text-center mb-4 text-slate-900 dark:text-slate-100">Login</h2>
                 {error && <p className="text-red-500 text-center">{error}</p>}
                 
                 <form onSubmit={handleLogin} className="relative">
@@ -41,7 +41,7 @@ const LoginPage = ({ setUser }) => {
                         placeholder="Username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="w-full p-2 border rounded mb-2"
+                        className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded mb-2"
                     />
 
                     <div className="relative">
@@ -50,11 +50,11 @@ const LoginPage = ({ setUser }) => {
                             placeholder="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full p-2 border rounded mb-2 pr-10"
+                            className="w-full p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded mb-2 pr-10"
                         />
                         <button
                             type="button"
-                            className="absolute inset-y-0 right-3 flex items-center text-gray-600"
+                            className="absolute inset-y-0 right-3 flex items-center text-slate-500 dark:text-slate-400"
                             onClick={() => setShowPassword(!showPassword)}
                         >
                             {showPassword ? <FiEyeOff /> : <FiEye />}

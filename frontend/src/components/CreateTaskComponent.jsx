@@ -121,8 +121,8 @@ const handleCreateTask = () => {
 };
 
 return (
-    <div className="bg-white p-6 rounded-lg shadow-md mt-4">
-    <h2 className="text-lg font-semibold">Create a New Task</h2>
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md mt-4">
+    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Create a New Task</h2>
     <div className="grid grid-cols-3 gap-4 mt-4">
         {/* Task Description */}
         <input
@@ -132,7 +132,7 @@ return (
             setNewTask({ ...newTask, task_description: e.target.value })
         }
         placeholder="Task Description"
-        className="border p-2 rounded w-full"
+        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full"
         />
 
         {/* Due Date */}
@@ -140,7 +140,7 @@ return (
         type="date"
         value={newTask.due_date}
         onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-        className="border p-2 rounded w-full"
+        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full"
         />
 
         {/* Account Search */}
@@ -150,10 +150,10 @@ return (
             value={accountSearch}
             onChange={(e) => setAccountSearch(e.target.value)}
             placeholder="Search for an account..."
-            className="border p-2 rounded w-full"
+            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full"
         />
         {filteredAccounts.length > 0 && (
-            <ul className="absolute bg-white border w-full mt-1 rounded shadow-lg max-h-48 overflow-y-auto">
+            <ul className="absolute bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full mt-1 rounded shadow-lg max-h-48 overflow-y-auto">
             {filteredAccounts.map((account) => (
                 <li
                 key={account.account_id}
@@ -166,7 +166,7 @@ return (
                     setAccountSearch(account.business_name);
                     setFilteredAccounts([]); // Hide dropdown after selection
                 }}
-                className="p-2 hover:bg-gray-200 cursor-pointer"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-200"
                 >
                 {account.business_name}
                 </li>
