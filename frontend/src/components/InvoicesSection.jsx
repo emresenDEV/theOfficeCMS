@@ -34,9 +34,9 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                 case "Past Due":
                     return "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
                 case "Pending":
-                    return "bg-gray-400 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                    return "bg-muted text-white px-2 py-1 rounded-full text-xs font-semibold";
                 default:
-                    return "bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs font-semibold";
+                    return "bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs font-semibold";
             }
         };
     
@@ -67,15 +67,15 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
     };
 
     return (
-        <div className="mt-6 border border-slate-200 dark:border-slate-800 p-4 rounded-lg bg-white dark:bg-slate-900">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Invoices</h2>
+        <div className="mt-6 border border-border p-4 rounded-lg bg-card">
+            <h2 className="text-xl font-semibold text-foreground">Invoices</h2>
             
             {/* Search and Filter Controls */}
             <div className="flex justify-between items-center mb-3">
                 <input 
                     type="text" 
                     placeholder="Search invoices..." 
-                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-1/3 flex-grow"
+                    className="border border-border bg-card text-foreground p-2 rounded w-1/3 flex-grow"
                     value={searchInvoices}
                     onChange={(e) => setSearchInvoices(e.target.value)}
                 />
@@ -115,7 +115,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             setSearchInvoices("");
                             refreshInvoices(); // fetch all invoices, no status filter
                         }} 
-                        className="bg-gray-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-gray-600 transition-colors"
+                        className="bg-muted text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-secondary/80 transition-colors"
                         >
                         Clear
                     </button>
@@ -131,16 +131,16 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
             </div>
 
             {/* ✅ Invoices Table */}
-            <div className="overflow-y-auto h-48 border border-slate-200 dark:border-slate-800 rounded-lg">
-                <table className="w-full text-slate-700 dark:text-slate-200">
-                    <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm">
+            <div className="overflow-y-auto h-48 border border-border rounded-lg">
+                <table className="w-full text-foreground">
+                    <thead className="sticky top-0 bg-card shadow-sm">
                         <tr>
-                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">ID</th>
-                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Date</th>
-                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Due Date</th>
-                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Total</th>
-                            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Status</th>
-                            <th className="font-bold p-2 border-b text-center text-slate-600 dark:text-slate-300">Action</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">ID</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Date</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Due Date</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Total</th>
+                            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Status</th>
+                            <th className="font-bold p-2 border-b text-center text-muted-foreground">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -148,8 +148,8 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             filteredInvoices.map((inv, index) => (
                                 <tr
                                     key={inv.invoice_id}
-                                    className={`hover:bg-slate-50 dark:hover:bg-slate-800 ${
-                                        index % 2 === 0 ? "bg-blue-50 dark:bg-slate-900/60" : "bg-white dark:bg-slate-900"
+                                    className={`hover:bg-muted/60 ${
+                                        index % 2 === 0 ? "bg-muted/40" : "bg-card"
                                     }`}
                                 >
                                     <td className="p-2 border-b border-r text-left">{inv.invoice_id}</td>
@@ -172,7 +172,7 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" className="p-4 text-center text-slate-500 dark:text-slate-400">No invoices available</td>
+                                <td colSpan="6" className="p-4 text-center text-muted-foreground">No invoices available</td>
                             </tr>
                         )}
                     </tbody>

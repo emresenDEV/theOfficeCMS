@@ -6,10 +6,42 @@ import pytz
 from pytz import timezone
 from decimal import Decimal
 from sqlalchemy.sql import func
+from notifications import create_notification
+from audit import create_audit_log
 
 
 invoice_bp = Blueprint("invoice", __name__, url_prefix="/invoices")
 central = timezone('America/Chicago')
+
+
+def _serialize_service(service):
+    return {
+        "invoice_service_id": service.invoice_service_id,
+        "service_id": service.service_id,
+        "quantity": service.quantity,
+        "price_per_unit": float(service.price_per_unit or 0),
+        "discount_percent": float(service.discount_percent or 0),
+        "discount_total": float(service.discount_total or 0),
+        "total_price": float(service.total_price or 0),
+    }
+
+
+def _serialize_invoice(invoice):
+    return {
+        "invoice_id": invoice.invoice_id,
+        "account_id": invoice.account_id,
+        "sales_rep_id": invoice.sales_rep_id,
+        "tax_rate": float(invoice.tax_rate or 0),
+        "tax_amount": float(invoice.tax_amount or 0),
+        "discount_percent": float(invoice.discount_percent or 0),
+        "discount_amount": float(invoice.discount_amount or 0),
+        "final_total": float(invoice.final_total or 0),
+        "status": invoice.status,
+        "date_created": invoice.date_created.strftime("%Y-%m-%d %H:%M:%S") if invoice.date_created else None,
+        "date_updated": invoice.date_updated.strftime("%Y-%m-%d %H:%M:%S") if invoice.date_updated else None,
+        "due_date": invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date else None,
+        "services": [_serialize_service(s) for s in invoice.invoice_services],
+    }
 
 # Update Invoice Status (Pending to Paid, Past Due, etc.)
 @invoice_bp.route("/invoices/<int:invoice_id>/update_status", methods=["PUT"])
@@ -21,7 +53,28 @@ def update_invoice_status(invoice_id):
         return jsonify({"error": "Status is required"}), 400
 
     invoice = Invoice.query.get_or_404(invoice_id)
+    before_data = _serialize_invoice(invoice)
     invoice.status = new_status
+    create_notification(
+        user_id=invoice.sales_rep_id,
+        notif_type="invoice_status",
+        title="Invoice status updated",
+        message=f"Invoice #{invoice.invoice_id} marked {new_status}",
+        link=f"/invoice/{invoice.invoice_id}",
+        source_type="invoice",
+        source_id=invoice.invoice_id,
+    )
+    create_audit_log(
+        entity_type="invoice",
+        entity_id=invoice.invoice_id,
+        action="update_status",
+        user_id=data.get("actor_user_id"),
+        user_email=data.get("actor_email"),
+        before_data=before_data,
+        after_data=_serialize_invoice(invoice),
+        account_id=invoice.account_id,
+        invoice_id=invoice.invoice_id,
+    )
     db.session.commit()
     return jsonify({"message": f"Invoice {invoice_id} status updated to {new_status}"}), 200
 
@@ -274,6 +327,7 @@ def validate_invoice_for_account(account_id, invoice_id):
 def update_invoice(invoice_id):
     data = request.get_json()
     invoice = Invoice.query.get_or_404(invoice_id)
+    before_data = _serialize_invoice(invoice)
 
     invoice.tax_rate = data.get("tax_rate", invoice.tax_rate)
     invoice.discount_percent = data.get("discount_percent", invoice.discount_percent)
@@ -355,6 +409,26 @@ def update_invoice(invoice_id):
     else:
         invoice.status = "Partial"
 
+    create_notification(
+        user_id=invoice.sales_rep_id,
+        notif_type="invoice_updated",
+        title="Invoice updated",
+        message=f"Invoice #{invoice.invoice_id} updated",
+        link=f"/invoice/{invoice.invoice_id}",
+        source_type="invoice",
+        source_id=invoice.invoice_id,
+    )
+    create_audit_log(
+        entity_type="invoice",
+        entity_id=invoice.invoice_id,
+        action="update",
+        user_id=data.get("actor_user_id"),
+        user_email=data.get("actor_email"),
+        before_data=before_data,
+        after_data=_serialize_invoice(invoice),
+        account_id=invoice.account_id,
+        invoice_id=invoice.invoice_id,
+    )
     db.session.commit()
     return jsonify({
         "message": "Invoice updated successfully",
@@ -385,7 +459,19 @@ def delete_invoice(invoice_id):
     if not invoice:
         return jsonify({"error": "Invoice not found"}), 404
 
+    before_data = _serialize_invoice(invoice)
     db.session.delete(invoice)
+    create_audit_log(
+        entity_type="invoice",
+        entity_id=invoice_id,
+        action="delete",
+        user_id=request.args.get("actor_user_id", type=int),
+        user_email=request.args.get("actor_email"),
+        before_data=before_data,
+        after_data=None,
+        account_id=invoice.account_id,
+        invoice_id=invoice_id,
+    )
     db.session.commit()
     return jsonify({"message": "Invoice deleted successfully"}), 200
 
@@ -454,6 +540,25 @@ def create_invoice():
     new_invoice.final_total = round(final_total, 2)
     new_invoice.status = status
 
+    create_notification(
+        user_id=new_invoice.sales_rep_id,
+        notif_type="invoice_created",
+        title="New invoice created",
+        message=f"Invoice #{new_invoice.invoice_id} created",
+        link=f"/invoice/{new_invoice.invoice_id}",
+        source_type="invoice",
+        source_id=new_invoice.invoice_id,
+    )
+    create_audit_log(
+        entity_type="invoice",
+        entity_id=new_invoice.invoice_id,
+        action="create",
+        user_id=data.get("actor_user_id") or data.get("created_by") or data.get("user_id") or new_invoice.sales_rep_id,
+        user_email=data.get("actor_email"),
+        after_data=_serialize_invoice(new_invoice),
+        account_id=new_invoice.account_id,
+        invoice_id=new_invoice.invoice_id,
+    )
     db.session.commit()
 
     return jsonify({"success": True, "invoice_id": new_invoice.invoice_id}), 201
@@ -500,6 +605,14 @@ def create_payment_method():
 def log_payment(invoice_id):
     data = request.get_json()
     try:
+        actor_user_id = data.get("actor_user_id")
+        actor_email = data.get("actor_email")
+        if not actor_user_id and data.get("logged_by"):
+            logged_by_user = Users.query.filter_by(username=data.get("logged_by")).first()
+            if logged_by_user:
+                actor_user_id = logged_by_user.user_id
+                actor_email = logged_by_user.email
+
         payment = Payment(
             invoice_id=invoice_id,
             account_id=data["account_id"],
@@ -542,6 +655,7 @@ def log_payment(invoice_id):
                 
         # Automatically update invoice status
         invoice = Invoice.query.get(invoice_id)
+        before_invoice = _serialize_invoice(invoice) if invoice else None
         payments = Payment.query.filter_by(invoice_id=invoice_id).all()
 
         # Convert all total_paid to Decimal before summing
@@ -560,6 +674,40 @@ def log_payment(invoice_id):
         else:
             invoice.status = "Partial"
 
+        create_audit_log(
+            entity_type="payment",
+            entity_id=payment.payment_id,
+            action="create",
+            user_id=actor_user_id,
+            user_email=actor_email,
+            after_data={
+                "payment_id": payment.payment_id,
+                "invoice_id": payment.invoice_id,
+                "account_id": payment.account_id,
+                "sales_rep_id": payment.sales_rep_id,
+                "logged_by": payment.logged_by,
+                "payment_method": payment.payment_method,
+                "last_four_payment_method": payment.last_four_payment_method,
+                "total_paid": float(payment.total_paid or 0),
+                "date_paid": payment.date_paid.isoformat() if payment.date_paid else None,
+            },
+            account_id=payment.account_id,
+            invoice_id=payment.invoice_id,
+        )
+
+        after_invoice = _serialize_invoice(invoice) if invoice else None
+        if before_invoice and after_invoice and before_invoice.get("status") != after_invoice.get("status"):
+            create_audit_log(
+                entity_type="invoice",
+                entity_id=invoice.invoice_id,
+                action="update_status",
+                user_id=actor_user_id,
+                user_email=actor_email,
+                before_data=before_invoice,
+                after_data=after_invoice,
+                account_id=invoice.account_id,
+                invoice_id=invoice.invoice_id,
+            )
 
         db.session.commit()
 
@@ -580,4 +728,3 @@ def log_payment(invoice_id):
         print("❌ Error saving payment:", e)
         return jsonify({"error": str(e)}), 500
     
-

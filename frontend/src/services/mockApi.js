@@ -154,6 +154,29 @@ const mockEvents = [
     },
 ];
 
+const mockNotifications = [
+    {
+        notification_id: 9001,
+        user_id: 101,
+        type: "task_assigned",
+        title: "New task assigned",
+        message: "Follow up with Staples",
+        link: "/tasks",
+        is_read: false,
+        created_at: "2026-02-04 09:15:00",
+    },
+    {
+        notification_id: 9002,
+        user_id: 101,
+        type: "event_reminder",
+        title: "Upcoming event: Client Review",
+        message: "Starts at 2:00 PM",
+        link: "/calendar?date=2026-02-06",
+        is_read: true,
+        created_at: "2026-02-04 08:05:00",
+    },
+];
+
 const buildSalesSeries = (seed = 1) =>
     Array.from({ length: 12 }, (_, i) => Math.round((i + 1) * 4200 + seed * 350));
 
@@ -271,6 +294,18 @@ export const mockAdapter = async (config) => {
     if (method === "post" && path === "/calendar/events") {
         const payload = typeof config.data === "string" ? JSON.parse(config.data) : config.data;
         return ok(config, { id: Date.now(), ...payload });
+    }
+
+    if (method === "get" && path === "/notifications") {
+        return ok(config, mockNotifications);
+    }
+
+    if (method === "put" && path.endsWith("/read")) {
+        return ok(config, { message: "Notification marked as read" });
+    }
+
+    if (method === "put" && path === "/notifications/read_all") {
+        return ok(config, { message: "All notifications marked as read" });
     }
 
     if (method === "get" && path === "/sales/company") {

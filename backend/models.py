@@ -78,6 +78,7 @@ class CalendarEvent(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     notes = db.Column(db.Text)
+    reminder_minutes = db.Column(db.Integer)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
     contact_name = db.Column(db.String(100))
@@ -335,3 +336,32 @@ class Users(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+
+class Notifications(db.Model):
+    __tablename__ = 'notifications'
+    notification_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    type = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text)
+    link = db.Column(db.String(255))
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    event_time = db.Column(db.DateTime, nullable=True)
+    source_type = db.Column(db.String(50), nullable=True)
+    source_id = db.Column(db.Integer, nullable=True)
+
+
+class AuditLog(db.Model):
+    __tablename__ = "audit_logs"
+    audit_id = db.Column(db.Integer, primary_key=True)
+    entity_type = db.Column(db.String(50), nullable=False)
+    entity_id = db.Column(db.Integer, nullable=True)
+    action = db.Column(db.String(20), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=True)
+    user_email = db.Column(db.String(100), nullable=True)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.invoice_id"), nullable=True)
+    before_data = db.Column(db.JSON, nullable=True)
+    after_data = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())

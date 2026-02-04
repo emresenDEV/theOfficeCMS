@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from models import Users, Branches, Departments, UserRoles
 from database import db
+from werkzeug.security import generate_password_hash
+from audit import create_audit_log
 
 user_bp = Blueprint("users", __name__)
 
@@ -9,6 +11,7 @@ user_bp = Blueprint("users", __name__)
 def get_users():
     branch_id = request.args.get("branch_id", type=int)
     department_id = request.args.get("department_id", type=int)
+    role_id = request.args.get("role_id", type=int)
 
     query = Users.query
 
@@ -17,6 +20,9 @@ def get_users():
 
     if department_id:
         query = query.filter_by(department_id=department_id)
+
+    if role_id:
+        query = query.filter_by(role_id=role_id)
 
     users = query.all()
 
@@ -33,6 +39,166 @@ def get_users():
             "branch_id": user.branch_id
         } for user in users
     ]), 200
+
+
+@user_bp.route("", methods=["POST"])
+@user_bp.route("/", methods=["POST"])
+def create_user():
+    data = request.json or {}
+    username = data.get("username")
+    password = data.get("password")
+    role_id = data.get("role_id")
+
+    if not username or not password or not role_id:
+        return jsonify({"error": "username, password, and role_id are required"}), 400
+
+    if not password.isalpha() or not password.islower():
+        return jsonify({"error": "Password must be lowercase letters only"}), 400
+
+    if Users.query.filter_by(username=username).first():
+        return jsonify({"error": "Username already exists"}), 409
+
+    new_user = Users(
+        username=username,
+        first_name=data.get("first_name"),
+        last_name=data.get("last_name"),
+        role_id=int(role_id),
+        reports_to=int(data.get("reports_to")) if data.get("reports_to") else None,
+        department_id=int(data.get("department_id")) if data.get("department_id") else None,
+        salary=data.get("salary"),
+        commission_rate=data.get("commission_rate"),
+        is_active=data.get("is_active", True),
+        is_department_lead=data.get("is_department_lead"),
+        receives_commission=data.get("receives_commission", False),
+        phone_number=data.get("phone_number"),
+        extension=data.get("extension"),
+        email=data.get("email"),
+        branch_id=int(data.get("branch_id")) if data.get("branch_id") else None,
+    )
+    new_user.password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
+
+    db.session.add(new_user)
+    db.session.flush()
+
+    create_audit_log(
+        entity_type="user",
+        entity_id=new_user.user_id,
+        action="create",
+        user_id=data.get("actor_user_id"),
+        user_email=data.get("actor_email"),
+        after_data={
+            "user_id": new_user.user_id,
+            "username": new_user.username,
+            "first_name": new_user.first_name,
+            "last_name": new_user.last_name,
+            "email": new_user.email,
+            "role_id": new_user.role_id,
+            "department_id": new_user.department_id,
+            "branch_id": new_user.branch_id,
+            "is_active": new_user.is_active,
+        },
+    )
+
+    db.session.commit()
+    return jsonify({"message": "User created", "user_id": new_user.user_id}), 201
+
+
+@user_bp.route("/<int:user_id>", methods=["PUT"])
+def update_user(user_id):
+    user = Users.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.json or {}
+    before_data = {
+        "user_id": user.user_id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "role_id": user.role_id,
+        "department_id": user.department_id,
+        "branch_id": user.branch_id,
+        "is_active": user.is_active,
+    }
+
+    user.username = data.get("username", user.username)
+    user.first_name = data.get("first_name", user.first_name)
+    user.last_name = data.get("last_name", user.last_name)
+    user.email = data.get("email", user.email)
+    user.phone_number = data.get("phone_number", user.phone_number)
+    user.extension = data.get("extension", user.extension)
+    user.role_id = int(data.get("role_id")) if data.get("role_id") else user.role_id
+    user.department_id = int(data.get("department_id")) if data.get("department_id") else user.department_id
+    user.branch_id = int(data.get("branch_id")) if data.get("branch_id") else user.branch_id
+    user.reports_to = int(data.get("reports_to")) if data.get("reports_to") else user.reports_to
+    user.salary = data.get("salary", user.salary)
+    user.commission_rate = data.get("commission_rate", user.commission_rate)
+    user.receives_commission = data.get("receives_commission", user.receives_commission)
+    user.is_active = data.get("is_active", user.is_active)
+
+    if "password" in data and data["password"]:
+        password = data["password"]
+        if not password.isalpha() or not password.islower():
+            return jsonify({"error": "Password must be lowercase letters only"}), 400
+        user.password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
+
+    after_data = {
+        "user_id": user.user_id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "role_id": user.role_id,
+        "department_id": user.department_id,
+        "branch_id": user.branch_id,
+        "is_active": user.is_active,
+    }
+
+    create_audit_log(
+        entity_type="user",
+        entity_id=user.user_id,
+        action="update",
+        user_id=data.get("actor_user_id"),
+        user_email=data.get("actor_email"),
+        before_data=before_data,
+        after_data=after_data,
+    )
+
+    db.session.commit()
+    return jsonify({"message": "User updated"}), 200
+
+
+@user_bp.route("/<int:user_id>", methods=["DELETE"])
+def delete_user(user_id):
+    user = Users.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    before_data = {
+        "user_id": user.user_id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "role_id": user.role_id,
+        "department_id": user.department_id,
+        "branch_id": user.branch_id,
+        "is_active": user.is_active,
+    }
+
+    db.session.delete(user)
+    create_audit_log(
+        entity_type="user",
+        entity_id=user_id,
+        action="delete",
+        user_id=request.args.get("actor_user_id", type=int),
+        user_email=request.args.get("actor_email"),
+        before_data=before_data,
+        after_data=None,
+    )
+    db.session.commit()
+    return jsonify({"message": "User deleted"}), 200
 
 
 @user_bp.route("/<int:user_id>", methods=["GET"])

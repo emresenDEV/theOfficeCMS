@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { 
     fetchCalendarEvents, 
     fetchDepartments,
@@ -17,6 +18,9 @@ import PropTypes from "prop-types";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 
 const CalendarPage = ({ user }) => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const calendarRef = useRef(null);
     const [branches, setBranches] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [events, setEvents] = useState(() => []);
@@ -72,6 +76,20 @@ const CalendarPage = ({ user }) => {
     
         fetchCalendarEvents(user.user_id).then(setEvents);
     }, [user]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const dateParam = params.get("date");
+        if (!dateParam) return;
+        setSelectedDate(dateParam);
+        setSelectedDateEvents(events.filter(event => event.start_date === dateParam));
+        if (calendarRef.current) {
+            const api = calendarRef.current.getApi();
+            api.gotoDate(dateParam);
+            api.changeView("timeGridDay");
+            setCalendarView("timeGridDay");
+        }
+    }, [location.search, events]);
     
 
     /** ✅ Fetch Users, Branches, and Departments */
@@ -149,6 +167,7 @@ const CalendarPage = ({ user }) => {
         const formattedDate = format(localDate, "yyyy-MM-dd"); 
         setSelectedDate(formattedDate);
         setSelectedDateEvents(events.filter(event => event.start_date === formattedDate));
+        navigate(`?date=${formattedDate}`, { replace: true });
     };
     
     
@@ -216,17 +235,17 @@ const CalendarPage = ({ user }) => {
 
     
     return (
-        <div className="bg-slate-50 dark:bg-slate-950 min-h-screen p-6">
-                <h1 className="text-2xl font-bold text-slate-700 dark:text-slate-100 pb-4">📅 Calendar</h1>
+        <div className="bg-background min-h-screen p-6">
+                <h1 className="text-2xl font-bold text-foreground pb-4">📅 Calendar</h1>
 
                 {/* ✅ Branch, Department, and Employee Selection */}
                 <div className="grid grid-cols-3 gap-4 mt-4">
                     <div>
-                        <label className="block text-slate-700 dark:text-slate-300">Select Branch:</label>
+                        <label className="block text-muted-foreground">Select Branch:</label>
                         <select 
                             value={selectedBranch}
                             onChange={(e) => setSelectedBranch(e.target.value)}
-                            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full mt-2"
+                            className="border border-border bg-card text-foreground p-2 rounded w-full mt-2"
                             
                         >
                             {branches.map(branch => (
@@ -240,11 +259,11 @@ const CalendarPage = ({ user }) => {
                     </div>
 
                     <div>
-                        <label className="block text-slate-700 dark:text-slate-300">Select Department:</label>
+                        <label className="block text-muted-foreground">Select Department:</label>
                         <select 
                             value={selectedDepartment}
                             onChange={(e) => setSelectedDepartment(e.target.value)}
-                            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full mt-2"
+                            className="border border-border bg-card text-foreground p-2 rounded w-full mt-2"
                             
                         >
                             {filteredDepartments.map(dept => (
@@ -258,11 +277,11 @@ const CalendarPage = ({ user }) => {
                     </div>
 
                     <div>
-                        <label className="block text-slate-700 dark:text-slate-300">Select Employee:</label>
+                        <label className="block text-muted-foreground">Select Employee:</label>
                         <select 
                             value={filteredUsers.length > 0 ? selectedUserId : ""}
                             onChange={(e) => setSelectedUserId(parseInt(e.target.value, 10))}
-                            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full mt-2"
+                            className="border border-border bg-card text-foreground p-2 rounded w-full mt-2"
                             
                         >
                             {filteredUsers.length > 0 ? (
@@ -282,8 +301,9 @@ const CalendarPage = ({ user }) => {
                 </div>
 
                 {/* ✅ Full Calendar Component */}
-                <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-md mt-6">
+                <div className="p-6 bg-card border border-border rounded-lg shadow-md mt-6">
                     <FullCalendar
+                        ref={calendarRef}
                         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                         initialView={calendarView}
                         headerToolbar={{
@@ -316,12 +336,13 @@ const CalendarPage = ({ user }) => {
                         userId={selectedUserId} 
                         setEvents={setEvents} 
                         closeForm={() => setShowCreateEvent(false)} 
+                        selectedDate={selectedDate ? new Date(selectedDate) : null}
                     />
                 )}
 
                 {/* ✅ Display Events for Selected Date or Today */}
-                <div className="mt-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md">
-                    <h2 className="text-lg font-bold text-slate-700 dark:text-slate-100 mb-4">
+                <div className="mt-6 bg-card border border-border p-6 rounded-lg shadow-md">
+                    <h2 className="text-lg font-bold text-foreground mb-4">
                         📅 Events on {selectedDate === format(new Date(), "yyyy-MM-dd") 
                             ? "Today" 
                             : format(new Date(selectedDate), "MM/dd/yyyy")} 
@@ -350,13 +371,13 @@ const CalendarPage = ({ user }) => {
                             )
                         ))
                     ) : (
-                        <p className="text-slate-500 dark:text-slate-400 text-sm italic">No events on this day.</p>
+                        <p className="text-muted-foreground text-sm italic">No events on this day.</p>
                     )}
                 </div>
 
                 {/* Past Events Button */}
                 <button 
-                    className="mt-4 bg-gray-600 text-white px-4 py-2 rounded-lg"
+                    className="mt-4 bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:bg-secondary/80"
                     onClick={() => setShowPastEvents(!showPastEvents)}
                 >
                     {showPastEvents ? "Hide Past Events" : "Show Past Events"}
@@ -377,7 +398,6 @@ const CalendarPage = ({ user }) => {
                         setEvents={setEvents} 
                     />
                 )}
-            </div>
         </div>
     );
 };

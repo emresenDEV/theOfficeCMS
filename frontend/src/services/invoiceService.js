@@ -4,10 +4,24 @@ import api from "./api";
 // Fetch All Invoices
 export const fetchInvoices = async (salesRepId) => {
     try {
-        const response = await api.get(`/invoices?sales_rep_id=${salesRepId}`);
+        if (salesRepId) {
+            const response = await api.get(`/invoices?sales_rep_id=${salesRepId}`);
+            return response.data;
+        }
+        const response = await api.get("/invoices");
         return response.data;
     } catch (error) {
         console.error("Error fetching invoices:", error);
+        return [];
+    }
+};
+
+export const fetchAllInvoices = async () => {
+    try {
+        const response = await api.get("/invoices");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching all invoices:", error);
         return [];
     }
 };
@@ -150,9 +164,14 @@ export const createInvoice = async (data) => {
 
 
 // Delete Invoice
-export const deleteInvoice = async (invoiceId) => {
+export const deleteInvoice = async (invoiceId, actorUserId, actorEmail) => {
     try {
-        await api.delete(`/invoices/${invoiceId}`);
+        const params = new URLSearchParams();
+        if (actorUserId) params.append("actor_user_id", actorUserId);
+        if (actorEmail) params.append("actor_email", actorEmail);
+        const query = params.toString();
+        const url = query ? `/invoices/${invoiceId}?${query}` : `/invoices/${invoiceId}`;
+        await api.delete(url);
         return { success: true };
     } catch (error) {
         console.error("Error deleting invoice:", error);
@@ -241,4 +260,3 @@ export const fetchIndustries = async () => {
         return [];
     }
 }
-

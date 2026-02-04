@@ -93,15 +93,15 @@ const formatTime = (dateString) => {
 };
 
 return (
-    <div className="mt-6 border border-slate-200 dark:border-slate-800 p-4 rounded-lg bg-white dark:bg-slate-900">
-    <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Notes</h2>
+    <div className="mt-6 border border-border p-4 rounded-lg bg-card">
+    <h2 className="text-xl font-semibold text-foreground">Notes</h2>
 
     {/* Search Input */}
     <div className="flex justify-between items-center mb-3">
         <input 
         type="text" 
         placeholder="Search notes..." 
-        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-1/3 flex-grow"
+        className="border border-border bg-card text-foreground p-2 rounded w-1/3 flex-grow"
         value={searchNotes}
         onChange={(e) => setSearchNotes(e.target.value)}
         />
@@ -112,7 +112,7 @@ return (
         <input 
         type="text" 
         placeholder="New note..." 
-        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded flex-grow"
+        className="border border-border bg-card text-foreground p-2 rounded flex-grow"
         value={newNote}
         onChange={(e) => setNewNote(e.target.value)}
         />
@@ -121,7 +121,7 @@ return (
         <input 
             type="number"
             placeholder="Invoice ID (Optional)"
-            className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-1/4 appearance-none"
+            className="border border-border bg-card text-foreground p-2 rounded w-1/4 appearance-none"
             value={inputInvoiceId}
             onChange={(e) => setInputInvoiceId(e.target.value)}
             pattern="[0-9]*"
@@ -137,23 +137,23 @@ return (
     </div>
 
     {/* Notes Table */}
-    <div className="overflow-y-auto h-48 border border-slate-200 dark:border-slate-800 rounded-lg">
-        <table className="w-full text-slate-700 dark:text-slate-200">
-        <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm">
+    <div className="overflow-y-auto h-48 border border-border rounded-lg">
+        <table className="w-full text-foreground">
+        <thead className="sticky top-0 bg-card shadow-sm">
             <tr>
-            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">User</th>
-            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Date</th>
-            <th className="font-bold p-2 border-b border-r text-left whitespace-nowrap text-slate-600 dark:text-slate-300">Time</th>
-            <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Note</th>
-            <th className="font-bold p-2 border-b text-center whitespace-nowrap text-slate-600 dark:text-slate-300">Invoice ID</th>
+            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">User</th>
+            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Date</th>
+            <th className="font-bold p-2 border-b border-r text-left whitespace-nowrap text-muted-foreground">Time</th>
+            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Note</th>
+            <th className="font-bold p-2 border-b text-center whitespace-nowrap text-muted-foreground">Invoice ID</th>
             </tr>
         </thead>
         <tbody>
             {sortedNotes.map((note, index) => (
             <tr 
                 key={note.note_id} 
-                className={`hover:bg-slate-50 dark:hover:bg-slate-800 ${
-                    index % 2 === 0 ? "bg-blue-50 dark:bg-slate-900/60" : "bg-white dark:bg-slate-900"
+                className={`hover:bg-muted/60 ${
+                    index % 2 === 0 ? "bg-muted/40" : "bg-card"
                 }`}
             >
                 <td className="p-2 border-b border-r text-left">{note.username || "Unknown User"}</td>
@@ -169,7 +169,7 @@ return (
                     {note.invoice_id}
                     </button>
                 ) : (
-                    <span className="text-slate-500 dark:text-slate-400">N/A</span>
+                    <span className="text-muted-foreground">N/A</span>
                 )}
                 </td>
             </tr>

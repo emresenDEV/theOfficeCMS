@@ -12,8 +12,11 @@ import CreateInvoicePage from "./pages/CreateInvoicePage";
 import Dashboard from "./pages/Dashboard";
 import EditInvoicePage from "./pages/EditInvoicePage";
 import EmployeesPage from "./pages/EmployeesPage";
+import AdminPage from "./pages/AdminPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import InvoiceDetailsPage from "./pages/InvoiceDetailsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import PaymentsPage from "./pages/PaymentsPage";
 import SettingsPage from "./pages/SettingsPage";
 import PaidInvoicesPage from "./pages/PaidInvoicesPage";
 import PastDueInvoicesPage from "./pages/PastDueInvoicesPage";
@@ -21,7 +24,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import TasksPage from "./pages/TaskPage";
 import UnpaidInvoicesPage from "./pages/UnpaidInvoicesPage";
 import UpdateAccountPage from "./pages/UpdateAccountPage";
-import Sidebar from "./components/Sidebar";
 import Layout from "./components/Layout";
 import { fetchUserSession } from "./services/authService";
 import api from "./services/api";
@@ -141,6 +143,7 @@ const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
 
           <Route path="/settings" element={<ProtectedRoute user={user} loading={loading}><SettingsPage user={user} /></ProtectedRoute>} />
           <Route path="/employees" element={<ProtectedRoute user={user} loading={loading}><EmployeesPage user={user} /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute user={user} loading={loading}><AdminPage user={user} /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute user={user} loading={loading}><TasksPage user={user} /></ProtectedRoute>} />
 
           {/* Calendar Routes */}
@@ -149,6 +152,7 @@ const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
 
           {/* Invoice Routes */}
           <Route path="/invoices" element={<ProtectedRoute user={user} loading={loading}><InvoicesPage user={user} /></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute user={user} loading={loading}><PaymentsPage user={user} /></ProtectedRoute>} />
           <Route path="/invoice/:invoiceId" element={<ProtectedRoute user={user} loading={loading}><InvoiceDetailsPage user={user} /></ProtectedRoute>} />
           <Route path="/invoices/invoice/:invoiceId/edit" element={<ProtectedRoute user={user} loading={loading}><EditInvoicePage user={user} /></ProtectedRoute>} />
           <Route path="/create-invoice/:accountId" element={<ProtectedRoute user={user} loading={loading}><CreateInvoicePage user={user} setUser={setUser}/></ProtectedRoute>} />
@@ -166,6 +170,7 @@ const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
 
           {/* Commissions */}
           <Route path="/commissions" element={<ProtectedRoute user={user} loading={loading}><CommissionsPage user={user} /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute user={user} loading={loading}><AnalyticsPage user={user} /></ProtectedRoute>} />
         
         {/* Redirect all unknown paths to Login */}
         <Route path="*" element={<Navigate to="/login" />} />

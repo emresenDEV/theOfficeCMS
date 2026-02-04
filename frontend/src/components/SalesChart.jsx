@@ -28,7 +28,14 @@ const MONTH_LABELS = [
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
-const COLORS = ["red", "blue", "green", "purple", "orange", "teal", "pink", "yellow", "gray"];
+const COLORS = [
+    "hsl(var(--chart-1))",
+    "hsl(var(--chart-2))",
+    "hsl(var(--chart-3))",
+    "hsl(var(--chart-4))",
+    "hsl(var(--chart-5))",
+    "hsl(var(--chart-6))",
+];
 
 const SalesChart = ({ userProfile }) => {
     const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
@@ -91,14 +98,14 @@ const SalesChart = ({ userProfile }) => {
     const renderChartData = () => {
         if (activeTab === "company") {
             return [
-                { label: "Company-Wide Sales", data: companySales, borderColor: "blue" },
-                { label: `${userProfile.first_name}'s Sales`, data: userSales, borderColor: "red" }
+                { label: "Company-Wide Sales", data: companySales, borderColor: COLORS[0] },
+                { label: `${userProfile.first_name}'s Sales`, data: userSales, borderColor: COLORS[1] }
             ];
         } else if (activeTab === "branch") {
             return selectedBranch ? [{
                 label: `${selectedBranch} Sales`,
                 data: branchSales[selectedBranch] || Array(12).fill(0),
-                borderColor: "green"
+                borderColor: COLORS[2]
             }] : [];
         } else {
             return selectedSalesReps.map((rep, i) => {
@@ -112,17 +119,17 @@ const SalesChart = ({ userProfile }) => {
         }
     };
 
-    if (!userProfile || !userProfile.branch_id) return <p className="text-center text-slate-500 dark:text-slate-400">Waiting for user profile data...</p>;
-    if (loading) return <p className="text-center text-slate-500 dark:text-slate-400">Loading Sales Data...</p>;
+    if (!userProfile || !userProfile.branch_id) return <p className="text-center text-muted-foreground">Waiting for user profile data...</p>;
+    if (loading) return <p className="text-center text-muted-foreground">Loading Sales Data...</p>;
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-md border border-border bg-card shadow-card">
             <div
                 className="flex items-center justify-between px-4 py-3 cursor-pointer"
                 onClick={() => setIsCollapsed((prev) => !prev)}
             >
                 <div className="flex items-center gap-4">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Sales Performance</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Sales Performance</h3>
                     <div className="flex gap-1">
                         {["company", "branch", "branchUsers"].map((tab) => (
                         <Button
@@ -146,7 +153,7 @@ const SalesChart = ({ userProfile }) => {
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                        className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                         {[...Array(5)].map((_, i) => {
                             const year = CURRENT_YEAR - i;
@@ -158,9 +165,9 @@ const SalesChart = ({ userProfile }) => {
                         })}
                     </select>
                     {isCollapsed ? (
-                        <ChevronDown className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
                     ) : (
-                        <ChevronUp className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
                     )}
                 </div>
             </div>
@@ -169,14 +176,14 @@ const SalesChart = ({ userProfile }) => {
                 <div className="px-4 pb-4">
                     {activeTab === "branch" && (
                         <div className="mb-4 flex items-center gap-2">
-                            <label htmlFor="branchSelect" className="text-sm font-semibold text-slate-600 dark:text-slate-400">
+                            <label htmlFor="branchSelect" className="text-sm font-semibold text-muted-foreground">
                                 Select Branch:
                             </label>
                             <select
                                 id="branchSelect"
                                 value={selectedBranch}
                                 onChange={(e) => setSelectedBranch(e.target.value)}
-                                className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                                className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                             >
                                 {allBranches.map((branch) => (
                                     <option key={branch} value={branch}>
@@ -189,7 +196,7 @@ const SalesChart = ({ userProfile }) => {
 
                     {activeTab === "branchUsers" && (
                         <div className="mb-4">
-                            <p className="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-400">Select Sales Representatives:</p>
+                            <p className="mb-2 text-sm font-semibold text-muted-foreground">Select Sales Representatives:</p>
                             <div className="flex flex-wrap gap-2">
                                 {salesReps.map((rep) => (
                                     <Button
@@ -214,7 +221,17 @@ const SalesChart = ({ userProfile }) => {
 
                     <Line
                         data={{ labels: MONTH_LABELS, datasets: renderChartData() }}
-                        options={{ responsive: true, plugins: { legend: { display: true }, tooltip: { enabled: true } } }}
+                        options={{
+                            responsive: true,
+                            plugins: {
+                                legend: { display: true, labels: { color: "hsl(var(--foreground))" } },
+                                tooltip: { enabled: true }
+                            },
+                            scales: {
+                                x: { ticks: { color: "hsl(var(--muted-foreground))" }, grid: { display: false } },
+                                y: { ticks: { color: "hsl(var(--muted-foreground))" } }
+                            }
+                        }}
                     />
                 </div>
             )}

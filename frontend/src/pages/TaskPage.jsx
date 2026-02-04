@@ -124,7 +124,7 @@ const handleTaskCompletion = (task) => {
         // After 5 seconds, finalize completion
         const timeoutId = setTimeout(async () => {
             try {
-                const updatedTask = { ...task, is_completed: true };
+                const updatedTask = { ...task, is_completed: true, actor_user_id: user.id, actor_email: user.email };
                 await updateTask(task.task_id, updatedTask);
 
                 setTasks((prevTasks) => prevTasks.filter((t) => t.task_id !== task.task_id));
@@ -150,7 +150,7 @@ const handleTaskCompletion = (task) => {
     // If task is already completed, Undo instantly
     (async () => {
         try {
-            const updatedTask = { ...task, is_completed: false };
+            const updatedTask = { ...task, is_completed: false, actor_user_id: user.id, actor_email: user.email };
             await updateTask(task.task_id, updatedTask);
 
             setCompletedTasks((prevCompletedTasks) => prevCompletedTasks.filter((t) => t.task_id !== task.task_id));
@@ -197,6 +197,8 @@ const handleEditTask = async () => {
             due_date: editingTask.due_date 
                 ? new Date(editingTask.due_date).toISOString().replace("T", " ").split(".")[0]
                 : null,
+            actor_user_id: user.id,
+            actor_email: user.email,
         };
 
         console.log("📤 Sending Update to DB:", updatedTask);
@@ -234,7 +236,7 @@ const handleEditTask = async () => {
 const handleDeleteTask = async (taskId) => {
     if (confirmDelete === taskId) {
         try {
-            const deleted = await deleteTask(taskId);
+            const deleted = await deleteTask(taskId, user.id, user.email);
             if (deleted) {
                 setTasks((prevTasks) => prevTasks.filter((task) => task.task_id !== taskId));
                 setCompletedTasks((prevCompletedTasks) => prevCompletedTasks.filter((task) => task.task_id !== taskId));
@@ -263,7 +265,12 @@ const transformedCompletedTasks = completedTasks.map((task) => ({
 
 const handleCreateTask = async (taskPayload) => {
     try {
-        await createTask(user.id, taskPayload);
+        await createTask({
+            ...taskPayload,
+            user_id: user.id,
+            actor_user_id: user.id,
+            actor_email: user.email,
+        });
 
         // Reload tasks
         const fetchedTasks = await fetchTasks(user.id);
@@ -288,7 +295,7 @@ const handleCreateTask = async (taskPayload) => {
 return (
     <div className="w-full">
     <div className="flex-1 p-4 sm:p-6">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">My Tasks</h1>
+        <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>
 
         {isMobile ? (
             <>
@@ -333,10 +340,10 @@ return (
         {!isMobile && (
         <>
         {/* Active Tasks */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md mt-6">
-        <h2 className="text-lg font-semibold mb-3 text-slate-900 dark:text-slate-100">Active Tasks</h2>
+        <div className="bg-card border border-border p-6 rounded-lg shadow-md mt-6">
+        <h2 className="text-lg font-semibold mb-3 text-foreground">Active Tasks</h2>
         <table className="w-full border-collapse">
-            <thead className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+            <thead className="bg-muted text-foreground">
             <tr>
                 <th className="p-3 text-left">Task</th>
                 <th className="p-3 text-left">Due Date</th>
@@ -410,13 +417,13 @@ return (
                 <td className="p-3 text-center">
                     {task.business_name !== "No Account" ? (
                     <button
-                        className="bg-gray-800 text-white px-3 py-1 rounded-lg hover:bg-gray-900 transition-colors"
+                        className="bg-secondary text-secondary-foreground px-3 py-1 rounded-lg hover:bg-secondary/80 transition-colors"
                         onClick={() => navigate(`/accounts/details/${task.account_id}`)}
                     >
                         {task.business_name}
                     </button>
                     ) : (
-                    <span className="text-gray-500">No Account</span>
+                    <span className="text-muted-foreground">No Account</span>
                     )}
                 </td>
                 <td className="p-3 text-center flex gap-2">
@@ -445,7 +452,7 @@ return (
                                 className={`px-3 py-1 rounded-lg transition-colors ${
                                     task.assigned_by_username === user.username
                                         ? "bg-blue-600 hover:bg-blue-700 text-white"
-                                        : "bg-gray-400 text-gray-700 cursor-not-allowed"
+                                        : "bg-muted text-muted-foreground cursor-not-allowed"
                                 }`}
                                 onClick={() => handleEditTaskClick(task)}
                                 disabled={task.assigned_by_username !== user.username}
@@ -470,7 +477,7 @@ return (
                     )}
                 </td>
                 {editError && (
-                    <div className="text-red-600 text-sm mt-2 bg-gray-100 p-2 rounded shadow-lg">
+                    <div className="text-red-600 text-sm mt-2 bg-muted p-2 rounded shadow-lg">
                         {editError}
                     </div>
                 )}
@@ -483,9 +490,9 @@ return (
         </div>
 
         {/* Completed Tasks */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md mt-6">
+        <div className="bg-card border border-border p-6 rounded-lg shadow-md mt-6">
         <button
-            className="flex items-center text-lg font-semibold w-full text-left text-slate-900 dark:text-slate-100"
+            className="flex items-center text-lg font-semibold w-full text-left text-foreground"
             onClick={() => setShowCompleted(!showCompleted)}
         >
             {showCompleted ? <FiChevronUp className="mr-2" /> : <FiChevronDown className="mr-2" />}
@@ -493,7 +500,7 @@ return (
         </button>
         {showCompleted && (
             <table className="w-full border-collapse mt-4">
-            <thead className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+            <thead className="bg-muted text-foreground">
                 <tr>
                 <th className="p-3 text-left">Task</th>
                 <th className="p-3 text-left">Due Date</th>
@@ -515,13 +522,13 @@ return (
                     <td className="p-3 text-center">
                     {task.business_name !== "No Account" ? (
                         <button
-                        className="bg-gray-800 text-white px-3 py-1 rounded-lg hover:bg-gray-900 transition-colors"
+                        className="bg-secondary text-secondary-foreground px-3 py-1 rounded-lg hover:bg-secondary/80 transition-colors"
                         onClick={() => navigate(`/accounts/details/${task.account_id}`)}
                         >
                         {task.business_name}
                         </button>
                     ) : (
-                        <span className="text-gray-500">No Account</span>
+                        <span className="text-muted-foreground">No Account</span>
                     )}
                     </td>
                     <td className="p-3 text-center flex gap-2">

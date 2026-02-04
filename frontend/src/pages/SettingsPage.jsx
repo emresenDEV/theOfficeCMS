@@ -48,28 +48,28 @@ const SettingsPage = ({ user }) => {
 
   return (
     <div className="flex-1 p-6">
-      <h1 className="text-2xl font-bold text-left text-slate-900 dark:text-slate-100">Settings</h1>
+      <h1 className="text-2xl font-bold text-left text-foreground">Settings</h1>
 
         {/* Theme Selection */}
-        <div className="mt-6 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <span className="font-semibold text-slate-700 dark:text-slate-200">Appearance</span>
+        <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-card p-4">
+          <span className="font-semibold text-foreground">Appearance</span>
           <ThemeToggle size="md" />
         </div>
 
         {/* Font Size Control */}
-        <div className="mt-6 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <span className="font-semibold text-slate-700 dark:text-slate-200">Font Size</span>
+        <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-card p-4">
+          <span className="font-semibold text-foreground">Font Size</span>
           <div className="flex items-center space-x-3">
             <button
-              className="px-3 py-1 bg-slate-200 text-slate-900 rounded-lg dark:bg-slate-800 dark:text-slate-100"
+              className="px-3 py-1 bg-secondary text-secondary-foreground rounded-lg"
               onClick={() => setFontSize(fontSize - 2)}
               disabled={fontSize <= 12}
             >
               A-
             </button>
-            <span className="text-lg text-slate-700 dark:text-slate-200">{fontSize}px</span>
+            <span className="text-lg text-foreground">{fontSize}px</span>
             <button
-              className="px-3 py-1 bg-slate-200 text-slate-900 rounded-lg dark:bg-slate-800 dark:text-slate-100"
+              className="px-3 py-1 bg-secondary text-secondary-foreground rounded-lg"
               onClick={() => setFontSize(fontSize + 2)}
               disabled={fontSize >= 24}
             >
@@ -79,11 +79,11 @@ const SettingsPage = ({ user }) => {
         </div>
 
         {/* High Contrast Mode */}
-        <div className="mt-6 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <span className="font-semibold text-slate-700 dark:text-slate-200">High Contrast Mode</span>
+        <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-card p-4">
+          <span className="font-semibold text-foreground">High Contrast Mode</span>
           <button
             className={`px-4 py-2 rounded-lg transition ${
-              highContrast ? "bg-yellow-500 text-black" : "bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+              highContrast ? "bg-yellow-500 text-black" : "bg-secondary text-secondary-foreground"
             }`}
             onClick={() => setHighContrast(!highContrast)}
           >
@@ -92,8 +92,8 @@ const SettingsPage = ({ user }) => {
         </div>
 
         {/* Reset to Default Settings */}
-        <div className="mt-6 flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <span className="font-semibold text-slate-700 dark:text-slate-200">Reset Settings</span>
+        <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-card p-4">
+          <span className="font-semibold text-foreground">Reset Settings</span>
           <button
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
             onClick={resetSettings}

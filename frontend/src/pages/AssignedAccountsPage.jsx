@@ -15,21 +15,21 @@ const AssignedAccountsPage = ({ user }) => {
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">Assigned Accounts</h1>
+            <h1 className="text-2xl font-bold mb-4 text-foreground">Assigned Accounts</h1>
                 {accounts.length > 0 ? (
-                    <table className="w-full border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200">
+                    <table className="w-full border border-border text-foreground">
                         <thead>
-                            <tr className="bg-slate-100 dark:bg-slate-800">
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Account #</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Business Name</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Contact Name</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Phone</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Actions</th>
+                            <tr className="bg-muted">
+                                <th className="p-2 border border-border">Account #</th>
+                                <th className="p-2 border border-border">Business Name</th>
+                                <th className="p-2 border border-border">Contact Name</th>
+                                <th className="p-2 border border-border">Phone</th>
+                                <th className="p-2 border border-border">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {accounts.map(acc => (
-                                <tr key={acc.account_id} className="border border-slate-200 dark:border-slate-800 text-center">
+                                <tr key={acc.account_id} className="border border-border text-center">
                                     <td className="p-2">{acc.account_id}</td>
                                     <td className="p-2">{acc.business_name}</td>
                                     <td className="p-2">{acc.contact_name}</td>
@@ -47,7 +47,7 @@ const AssignedAccountsPage = ({ user }) => {
                         </tbody>
                     </table>
                 ) : (
-                    <p className="text-slate-500 dark:text-slate-400">No assigned accounts found.</p>
+                    <p className="text-muted-foreground">No assigned accounts found.</p>
                 )}
         </div>
     );

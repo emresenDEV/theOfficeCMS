@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request
 from models import Account, Industry, Users, Branches, Tasks, Invoice
 from sqlalchemy import func
 from database import db
+from notifications import create_notification
+from audit import create_audit_log
 
 
 # Create Blueprint
@@ -170,6 +172,9 @@ def update_account(account_id):
 
         # Log before updating
         print(f"📝 Existing Account Before Update: {account.to_dict()}")
+        before_data = account.to_dict()
+
+        previous_sales_rep_id = account.sales_rep_id
 
         # Update account fields
         account.business_name = data.get("business_name", account.business_name)
@@ -190,6 +195,40 @@ def update_account(account_id):
         account.updated_by_user_id = data.get("updated_by_user_id", account.updated_by_user_id)
 
 
+        # Notifications (skip admin-triggered changes)
+        updater = Users.query.get(account.updated_by_user_id) if account.updated_by_user_id else None
+        is_admin_update = bool(updater and updater.role and "admin" in updater.role.role_name.lower())
+
+        if account.sales_rep_id and not is_admin_update:
+            if previous_sales_rep_id != account.sales_rep_id:
+                create_notification(
+                    user_id=account.sales_rep_id,
+                    notif_type="account_assigned",
+                    title="New account assigned",
+                    message=account.business_name,
+                    link=f"/accounts/details/{account.account_id}",
+                    source_type="account",
+                    source_id=account.account_id,
+                )
+            else:
+                create_notification(
+                    user_id=account.sales_rep_id,
+                    notif_type="account_updated",
+                    title="Account updated",
+                    message=account.business_name,
+                    link=f"/accounts/details/{account.account_id}",
+                    source_type="account",
+                    source_id=account.account_id,
+                )
+        create_audit_log(
+            entity_type="account",
+            entity_id=account.account_id,
+            action="update",
+            user_id=account.updated_by_user_id,
+            before_data=before_data,
+            after_data=account.to_dict(),
+            account_id=account.account_id,
+        )
         db.session.commit()
 
         # Log after updating
@@ -231,6 +270,26 @@ def create_account():
             updated_by_user_id=created_by
             )
         db.session.add(new_account)
+        db.session.flush()
+
+        if new_account.sales_rep_id:
+            create_notification(
+                user_id=new_account.sales_rep_id,
+                notif_type="account_assigned",
+                title="New account assigned",
+                message=new_account.business_name,
+                link=f"/accounts/details/{new_account.account_id}",
+                source_type="account",
+                source_id=new_account.account_id,
+            )
+        create_audit_log(
+            entity_type="account",
+            entity_id=new_account.account_id,
+            action="create",
+            user_id=created_by,
+            after_data=new_account.to_dict(),
+            account_id=new_account.account_id,
+        )
         db.session.commit()
 
         return jsonify({"message": "Account created successfully", "account_id": new_account.account_id}), 201
@@ -238,3 +297,26 @@ def create_account():
     except Exception as e:
         print(f"❌ Error creating account: {str(e)}")
         return jsonify({"error": "An error occurred while creating the account", "details": str(e)}), 500
+
+
+# Delete Account
+@account_bp.route("/<int:account_id>", methods=["DELETE"])
+def delete_account(account_id):
+    account = Account.query.get(account_id)
+    if not account:
+        return jsonify({"error": "Account not found"}), 404
+
+    before_data = account.to_dict()
+    db.session.delete(account)
+    create_audit_log(
+        entity_type="account",
+        entity_id=account_id,
+        action="delete",
+        user_id=request.args.get("actor_user_id", type=int),
+        user_email=request.args.get("actor_email"),
+        before_data=before_data,
+        after_data=None,
+        account_id=account_id,
+    )
+    db.session.commit()
+    return jsonify({"message": "Account deleted successfully"}), 200

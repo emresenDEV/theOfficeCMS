@@ -15,7 +15,7 @@ export const fetchUsers = async () => {
 // Fetch all user roles
 export const fetchUserRoles = async () => {
     try {
-        const response = await api.get("/user_roles");
+        const response = await api.get("/roles/roles");
         return response.data;
     } catch (error) {
         console.error("Error fetching user_roles:", error);
@@ -56,4 +56,3 @@ export const fetchSalesReps = async () => {
         return [];
     }
 };
-

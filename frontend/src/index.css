@@ -1,106 +1,129 @@
+@config "../tailwind.config.js";
 @import "tailwindcss";
 
 /* @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities"; */
 
-/* Define CSS variables for light and dark themes */
+/* Design tokens */
 :root {
-    --color-primary: #2563EB; /* Modern blue */
-    --color-primary-dark: #1E40AF; /* Dark blue */
-    --color-background: #F3F4F6; /* Light gray */
-    --color-background-dark: #1E40AF; /* Dark blue */
-    --color-text: #1E40AF; /* Dark blue */
-    --color-text-dark: #F3F4F6; /* Light gray */
-    --color-button: #2563EB; /* Modern blue */
-    --color-button-hover: #1E40AF; /* Dark blue */
-    --color-button-dark: #2563EB; /* Modern blue */
-    --color-button-hover-dark: #1C3FAF; /* Slightly darker blue */
-    }
+    --background: 210 40% 98%;
+    --foreground: 222.2 47.4% 11.2%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 214 95% 93%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    --chart-1: 221.2 83.2% 53.3%;
+    --chart-2: 142.1 76.2% 36.3%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 199 89% 48%;
+    --chart-5: 262 83% 58%;
+    --chart-6: 16 84% 56%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222.2 47.4% 11.2%;
+    --sidebar-primary: 221.2 83.2% 53.3%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 221.2 83.2% 53.3%;
+    --sidebar-muted: 215.4 16.3% 46.9%;
+    --radius: 0.25rem;
+    --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+    --shadow-md: 0 6px 18px rgb(15 23 42 / 0.08);
+    --shadow-lg: 0 16px 30px rgb(15 23 42 / 0.12);
+}
+
+.dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 6%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 6%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 222.2 47.4% 11.2%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    --chart-1: 217.2 91.2% 59.8%;
+    --chart-2: 142.1 70.6% 45.3%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 199 89% 48%;
+    --chart-5: 262 83% 58%;
+    --chart-6: 16 84% 56%;
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217.2 91.2% 59.8%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 224.3 76.3% 48%;
+    --sidebar-muted: 215 20.2% 65.1%;
+}
 
 @layer base {
-    body {
-        @apply bg-slate-50 text-slate-900;
+    * {
+        @apply border-border;
     }
-    .dark body {
-        @apply bg-slate-950 text-slate-100;
+    body {
+        @apply bg-background text-foreground font-sans;
     }
     .dark table thead {
-        @apply bg-slate-800 text-slate-200;
+        @apply bg-muted text-muted-foreground;
     }
     .dark table th,
     .dark table td {
-        @apply border-slate-800;
-    }
-    .dark .bg-white {
-        @apply bg-slate-900;
-    }
-    .dark .bg-gray-50 {
-        @apply bg-slate-900;
-    }
-    .dark .bg-gray-100 {
-        @apply bg-slate-800;
-    }
-    .dark .bg-gray-200 {
-        @apply bg-slate-800;
-    }
-    .dark .bg-gray-300 {
-        @apply bg-slate-700;
-    }
-    .dark .text-gray-900 {
-        @apply text-slate-100;
-    }
-    .dark .text-gray-700 {
-        @apply text-slate-300;
-    }
-    .dark .text-gray-600 {
-        @apply text-slate-400;
-    }
-    .dark .text-gray-500 {
-        @apply text-slate-400;
-    }
-    .dark .border-gray-200 {
-        @apply border-slate-800;
-    }
-    .dark .border-gray-300 {
-        @apply border-slate-700;
+        @apply border-border;
     }
 }
 
-/* Apply CSS variables to Tailwind classes */
-@layer components {
-    .text-theme {
-    color: var(--color-text);
-    }
-
-    .dark .text-theme {
-    color: var(--color-text-dark);
-    }
-
-    .bg-theme {
-    background-color: var(--color-background);
-    }
-
-    .dark .bg-theme {
-    background-color: var(--color-background-dark);
-    }
-
-    .button-theme {
-    background-color: var(--color-button);
-    color: white;
-    }
-
-    .button-theme:hover {
-    background-color: var(--color-button-hover);
-    }
-
-    .dark .button-theme {
-    background-color: var(--color-button-dark);
-    }
-
-    .dark .button-theme:hover {
-    background-color: var(--color-button-hover-dark);
-    }
+/* Sharper corners for Salesforce-like look */
+.rounded-2xl {
+    border-radius: 0.25rem;
+}
+.rounded-xl {
+    border-radius: 0.25rem;
+}
+.rounded-lg {
+    border-radius: 0.25rem;
+}
+.rounded-md {
+    border-radius: 0.25rem;
 }
 
 /* High Contrast Mode */
@@ -109,19 +132,12 @@
     background-color: black !important;
     color: yellow !important;
 }
-.high-contrast .bg-white {
+.high-contrast .bg-card,
+.high-contrast .bg-background,
+.high-contrast .bg-muted {
     background-color: black !important;
     color: yellow !important;
 }
-.high-contrast .text-gray-600 {
-    color: yellow !important;
-}
-
-.high-contrast .dark\:bg-gray-800 {
-    background-color: black !important;
-    color: yellow !important;
-}
-
-.high-contrast .dark\:text-gray-300 {
+.high-contrast .text-muted-foreground {
     color: yellow !important;
 }

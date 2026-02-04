@@ -50,7 +50,7 @@ const normalizeEvent = (event) => {
     };
 };
 
-export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
+export function DashboardCalendarSection({ events, onAddEvent, onEventClick, onDateSelect }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -71,13 +71,13 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
     const selectedDayEvents = getEventsForDay(selectedDate);
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-md border border-border bg-card shadow-card">
             <div
                 className="flex items-center justify-between px-4 py-3 cursor-pointer"
                 onClick={() => setIsExpanded((prev) => !prev)}
             >
                 <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Calendar</h2>
+                    <h2 className="text-lg font-semibold text-foreground">Calendar</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
@@ -92,9 +92,9 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                         Add Event
                     </Button>
                     {isExpanded ? (
-                        <ChevronUp className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
                     ) : (
-                        <ChevronDown className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
                     )}
                 </div>
             </div>
@@ -106,7 +106,6 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                 )}
             >
                 <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Mini Calendar */}
                     <div className="lg:col-span-2">
                         <div className="flex items-center justify-between mb-4">
                             <Button
@@ -116,7 +115,7 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                             >
                                 <ChevronLeft className="h-5 w-5" />
                             </Button>
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                            <h3 className="text-lg font-semibold text-foreground">
                                 {format(currentDate, "MMMM yyyy")}
                             </h3>
                             <Button
@@ -132,7 +131,7 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                             {weekDays.map((day) => (
                                 <div
                                     key={day}
-                                    className="text-center text-xs font-medium text-slate-400 dark:text-slate-500 py-2"
+                                    className="text-center text-xs font-medium text-muted-foreground py-2"
                                 >
                                     {day}
                                 </div>
@@ -148,14 +147,17 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                                 return (
                                     <button
                                         key={day.toISOString()}
-                                        onClick={() => setSelectedDate(day)}
+                                        onClick={() => {
+                                            setSelectedDate(day);
+                                            onDateSelect?.(day);
+                                        }}
                                         className={cn(
                                             "relative aspect-square flex flex-col items-center justify-center rounded-lg text-sm transition-colors",
-                                            !isCurrentMonth && "text-slate-300 dark:text-slate-600",
-                                            isCurrentMonth && "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800",
-                                            isToday && "bg-blue-600 text-white font-semibold",
-                                            isSelected && !isToday && "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900",
-                                            isSelected && isToday && "ring-2 ring-blue-400 ring-offset-2"
+                                            !isCurrentMonth && "text-muted-foreground/40",
+                                            isCurrentMonth && "text-foreground hover:bg-accent/60",
+                                            isToday && "bg-primary text-primary-foreground font-semibold",
+                                            isSelected && !isToday && "bg-primary text-primary-foreground",
+                                            isSelected && isToday && "ring-2 ring-primary ring-offset-2"
                                         )}
                                     >
                                         {format(day, "d")}
@@ -167,8 +169,8 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                                                         className={cn(
                                                             "h-1 w-1 rounded-full",
                                                             isSelected || isToday
-                                                                ? "bg-white/80"
-                                                                : "bg-blue-600"
+                                                                ? "bg-primary-foreground/80"
+                                                                : "bg-primary"
                                                         )}
                                                     />
                                                 ))}
@@ -193,24 +195,23 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                         </div>
                     </div>
 
-                    {/* Events List */}
-                    <div className="lg:border-l lg:pl-6 border-slate-200 dark:border-slate-800">
-                        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-3">
-                            {format(selectedDate, "EEEE, MMMM d")}
+                    <div className="lg:border-l lg:pl-6 border-border">
+                        <h3 className="text-sm font-semibold text-muted-foreground mb-3">
+                            {format(selectedDate, "EEEE, MMMM d")} Schedule
                         </h3>
                         <div className="space-y-3">
                             {selectedDayEvents.length > 0 ? (
                                 selectedDayEvents.map((event) => (
                                     <div
                                         key={event.id}
-                                        className="p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer dark:bg-slate-800 dark:hover:bg-slate-700"
+                                        className="p-3 rounded-md bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
                                         onClick={() => onEventClick?.(event.raw)}
                                     >
-                                        <p className="font-medium text-sm text-slate-900 dark:text-slate-100">
+                                        <p className="font-medium text-sm text-foreground">
                                             {event.title}
                                         </p>
                                         <div className="mt-2 space-y-1">
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                            <p className="text-xs text-muted-foreground flex items-center gap-1">
                                                 <Clock className="h-3 w-3" />
                                                 {event.start
                                                     ? `${format(event.start, "h:mm a")}${
@@ -219,7 +220,7 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                                                     : "Time TBD"}
                                             </p>
                                             {event.location && (
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
                                                     <MapPin className="h-3 w-3" />
                                                     {event.location}
                                                 </p>
@@ -228,7 +229,7 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                                         {event.accountName && (
                                             <Button
                                                 variant="link"
-                                                className="h-auto p-0 text-xs text-blue-600 mt-2 dark:text-blue-300"
+                                                className="h-auto p-0 text-xs text-primary mt-2"
                                             >
                                                 {event.accountName}
                                             </Button>
@@ -236,7 +237,7 @@ export function DashboardCalendarSection({ events, onAddEvent, onEventClick }) {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-sm text-slate-500 dark:text-slate-400 py-4 text-center">
+                                <p className="text-sm text-muted-foreground py-4 text-center">
                                     No events scheduled
                                 </p>
                             )}
@@ -252,6 +253,7 @@ DashboardCalendarSection.propTypes = {
     events: PropTypes.arrayOf(PropTypes.object),
     onAddEvent: PropTypes.func,
     onEventClick: PropTypes.func,
+    onDateSelect: PropTypes.func,
 };
 
 DashboardCalendarSection.defaultProps = {

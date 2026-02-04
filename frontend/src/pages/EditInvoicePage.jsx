@@ -92,6 +92,8 @@ const EditInvoice = ({ user }) => {
         discount_percent: formData.discount_percent
           ? parseFloat(formData.discount_percent) / 100
           : 0,
+        actor_user_id: user?.user_id || user?.id,
+        actor_email: user?.email,
       };
       const updatedInvoice = await updateInvoice(invoiceId, updatedData);
       navigate(`/invoice/${invoiceId}`);
@@ -101,38 +103,38 @@ const EditInvoice = ({ user }) => {
     }
   };
 
-  if (loading) return <p className="text-slate-500 dark:text-slate-400">Loading invoice details...</p>;
+  if (loading) return <p className="text-muted-foreground">Loading invoice details...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-md">
+    <div className="p-6 max-w-3xl mx-auto bg-card border border-border rounded shadow-md">
       {/* Header with Back and Edit buttons */}
       <div className="flex items-center justify-between mb-6">
         <button
           type="button"
-          className="bg-slate-500 text-white px-4 py-2 rounded"
+          className="bg-secondary text-secondary-foreground px-4 py-2 rounded"
           onClick={() => navigate(`/invoice/${invoiceId}`)}
         >
           Back to Invoice #{invoiceId} Details
         </button>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Edit Invoice #{invoiceId}</h2>
+        <h2 className="text-2xl font-bold text-foreground">Edit Invoice #{invoiceId}</h2>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Service */}
         <div className="flex items-center">
-          <label className="w-1/3 text-lg font-bold text-left text-slate-700 dark:text-slate-300">Service:</label>
+          <label className="w-1/3 text-lg font-bold text-left text-muted-foreground">Service:</label>
           <input
             type="text"
             name="service"
             value={formData.service}
             onChange={handleChange}
-            className="w-2/3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded"
+            className="w-2/3 border border-border bg-card text-foreground p-2 rounded"
             required
           />
         </div>
         {/* Amount */}
         <div className="flex items-center">
-          <label className="w-1/3 text-lg font-bold text-left text-slate-700 dark:text-slate-300">Amount:</label>
+          <label className="w-1/3 text-lg font-bold text-left text-muted-foreground">Amount:</label>
           <input
             type="number"
             name="amount"
@@ -296,7 +298,7 @@ const EditInvoice = ({ user }) => {
         <div className="flex justify-between mt-4">
           <button
             type="button"
-            className="bg-gray-500 text-white px-4 py-2 rounded"
+            className="bg-muted text-white px-4 py-2 rounded"
             onClick={() => navigate(`/invoice/${invoiceId}`)}
           >
             Back to Invoice #{invoiceId} Details

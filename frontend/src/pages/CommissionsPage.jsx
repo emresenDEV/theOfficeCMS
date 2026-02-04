@@ -115,10 +115,10 @@ const CommissionsPage = ({ user }) => {
     console.log("📄 Related Accounts Data:", commissions);  //debugging
 
 return (
-    <div className="bg-white dark:bg-slate-950 p-6">
+    <div className="bg-card p-6">
         <div className="flex min-h-screen">
             <div className="flex-1">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 pb-4">Commissions</h1>
+                <h1 className="text-2xl font-bold text-foreground pb-4">Commissions</h1>
 
                 {/* Filters */}
                 <Filters {...{ viewMode, setViewMode, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth, fromYear, setFromYear, toYear, setToYear, yearRange }} />
@@ -161,14 +161,14 @@ return (
                                 {Object.entries(yearlyData)
                                     .sort((a, b) => a[0] - b[0])
                                     .map(([year, amount]) => (
-                                        <li key={year} className="flex justify-between items-center p-2 bg-gray-100 rounded shadow">
+                                        <li key={year} className="flex justify-between items-center p-2 bg-muted rounded shadow">
                                             <span className="text-sm font-medium">{year}</span>
                                             <span className="text-green-600 font-semibold">${Number(amount).toFixed(2)}</span>
                                         </li>
                                     ))}
                             </ul>
                         ) : (
-                            <p className="text-gray-500">No yearly commission data available.</p>
+                            <p className="text-muted-foreground">No yearly commission data available.</p>
                         )}
                     </div>
                 )}

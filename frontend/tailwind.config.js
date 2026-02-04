@@ -2,52 +2,149 @@
 import plugin from "tailwindcss/plugin";
 
 export default {
-  darkMode: "class", // or 'media' or 'class'. Media changes based on system settings, class changes manually with a class
-  content: [
-    "./index.html", 
-    "./src/**/*.{js,jsx,ts,tsx}"
-  ],
+  darkMode: ["class"],
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+      },
       colors: {
-        primary: 
-          "var(--color-primary)",
-          "primary-dark": "var(--color-primary-dark)",
-        background: 
-          "var(--color-background)",
-          "background-dark": "var(--color-background-dark)",
-        text: 
-          "var(--color-text)",
-          "text-dark": "var(--color-text-dark)",
-        button: 
-          "var(--color-button)",
-          "button-hover": "var(--color-button-hover)",
-          "button-dark": "var(--color-button-dark)",
-          "button-hover-dark": "var(--color-button-hover-dark)",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        chart: {
+          "1": "hsl(var(--chart-1))",
+          "2": "hsl(var(--chart-2))",
+          "3": "hsl(var(--chart-3))",
+          "4": "hsl(var(--chart-4))",
+          "5": "hsl(var(--chart-5))",
+          "6": "hsl(var(--chart-6))",
+        },
+        sidebar: {
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+          muted: "hsl(var(--sidebar-muted))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        elevated: "var(--shadow-md)",
+        floating: "var(--shadow-lg)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "slide-in-from-left": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "pulse-subtle": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "slide-in": "slide-in-from-left 0.3s ease-out",
+        "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
       },
     },
   },
   plugins: [
-      plugin(function ({ addUtilities }) {
-        addUtilities({
-          ".high-contrast": {
-            backgroundColor: "black !important",
-            color: "yellow !important",
-          },
-          ".high-contrast .bg-white": {
-            backgroundColor: "black !important",
-            color: "yellow !important",
-          },
-          ".high-contrast .text-gray-600": {
-            color: "yellow !important",
-          },
-          ".high-contrast .dark\\:bg-gray-800": {
-            backgroundColor: "black !important",
-            color: "yellow !important",
-          },
-          ".high-contrast .dark\\:text-gray-300": {
-            color: "yellow !important",
-          },
+    plugin(function ({ addUtilities }) {
+      addUtilities({
+        ".high-contrast": {
+          backgroundColor: "black !important",
+          color: "yellow !important",
+        },
+        ".high-contrast .bg-card": {
+          backgroundColor: "black !important",
+          color: "yellow !important",
+        },
+        ".high-contrast .bg-background": {
+          backgroundColor: "black !important",
+          color: "yellow !important",
+        },
+        ".high-contrast .bg-muted": {
+          backgroundColor: "black !important",
+          color: "yellow !important",
+        },
+        ".high-contrast .text-muted-foreground": {
+          color: "yellow !important",
+        },
       });
     }),
   ],

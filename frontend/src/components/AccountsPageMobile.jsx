@@ -59,7 +59,7 @@ const AccountsPageMobile = ({
                         className={`text-xs px-3 py-1 rounded whitespace-nowrap transition ${
                             sortBy === "name"
                                 ? "bg-blue-600 text-white"
-                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                : "bg-muted text-muted-foreground hover:bg-muted"
                         }`}
                     >
                         Name
@@ -69,7 +69,7 @@ const AccountsPageMobile = ({
                         className={`text-xs px-3 py-1 rounded whitespace-nowrap transition ${
                             sortBy === "date"
                                 ? "bg-blue-600 text-white"
-                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                : "bg-muted text-muted-foreground hover:bg-muted"
                         }`}
                     >
                         Date
@@ -79,7 +79,7 @@ const AccountsPageMobile = ({
                         className={`text-xs px-3 py-1 rounded whitespace-nowrap transition ${
                             sortBy === "rep"
                                 ? "bg-blue-600 text-white"
-                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                : "bg-muted text-muted-foreground hover:bg-muted"
                         }`}
                     >
                         Sales Rep
@@ -88,7 +88,7 @@ const AccountsPageMobile = ({
 
                 {/* Results Count */}
                 {sortedAccounts.length > 0 && (
-                    <div className="text-xs text-gray-600 mb-3">
+                    <div className="text-xs text-muted-foreground mb-3">
                         Showing {sortedAccounts.length} account{sortedAccounts.length !== 1 ? "s" : ""}
                     </div>
                 )}
@@ -105,7 +105,7 @@ const AccountsPageMobile = ({
                         ))
                     ) : (
                         <div className="text-center py-8">
-                            <p className="text-gray-500 text-sm">
+                            <p className="text-muted-foreground text-sm">
                                 {searchQuery ? "No accounts found matching your search" : "No accounts yet"}
                             </p>
                             {!searchQuery && (

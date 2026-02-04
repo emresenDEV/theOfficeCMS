@@ -75,7 +75,7 @@ export const createAccount = async (accountData) => {
 // Update an Existing Account
 export const updateAccount = async (accountId, accountData, userId) => {
     try {
-        const updatedData = { ...accountData, updated_by_user_id: userId };
+        const updatedData = { ...accountData, updated_by_user_id: userId ?? accountData.updated_by_user_id };
         const response = await api.put(`/accounts/update/${accountId}`, updatedData);
         console.log("✅ Account updated in DB:", response.data);
         return { success: true, data: response.data };
@@ -85,3 +85,18 @@ export const updateAccount = async (accountId, accountData, userId) => {
     }
 };
 
+// Delete an Account
+export const deleteAccount = async (accountId, actorUserId, actorEmail) => {
+    try {
+        const params = new URLSearchParams();
+        if (actorUserId) params.append("actor_user_id", actorUserId);
+        if (actorEmail) params.append("actor_email", actorEmail);
+        const query = params.toString();
+        const url = query ? `/accounts/${accountId}?${query}` : `/accounts/${accountId}`;
+        await api.delete(url);
+        return { success: true };
+    } catch (error) {
+        console.error("❌ Error deleting account:", error.response?.data || error.message);
+        return { success: false };
+    }
+};

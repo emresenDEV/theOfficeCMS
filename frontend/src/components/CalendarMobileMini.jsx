@@ -120,7 +120,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
     const displayedEvents = getDisplayedEvents();
 
     return (
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="bg-card rounded-lg shadow-md p-4">
             {/* Collapsible Header */}
             <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -155,7 +155,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                 <button
                                     onClick={() => setView("month")}
                                     className={`text-xs px-2 py-1 rounded ${
-                                        view === "month" ? "bg-blue-600 text-white" : "bg-gray-200"
+                                        view === "month" ? "bg-blue-600 text-white" : "bg-muted"
                                     }`}
                                 >
                                     Month
@@ -163,7 +163,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                 <button
                                     onClick={() => setView("week")}
                                     className={`text-xs px-2 py-1 rounded ${
-                                        view === "week" ? "bg-blue-600 text-white" : "bg-gray-200"
+                                        view === "week" ? "bg-blue-600 text-white" : "bg-muted"
                                     }`}
                                 >
                                     Week
@@ -171,7 +171,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                 <button
                                     onClick={() => setView("day")}
                                     className={`text-xs px-2 py-1 rounded ${
-                                        view === "day" ? "bg-blue-600 text-white" : "bg-gray-200"
+                                        view === "day" ? "bg-blue-600 text-white" : "bg-muted"
                                     }`}
                                 >
                                     Day
@@ -191,7 +191,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                         goToPrevDay();
                                     }
                                 }}
-                                className="text-sm px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                                className="text-sm px-2 py-1 bg-muted rounded hover:bg-muted"
                             >
                                 ← Prev
                             </button>
@@ -208,7 +208,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                         goToNextDay();
                                     }
                                 }}
-                                className="text-sm px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                                className="text-sm px-2 py-1 bg-muted rounded hover:bg-muted"
                             >
                                 Next →
                             </button>
@@ -221,7 +221,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                             {/* Day headers */}
                             <div className="grid grid-cols-7 gap-1 mb-2">
                                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
-                                    <div key={day} className="text-center text-xs font-semibold text-gray-600 py-1">
+                                    <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-1">
                                         {day}
                                     </div>
                                 ))}
@@ -240,10 +240,10 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                             onClick={() => handleDateClick(day)}
                                             className={`aspect-square flex flex-col items-center justify-center text-xs rounded border ${
                                                 isToday
-                                                    ? "bg-blue-100 border-blue-400"
+                                                    ? "bg-accent text-accent-foreground border-primary/30"
                                                     : isCurrentMonth
-                                                    ? "bg-white border-gray-200 hover:bg-gray-50"
-                                                    : "bg-gray-50 border-gray-100 text-gray-400"
+                                                    ? "bg-card border-border hover:bg-muted/40"
+                                                    : "bg-muted/40 border-border text-muted-foreground"
                                             } cursor-pointer transition`}
                                         >
                                             <div className="font-semibold">{day.day}</div>
@@ -273,7 +273,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                             {/* Day headers */}
                             <div className="grid grid-cols-7 gap-1 mb-2">
                                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
-                                    <div key={day} className="text-center text-xs font-semibold text-gray-600 py-1">
+                                    <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-1">
                                         {day}
                                     </div>
                                 ))}
@@ -293,7 +293,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                             className={`aspect-square flex items-center justify-center text-sm font-bold rounded border cursor-pointer transition ${
                                                 isToday
                                                     ? "bg-blue-600 text-white border-blue-700"
-                                                    : "bg-white border-gray-200 hover:bg-gray-100 text-gray-900"
+                                                    : "bg-card border-border hover:bg-muted text-foreground"
                                             }`}
                                         >
                                             {day.day}
@@ -321,7 +321,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                         <div
                                             key={event.event_id}
                                             onClick={() => handleEventClick(event)}
-                                            className="border rounded p-3 cursor-pointer hover:shadow-md transition bg-gray-50 hover:bg-gray-100"
+                                            className="border rounded p-3 cursor-pointer hover:shadow-md transition bg-muted/40 hover:bg-muted"
                                         >
                                             {/* Event Card Layout */}
                                             <div className="flex gap-3">
@@ -335,34 +335,34 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                                 {/* Event Details (Center/Right) */}
                                                 <div className="flex-1 flex flex-col justify-between">
                                                     {/* Title */}
-                                                    <div className="text-sm font-bold text-gray-900">
+                                                    <div className="text-sm font-bold text-foreground">
                                                         {event.event_title}
                                                     </div>
 
                                                     {/* Contact Name (Priority 1) */}
                                                     {event.contact_name && (
-                                                        <div className="text-xs text-gray-600">
+                                                        <div className="text-xs text-muted-foreground">
                                                             👤 {event.contact_name}
                                                         </div>
                                                     )}
 
                                                     {/* Phone Number (Priority 2 - show if contact exists) */}
                                                     {event.contact_name && event.phone_number && (
-                                                        <div className="text-xs text-gray-600">
+                                                        <div className="text-xs text-muted-foreground">
                                                             📱 {event.phone_number}
                                                         </div>
                                                     )}
 
                                                     {/* Notes (Priority 3 - show if no contact) */}
                                                     {!event.contact_name && event.notes && (
-                                                        <div className="text-xs text-gray-500 line-clamp-1">
+                                                        <div className="text-xs text-muted-foreground line-clamp-1">
                                                             {event.notes}
                                                         </div>
                                                     )}
 
                                                     {/* Location (Priority 4 - show if no contact and no notes) */}
                                                     {!event.contact_name && !event.notes && event.location && (
-                                                        <div className="text-xs text-gray-600">
+                                                        <div className="text-xs text-muted-foreground">
                                                             📍 {event.location}
                                                         </div>
                                                     )}
@@ -380,7 +380,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                 })}
                             </div>
                         ) : (
-                            <p className="text-xs text-gray-500 text-center py-4">No events scheduled</p>
+                            <p className="text-xs text-muted-foreground text-center py-4">No events scheduled</p>
                         )}
                     </div>
                 </>

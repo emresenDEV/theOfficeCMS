@@ -58,6 +58,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
             assigned_to: assignedTo || null,
             task_description: newTaskDescription.trim(),
             due_date: dueDate || null,
+            actor_user_id: userId,
         };
 
         try {
@@ -106,7 +107,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
     // Toggle Task Completion Status
     const toggleTaskStatus = async (taskId, currentStatus) => {
         try {
-            await updateTask(taskId, { is_completed: !currentStatus });
+            await updateTask(taskId, { is_completed: !currentStatus, actor_user_id: userId });
             await refreshTasks();
         } catch (error) {
             console.error("❌ Error updating task status:", error);
@@ -120,15 +121,15 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
     };
 
     return (
-        <div className="mt-6 border border-slate-200 dark:border-slate-800 p-4 rounded-lg bg-white dark:bg-slate-900">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Tasks</h2>
+        <div className="mt-6 border border-border p-4 rounded-lg bg-card">
+            <h2 className="text-xl font-semibold text-foreground">Tasks</h2>
 
             {/* Task Filter/Search */}
             <div className="flex justify-between items-center mb-3">
                 <input
                     type="text"
                     placeholder="Search tasks..."
-                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-1/3 flex-grow"
+                    className="border border-border bg-card text-foreground p-2 rounded w-1/3 flex-grow"
                     value={searchTasks}
                     onChange={(e) => setSearchTasks(e.target.value)}
                 />
@@ -147,7 +148,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                     </button>
                     <button 
                         onClick={clearFilters} 
-                        className="bg-gray-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-gray-600 transition-colors"
+                        className="bg-muted text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-secondary/80 transition-colors"
                     >
                         Clear
                     </button>
@@ -159,7 +160,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 <input
                     type="text"
                     placeholder="New task..."
-                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded flex-grow"
+                    className="border border-border bg-card text-foreground p-2 rounded flex-grow"
                     value={newTaskDescription}
                     onChange={(e) => setNewTaskDescription(e.target.value)}
                 />
@@ -167,16 +168,16 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                     <input
                         type="text"
                         placeholder="Assigned To (search by name/username)"
-                        className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-full"
+                        className="border border-border bg-card text-foreground p-2 rounded w-full"
                         value={assignedToSearch}
                         onChange={(e) => handleAssigneeSearch(e.target.value)}
                     />
                     {filteredUsers.length > 0 && (
-                        <div className="absolute bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full mt-1 rounded-lg shadow-lg z-50 max-h-40 overflow-y-scroll">
+                        <div className="absolute bg-card border border-border w-full mt-1 rounded-lg shadow-lg z-50 max-h-40 overflow-y-scroll">
                             {filteredUsers.map((user) => (
                                 <div
                                     key={user.user_id}
-                                    className="p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                                    className="p-2 cursor-pointer hover:bg-muted text-foreground"
                                     onClick={() => handleAssigneeSelect(user)}
                                 >
                                     {user.first_name} {user.last_name} ({user.username})
@@ -187,7 +188,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 </div>
                 <input
                     type="date"
-                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-2 rounded w-1/4"
+                    className="border border-border bg-card text-foreground p-2 rounded w-1/4"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                 />
@@ -200,25 +201,25 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
             </div>
 
             {/* ✅ Tasks Table */}
-            <div className="overflow-y-auto h-48 border border-slate-200 dark:border-slate-800 rounded-lg">
+            <div className="overflow-y-auto h-48 border border-border rounded-lg">
                 {filteredTasks.length > 0 ? (
-                    <table className="w-full text-slate-700 dark:text-slate-200">
-                        <thead className="sticky top-0 bg-white dark:bg-slate-800 shadow-sm">
+                    <table className="w-full text-foreground">
+                        <thead className="sticky top-0 bg-card shadow-sm">
                             <tr>
-                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Date</th>
-                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Created By</th>
-                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Assigned To</th>
-                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Description</th>
-                                <th className="font-bold p-2 border-b border-r text-left text-slate-600 dark:text-slate-300">Due Date</th>
-                                <th className="font-bold p-2 border-b text-center text-slate-600 dark:text-slate-300">Status</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Date</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Created By</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Assigned To</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Description</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Due Date</th>
+                                <th className="font-bold p-2 border-b text-center text-muted-foreground">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredTasks.map((task, index) => (
                                 <tr
                                     key={task.task_id}
-                                    className={`hover:bg-slate-50 dark:hover:bg-slate-800 ${
-                                        index % 2 === 0 ? "bg-blue-50 dark:bg-slate-900/60" : "bg-white dark:bg-slate-900"
+                                    className={`hover:bg-muted/60 ${
+                                        index % 2 === 0 ? "bg-muted/40" : "bg-card"
                                     }`}
                                 >
                                     <td className="p-2 border-b border-r text-left">{formatDate(task.date_created)}</td>
@@ -231,14 +232,14 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                                         onClick={() => toggleTaskStatus(task.task_id, task.is_completed)}
                                     >
                                         {task.is_completed ? "✅ Completed" : "❌ Incomplete"}
-                                        <span className="block text-xs text-slate-400">Click to update</span>
+                                        <span className="block text-xs text-muted-foreground">Click to update</span>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 ) : (
-                    <p className="text-slate-500 dark:text-slate-400 text-center mt-2">
+                    <p className="text-muted-foreground text-center mt-2">
                         No tasks available. Create a task to add one.
                     </p>
                 )}

@@ -321,16 +321,16 @@ const UpdateAccountPage = () => {
     
     
     if (!isDataLoaded) {
-        return <p className="text-slate-500 dark:text-slate-400 text-center">Loading account details...</p>;
+        return <p className="text-muted-foreground text-center">Loading account details...</p>;
     }
     
 
     return (
-        <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg">
+        <div className="max-w-2xl mx-auto p-6 bg-card border border-border shadow-lg rounded-lg">
             {/* 🔙 Back Button */}
             <div className="flex justify-between items-center mb-4">
                 <button
-                    className="bg-gray-300 hover:bg-gray-400 text-black px-3 py-2 rounded"
+                    className="bg-muted hover:bg-muted text-black px-3 py-2 rounded"
                     onClick={() => navigate(`/accounts/details/${accountId}`)}
                 >
                     ← Back to Account
@@ -338,14 +338,14 @@ const UpdateAccountPage = () => {
             </div>
 
             <h1 className="text-2xl font-bold mb-4">Update Account</h1>
-            <div className="text-gray-600 text-sm mb-4 text-left">
+            <div className="text-muted-foreground text-sm mb-4 text-left">
                 <p><strong>Last Updated:</strong> {accountData.lastUpdated}</p>
                 <p><strong>Updated By:</strong> {accountData.updatedBy}</p>
             </div>
 
             <form onSubmit={handleSubmit}>
                 {/* ✅ Business Name */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">Business Name</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Business Name</label>
                 <input 
                     type="text" 
                     name="business_name" 
@@ -355,7 +355,7 @@ const UpdateAccountPage = () => {
                     required
                 />
                 {/* ✅ Contact Name */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">Contact Name</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Contact Name</label>
                 <input 
                     type="text" 
                     name="contact_name" 
@@ -365,7 +365,7 @@ const UpdateAccountPage = () => {
                     required
                 />
                 {/* ✅ Phone Number */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">Phone Number</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Phone Number</label>
                 <input 
                     type="text" 
                     name="phone_number" 
@@ -375,7 +375,7 @@ const UpdateAccountPage = () => {
                     required
                 />
                 {/* ✅ Address */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">Address</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Address</label>
                 <input 
                     type="text" 
                     name="address" 
@@ -385,7 +385,7 @@ const UpdateAccountPage = () => {
                     required
                 />
                 {/* ✅ City */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">City</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">City</label>
                 <input 
                     type="text" 
                     name="city" 
@@ -395,7 +395,7 @@ const UpdateAccountPage = () => {
                     required
                 />
                 {/* ✅ State */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">State</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">State</label>
                 <input 
                     type="text" 
                     name="state" 
@@ -405,7 +405,7 @@ const UpdateAccountPage = () => {
                     required
                 />
                 {/* ✅ Zip Code */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">ZipCode</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">ZipCode</label>
                 <input 
                     type="text" 
                     name="zipcode" 
@@ -415,7 +415,7 @@ const UpdateAccountPage = () => {
                     required
                 />
                 {/* ✅ Industry Dropdown */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">Industry</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Industry</label>
                 <select 
                     name="industry_id" 
                     className="w-full p-2 border rounded mb-4" 
@@ -449,7 +449,7 @@ const UpdateAccountPage = () => {
                     </div>
                 )}
                 {/* ✅ Sales Representative Dropdown */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">Sales Representative</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Sales Representative</label>
                 <select 
                     name="user_id" 
                     className="w-full p-2 border rounded mb-4"
@@ -464,7 +464,7 @@ const UpdateAccountPage = () => {
                     ))}
                 </select>
                 {/* ✅ Branch Dropdown */}
-                <label className="block text-lg font-semibold text-gray-700 mb-2 text-left">Branch</label>
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Branch</label>
                 <select 
                     name="branch_id" 
                     className="w-full p-2 border rounded mb-4"

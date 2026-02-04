@@ -121,8 +121,8 @@ const handleDelete = () => {
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto flex items-center justify-center p-4">
-            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all">
-            <Dialog.Title className="text-lg font-medium text-gray-900 mb-2">
+            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card p-6 shadow-xl transition-all">
+            <Dialog.Title className="text-lg font-medium text-foreground mb-2">
                 {initialData?.event_id ? "Edit Event" : "Create Event"}
             </Dialog.Title>
 
@@ -139,7 +139,7 @@ const handleDelete = () => {
 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">Start Date</label>
                         <DatePicker
                             selected={formData.start.toJSDate()}
                             onChange={(date) => setFormData((prev) => ({ ...prev, start: DateTime.fromJSDate(date).set({ hour: prev.start.hour, minute: prev.start.minute }) }))}
@@ -151,7 +151,7 @@ const handleDelete = () => {
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                            <label className="block text-sm font-medium text-muted-foreground mb-2">Start Time</label>
                             <input
                                 type="time"
                                 value={formData.start.toFormat("HH:mm")}
@@ -161,12 +161,12 @@ const handleDelete = () => {
                                 }}
                                 className="w-full border rounded px-3 py-2"
                             />
-                            <span className="text-xs text-gray-500 mt-1">{formData.start.toFormat("h:mm a")}</span>
+                            <span className="text-xs text-muted-foreground mt-1">{formData.start.toFormat("h:mm a")}</span>
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <label className="block text-sm font-medium text-muted-foreground mb-2">End Date</label>
                         <DatePicker
                             selected={formData.end.toJSDate()}
                             onChange={(date) => setFormData((prev) => ({ ...prev, end: DateTime.fromJSDate(date).set({ hour: prev.end.hour, minute: prev.end.minute }) }))}
@@ -178,7 +178,7 @@ const handleDelete = () => {
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                            <label className="block text-sm font-medium text-muted-foreground mb-2">End Time</label>
                             <input
                                 type="time"
                                 value={formData.end.toFormat("HH:mm")}
@@ -188,7 +188,7 @@ const handleDelete = () => {
                                 }}
                                 className="w-full border rounded px-3 py-2"
                             />
-                            <span className="text-xs text-gray-500 mt-1">{formData.end.toFormat("h:mm a")}</span>
+                            <span className="text-xs text-muted-foreground mt-1">{formData.end.toFormat("h:mm a")}</span>
                         </div>
                     </div>
                 </div>
@@ -246,7 +246,7 @@ const handleDelete = () => {
                     <button
                     type="button"
                     onClick={closeModal}
-                    className="bg-gray-200 px-4 py-2 rounded"
+                    className="bg-muted px-4 py-2 rounded"
                     >
                     Cancel
                     </button>

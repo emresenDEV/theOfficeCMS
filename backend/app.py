@@ -8,6 +8,7 @@ import os
 # Route Blueprints
 from routes.account_routes import account_bp
 from routes.auth_routes import auth_bp
+from routes.audit_routes import audit_bp
 from routes.branch_routes import branch_bp
 from routes.calendar_routes import calendar_bp
 from routes.commission_routes import commission_bp
@@ -16,6 +17,7 @@ from routes.employee_routes import employee_bp
 from routes.industry_routes import industry_bp
 from routes.invoice_routes import invoice_bp
 from routes.notes_routes import notes_bp
+from routes.notification_routes import notification_bp
 from routes.payment_routes import payment_bp
 from routes.sales_routes import sales_bp 
 from routes.task_routes import task_bp
@@ -44,6 +46,7 @@ CORS(app,
 # Route Blueprints
 app.register_blueprint(account_bp, url_prefix="/accounts")
 app.register_blueprint(auth_bp, url_prefix="/auth")
+app.register_blueprint(audit_bp, url_prefix="/audit")
 app.register_blueprint(branch_bp, url_prefix="/branches")
 app.register_blueprint(calendar_bp, url_prefix="/calendar")
 app.register_blueprint(commission_bp, url_prefix="/commissions")
@@ -52,6 +55,7 @@ app.register_blueprint(employee_bp, url_prefix="/employees")
 app.register_blueprint(industry_bp, url_prefix="/industries")
 app.register_blueprint(invoice_bp, url_prefix="/invoices")
 app.register_blueprint(notes_bp, url_prefix="/notes")
+app.register_blueprint(notification_bp, url_prefix="/notifications")
 app.register_blueprint(payment_bp, url_prefix="/payment")
 app.register_blueprint(sales_bp, url_prefix="/sales")
 app.register_blueprint(service_bp, url_prefix="/services")

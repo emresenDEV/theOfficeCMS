@@ -28,7 +28,7 @@ const SelectTrigger = ({ className, value, onValueChange, children }) => {
             value={value}
             onChange={(e) => onValueChange?.(e.target.value)}
             className={cn(
-                "h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100",
+                "h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring",
                 className
             )}
         >

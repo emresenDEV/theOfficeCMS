@@ -113,6 +113,8 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
             due_date: formattedDueDate,
             is_completed: false,
             account_id: selectedAccount?.account_id || null,
+            actor_user_id: user.user_id,
+            actor_email: user.email,
         };
 
         console.log("📤 Creating Task:", taskData); // Debugging log
@@ -162,7 +164,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                 const newTime = prev[task.task_id] - 1;
                 if (newTime === 0) {
                     clearInterval(countdown);
-                    updateTask(task.task_id, { is_completed: true })
+                    updateTask(task.task_id, { is_completed: true, actor_user_id: user.user_id, actor_email: user.email })
                         .then(refreshTasks)
                         .catch(error => console.error("❌ Error updating task:", error));
 
@@ -176,7 +178,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
     return (
         <div
             className={cn(
-                "rounded-xl border border-slate-200 bg-white shadow-sm transition-all dark:border-slate-800 dark:bg-slate-900",
+                "rounded-xl border border-border bg-card shadow-card transition-all",
                 isCollapsed && "overflow-hidden"
             )}
         >
@@ -185,7 +187,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                 onClick={() => setIsCollapsed((prev) => !prev)}
             >
                 <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Tasks</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Tasks</h3>
                     <Badge variant="secondary" className="font-medium">
                         {visibleTasks.length} pending
                     </Badge>
@@ -202,9 +204,9 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                         Add Task
                     </Button>
                     {isCollapsed ? (
-                        <ChevronDown className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
                     ) : (
-                        <ChevronUp className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
                     )}
                 </div>
             </div>
@@ -234,11 +236,11 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                                 onChange={(e) => setSearchAccount(e.target.value)}
                             />
                             {searchAccount.trim() && filteredAccounts.length > 0 && (
-                                <div className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                                <div className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
                                     {filteredAccounts.map((acc) => (
                                         <div
                                             key={acc.account_id}
-                                            className="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                                            className="cursor-pointer px-3 py-2 text-sm text-foreground hover:bg-muted/60"
                                             onClick={() => {
                                                 setSelectedAccount(acc);
                                                 setSearchAccount(acc.business_name);
@@ -262,38 +264,38 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                     {/* Tasks Table */}
                     <div className="max-h-[350px] overflow-y-auto">
                         <table className="w-full">
-                            <thead className="sticky top-0 bg-slate-50">
+                            <thead className="sticky top-0 bg-muted/40">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                         Task
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                         Due Date
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                         Assigned By
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                         Account
                                     </th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                         Status
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tbody className="divide-y divide-border">
                                 {visibleTasks.map((task) => (
-                                    <tr key={task.task_id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                        <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                                    <tr key={task.task_id} className="hover:bg-muted/60 transition-colors">
+                                        <td className="px-4 py-3 text-sm font-medium text-foreground">
                                             {task.task_description}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                                                <Calendar className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <Calendar className="h-4 w-4 text-muted-foreground" />
                                                 {format(new Date(task.due_date), "MMM d, yyyy")}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                                        <td className="px-4 py-3 text-sm text-muted-foreground">
                                             {task.assigned_by_username || "N/A"}
                                         </td>
                                         <td className="px-4 py-3">
@@ -306,7 +308,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                                                     {task.business_name}
                                                 </Button>
                                             ) : (
-                                                <span className="text-sm text-slate-400 dark:text-slate-500">No Account</span>
+                                                <span className="text-sm text-muted-foreground">No Account</span>
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-right">
@@ -332,7 +334,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                         </table>
 
                         {visibleTasks.length === 0 && (
-                            <div className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                            <div className="py-10 text-center text-sm text-muted-foreground">
                                 No tasks scheduled
                             </div>
                         )}

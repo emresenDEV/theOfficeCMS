@@ -91,7 +91,7 @@ export const AccountsTable = ({ user }) => {
 
     const SortableHeader = ({ label, sortKeyName }) => (
         <th
-            className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-slate-900 transition-colors"
+            className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
             onClick={() => toggleSortOrder(sortKeyName)}
         >
             <div className="flex items-center gap-1">
@@ -99,7 +99,7 @@ export const AccountsTable = ({ user }) => {
                 <ArrowUpDown
                     className={cn(
                         "h-3 w-3",
-                        sortColumn === sortKeyName ? "text-slate-900" : "text-slate-400"
+                        sortColumn === sortKeyName ? "text-foreground" : "text-muted-foreground"
                     )}
                 />
                 {sortColumn === sortKeyName && (
@@ -112,7 +112,7 @@ export const AccountsTable = ({ user }) => {
     return (
         <div
             className={cn(
-                "rounded-xl border border-slate-200 bg-white shadow-sm transition-all dark:border-slate-800 dark:bg-slate-900",
+                "rounded-xl border border-border bg-card shadow-card transition-all",
                 isCollapsed && "overflow-hidden"
             )}
         >
@@ -122,15 +122,15 @@ export const AccountsTable = ({ user }) => {
                 onClick={() => setIsCollapsed((prev) => !prev)}
             >
                 <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Your Accounts</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Your Accounts</h3>
                     <Badge variant="secondary" className="font-medium">
                         {filteredAccounts.length} accounts
                     </Badge>
                 </div>
                 {isCollapsed ? (
-                    <ChevronDown className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
                 ) : (
-                    <ChevronUp className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
                 )}
             </div>
 
@@ -139,7 +139,7 @@ export const AccountsTable = ({ user }) => {
                     {/* Search */}
                     <div className="px-4 pb-4 flex items-center gap-3">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 placeholder="Search accounts..."
                                 value={searchQuery}
@@ -165,7 +165,7 @@ export const AccountsTable = ({ user }) => {
                     {/* Table */}
                     <div className="max-h-[450px] overflow-y-auto">
                         <table className="w-full">
-                            <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800">
+                            <thead className="sticky top-0 bg-background">
                                 <tr>
                                     <SortableHeader label="Business Name" sortKeyName="business_name" />
                                     <SortableHeader label="Contact" sortKeyName="contact_name" />
@@ -175,9 +175,9 @@ export const AccountsTable = ({ user }) => {
                                     <SortableHeader label="Last Invoice" sortKeyName="last_invoice_date" />
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tbody className="divide-y divide-border">
                                 {filteredAccounts.map((acc) => (
-                                    <tr key={acc.account_id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    <tr key={acc.account_id} className="hover:bg-muted/60 transition-colors">
                                         <td className="px-4 py-3">
                                             <Button
                                                 variant="link"
@@ -188,19 +188,19 @@ export const AccountsTable = ({ user }) => {
                                                 {acc.business_name}
                                             </Button>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">{acc.contact_name}</td>
+                                        <td className="px-4 py-3 text-sm text-muted-foreground">{acc.contact_name}</td>
                                         <td className="px-4 py-3">
                                             <Badge variant="outline" className="font-normal">
                                                 {acc.industry_name || "Unspecified"}
                                             </Badge>
                                         </td>
-                                        <td className="px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        <td className="px-4 py-3 text-sm font-medium text-muted-foreground">
                                             {acc.task_count || 0}
                                         </td>
-                                        <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">
+                                        <td className="px-4 py-3 text-sm font-medium text-foreground">
                                             {acc.total_revenue ? `$${acc.total_revenue.toFixed(2)}` : "$0.00"}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                                        <td className="px-4 py-3 text-sm text-muted-foreground">
                                             {acc.last_invoice_date ? format(new Date(acc.last_invoice_date), "MMM d, yyyy") : "N/A"}
                                         </td>
                                     </tr>
@@ -209,7 +209,7 @@ export const AccountsTable = ({ user }) => {
                         </table>
 
                         {filteredAccounts.length === 0 && (
-                            <div className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
+                            <div className="py-12 text-center text-sm text-muted-foreground">
                                 No accounts found
                             </div>
                         )}

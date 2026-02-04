@@ -11,26 +11,26 @@ return (
     <div className="flex items-center space-x-2">
         <button
         onClick={goToToday}
-        className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+        className="bg-muted text-foreground px-3 py-1 rounded hover:bg-muted/80"
         >
         Today
         </button>
         <button
         onClick={goToBack}
-        className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+        className="bg-muted text-foreground px-3 py-1 rounded hover:bg-muted/80"
         >
         ‹
         </button>
         <button
         onClick={goToNext}
-        className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+        className="bg-muted text-foreground px-3 py-1 rounded hover:bg-muted/80"
         >
         ›
         </button>
     </div>
 
     {/* Month and Year */}
-    <div className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-100 text-center tracking-tight">
+    <div className="text-3xl sm:text-4xl font-extrabold text-foreground text-center tracking-tight">
         {label}
     </div>
 
@@ -43,7 +43,7 @@ return (
             className={`px-3 py-1 rounded text-sm sm:text-base ${
             view === viewName
                 ? "bg-blue-600 text-white"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+                : "bg-muted text-foreground hover:bg-muted/80"
             }`}
         >
             {viewName.charAt(0).toUpperCase() + viewName.slice(1)}

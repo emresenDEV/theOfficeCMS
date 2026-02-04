@@ -18,6 +18,7 @@ import { fetchSalesReps } from "../services/userService";
 import { updatePayment, deletePayment } from "../services/paymentService";
 // import Sidebar from "../components/Sidebar";
 import NotesSection from "../components/NotesSection";
+import AuditSection from "../components/AuditSection";
 import InvoiceActions from "../components/InvoiceActions";
 import PaidBox from "../components/PaidBox";
 import { fetchAccountDetails } from "../services/accountService";
@@ -197,7 +198,7 @@ const handleSaveEdit = (index) => {
         updateService(updatedService.service_id, updatedService);
     }
     setEditingIndex(null);
-    updateInvoice(invoiceId, { services });
+    updateInvoice(invoiceId, { services, actor_user_id: user.id, actor_email: user.email });
     };
 
 const handleServiceFieldChange = (index, field, value) => {
@@ -227,6 +228,8 @@ const handleLogPayment = async () => {
             payment_method: paymentForm.payment_method,
             last_four_payment_method: paymentForm.last_four_payment_method || null,
             total_paid: parseFloat(paymentForm.total_paid),
+            actor_user_id: user.id,
+            actor_email: user.email,
         };
     
         const response = await logInvoicePayment(invoiceId, payload);
@@ -273,6 +276,8 @@ const handleDeleteService = async (index) => {
             tax_rate: invoiceForm.tax_rate,
             sales_rep_id: invoiceForm.sales_rep_id,
             due_date: invoiceForm.due_date,
+            actor_user_id: user.id,
+            actor_email: user.email,
         });
 
         // 🧼 Refresh invoice data from DB
@@ -329,6 +334,8 @@ const handleAddServiceSave = async () => {
         tax_rate: invoiceForm.tax_rate,
         sales_rep_id: invoiceForm.sales_rep_id,
         due_date: invoiceForm.due_date,
+        actor_user_id: user.id,
+        actor_email: user.email,
     });
     
     const updated = await fetchInvoiceById(invoiceId);
@@ -347,14 +354,14 @@ const handleAddServiceSave = async () => {
 };
 
 if (!invoice)
-    return <p className="text-center text-slate-500 dark:text-slate-400">Loading invoice details...</p>;
+    return <p className="text-center text-muted-foreground">Loading invoice details...</p>;
 
     return (
-        <div className="p-6 max-w-6xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg">
+        <div className="p-6 max-w-6xl mx-auto bg-card border border-border shadow-lg rounded-lg">
             <div className="flex justify-between items-center mb-4">
                 <button
                     onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
-                    className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+                    className="bg-muted text-black px-4 py-2 rounded hover:bg-muted"
                 >
                     ← Back to Account
                 </button>
@@ -382,7 +389,7 @@ if (!invoice)
                     </p>
                     )}
                     {!invoice.status && (
-                    <p className="text-gray-700 bg-gray-100 border border-gray-300 px-3 py-1 rounded-full text-sm font-semibold">
+                    <p className="text-muted-foreground bg-muted border border-border px-3 py-1 rounded-full text-sm font-semibold">
                         Unknown Status
                     </p>
                     )}
@@ -449,7 +456,7 @@ if (!invoice)
                             }
                             className="w-full border p-2 pr-6 rounded text-right"
                         />
-                        <span className="absolute right-2 top-2 text-gray-400 font-bold">%</span>
+                        <span className="absolute right-2 top-2 text-muted-foreground font-bold">%</span>
                         </div>
                     </div>
 
@@ -468,7 +475,7 @@ if (!invoice)
                             }
                             className="w-full border p-2 pr-6 rounded text-right"
                         />
-                        <span className="absolute right-2 top-2 text-gray-400 font-bold">%</span>
+                        <span className="absolute right-2 top-2 text-muted-foreground font-bold">%</span>
                         </div>
                     </div>
 
@@ -520,6 +527,8 @@ if (!invoice)
                                     tax_rate: invoiceForm.tax_rate,
                                     sales_rep_id: invoiceForm.sales_rep_id,
                                     due_date: invoiceForm.due_date, 
+                                    actor_user_id: user.id,
+                                    actor_email: user.email,
                                 });
                             
                                 const updated = await fetchInvoiceById(invoiceId);
@@ -534,7 +543,7 @@ if (!invoice)
                         Save Update
                     </button>
                     <button
-                        className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                        className="bg-muted text-white px-4 py-2 rounded hover:bg-secondary/80"
                         onClick={() => setShowEditInvoiceForm(false)}
                     >
                         Cancel
@@ -555,7 +564,7 @@ if (!invoice)
             </div>
             <div className="overflow-y-auto max-h-64 border rounded-lg">
                 <table className="w-full">
-                <thead className="sticky top-0 bg-white shadow-sm">
+                <thead className="sticky top-0 bg-card shadow-sm">
                     <tr>
                     <th className="font-bold p-2 border-b border-r text-left">Service</th>
                     <th className="font-bold p-2 border-b border-r text-right">Price / Unit</th>
@@ -571,7 +580,7 @@ if (!invoice)
                         const displayDiscount = (s.discount_percent || 0) * 100;
 
                         return (
-                        <tr key={index} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
+                        <tr key={index} className={index % 2 === 0 ? "bg-blue-50" : "bg-card"}>
                         <td className="p-2 border-b border-r text-left">
                             {editingIndex === index ? (
                             <select
@@ -665,7 +674,7 @@ if (!invoice)
                                 </button>
                                 <button
                                 onClick={() => setEditingIndex(null)}
-                                className="bg-gray-500 text-white px-2 py-1 rounded"
+                                className="bg-muted text-white px-2 py-1 rounded"
                                 >
                                 Cancel
                                 </button>
@@ -772,7 +781,7 @@ if (!invoice)
                             </button>
                             <button
                             onClick={() => setAddingService(false)}
-                            className="bg-gray-500 text-white px-2 py-1 rounded"
+                            className="bg-muted text-white px-2 py-1 rounded"
                             >
                             Cancel
                             </button>
@@ -788,7 +797,7 @@ if (!invoice)
             {/* FInancial Summary */}
             <section className="mb-6 border p-4 rounded-lg text-left">
             <h2 className="text-xl font-semibold mb-2">Financial Summary</h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
                 Discounts are applied in two ways:
                 <ul className="list-disc list-inside mt-1">
                 <li><strong>Service Discount</strong> — applied per service.</li>
@@ -828,7 +837,7 @@ if (!invoice)
             </div>
 
             {showPaymentForm && (
-                <div className="bg-gray-100 p-4 rounded border">
+                <div className="bg-muted p-4 rounded border">
                 <div className="mb-2">
                     <label className="block text-sm font-medium">Payment Method</label>
                     <select
@@ -889,7 +898,7 @@ if (!invoice)
                     Log Payment
                     </button>
                     <button
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                    className="bg-muted text-white px-4 py-2 rounded hover:bg-secondary/80"
                     onClick={() => setShowPaymentForm(false)}
                     >
                     Cancel
@@ -912,7 +921,7 @@ if (!invoice)
                     totalPaidSoFar={payments.reduce((sum, p) => sum + parseFloat(p.total_paid || 0), 0)}
                     loggedInUsername={user.username}
                     onUpdate={async (updatedPayment) => {
-                        const res = await updatePayment(payment.payment_id, updatedPayment);
+                        const res = await updatePayment(payment.payment_id, updatedPayment, user.id, user.email);
                         if (res) {
                             const updatedPayments = [...payments];
                             updatedPayments[idx] = res;
@@ -921,7 +930,7 @@ if (!invoice)
                     }}
                     
                     onDelete={async (paymentId) => {
-                        const res = await deletePayment(paymentId);
+                        const res = await deletePayment(paymentId, user.id, user.email);
                         if (res) {
                             const updated = payments.filter(p => p.payment_id !== paymentId);
                             setPayments(updated);
@@ -936,7 +945,7 @@ if (!invoice)
             {/* SHARE INVOICE PDF */}
             <section className="mb-6 border p-4 rounded-lg text-left">
             <h2 className="text-xl font-semibold mb-2">Share Invoice</h2>
-            <div className="text-sm text-gray-600 mb-4">
+            <div className="text-sm text-muted-foreground mb-4">
             <p>Discounts are applied in two ways:</p>
                 <ul className="list-disc list-inside mt-1">
                     <li><strong>Service Discount</strong> — applied per service.</li>
@@ -979,9 +988,15 @@ if (!invoice)
             invoiceId={invoiceId}
             />
 
+            <AuditSection
+                title="Invoice Audit Trail"
+                filters={{ invoice_id: Number(invoiceId) }}
+                limit={100}
+            />
+
             <div className="flex justify-end mt-6">
             <button
-                onClick={() => deleteInvoice(invoiceId).then(() => navigate(`/accounts/details/${invoice.account_id}`))}
+                onClick={() => deleteInvoice(invoiceId, user.id, user.email).then(() => navigate(`/accounts/details/${invoice.account_id}`))}
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
             >
                 Delete Invoice

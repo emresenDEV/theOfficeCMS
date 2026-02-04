@@ -26,11 +26,26 @@ export const fetchCalendarEvents = async (userId) => {
     }
 };
 
+// Fetch All Calendar Events (Admin)
+export const fetchAllCalendarEvents = async () => {
+    try {
+        const response = await api.get("/calendar/events", { params: { all: true } });
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching all calendar events:", error.response?.data || error.message);
+        return [];
+    }
+};
 
 // Update an Existing Calendar Event
 export const updateCalendarEvent = async (eventId, updatedData) => {
     try {
-        const response = await api.put(`/calendar/events/${eventId}`, updatedData, {
+        const payload = {
+            ...updatedData,
+            actor_user_id: updatedData.actor_user_id || updatedData.user_id,
+            actor_email: updatedData.actor_email,
+        };
+        const response = await api.put(`/calendar/events/${eventId}`, payload, {
             headers: {
                 "Content-Type": "application/json"
             },
@@ -45,9 +60,14 @@ export const updateCalendarEvent = async (eventId, updatedData) => {
 
 
 // Delete a Calendar Event
-export const deleteCalendarEvent = async (eventId) => {
+export const deleteCalendarEvent = async (eventId, actorUserId, actorEmail) => {
     try {
-        await api.delete(`/calendar/events/${eventId}`); 
+        const params = new URLSearchParams();
+        if (actorUserId) params.append("actor_user_id", actorUserId);
+        if (actorEmail) params.append("actor_email", actorEmail);
+        const query = params.toString();
+        const url = query ? `/calendar/events/${eventId}?${query}` : `/calendar/events/${eventId}`;
+        await api.delete(url); 
         return { success: true };
     } catch (error) {
         console.error("Error deleting event:", error.response?.data || error.message);

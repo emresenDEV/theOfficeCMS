@@ -30,23 +30,23 @@ const PastDueInvoicesPage = ({ user }) => {
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">Past Due Invoices</h1>
+            <h1 className="text-2xl font-bold mb-4 text-foreground">Past Due Invoices</h1>
 
                 {invoices.length > 0 ? (
-                    <table className="w-full border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200">
+                    <table className="w-full border border-border text-foreground">
                         <thead>
-                            <tr className="bg-slate-100 dark:bg-slate-800">
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Invoice #</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Account</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Amount</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Due Date</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Payment Method</th>
-                                <th className="p-2 border border-slate-200 dark:border-slate-800">Actions</th>
+                            <tr className="bg-muted">
+                                <th className="p-2 border border-border">Invoice #</th>
+                                <th className="p-2 border border-border">Account</th>
+                                <th className="p-2 border border-border">Amount</th>
+                                <th className="p-2 border border-border">Due Date</th>
+                                <th className="p-2 border border-border">Payment Method</th>
+                                <th className="p-2 border border-border">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {invoices.map(inv => (
-                                <tr key={inv.invoice_id} className="border border-slate-200 dark:border-slate-800 text-center">
+                                <tr key={inv.invoice_id} className="border border-border text-center">
                                     <td className="p-2">{inv.invoice_id}</td>
                                     <td className="p-2">{inv.account_id}</td>
                                     <td className="p-2">${(inv.amount ?? 0).toFixed(2)}</td> {/* ✅ Prevent `toFixed` error */}
@@ -67,7 +67,7 @@ const PastDueInvoicesPage = ({ user }) => {
                         </tbody>
                     </table>
                 ) : (
-                    <p className="text-slate-500 dark:text-slate-400">No past due invoices found.</p>
+                    <p className="text-muted-foreground">No past due invoices found.</p>
                 )}
         </div>
     );

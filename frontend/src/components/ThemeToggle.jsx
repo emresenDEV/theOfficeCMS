@@ -14,14 +14,14 @@ export const ThemeToggle = ({ size = "sm", className }) => {
         cn(
             "px-3 transition-colors rounded-full",
             theme === value
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted"
         );
 
     return (
         <div
             className={cn(
-                "inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900",
+                "inline-flex items-center gap-1 rounded-full border border-border bg-card p-1",
                 sizes[size],
                 className
             )}

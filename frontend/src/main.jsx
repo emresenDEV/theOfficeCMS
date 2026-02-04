@@ -8,19 +8,7 @@ import App from './App.jsx'
 const rootElement = document.getElementById("root");
 const root = createRoot(rootElement);
 
-// Check localStorage for theme and high contrast settings
-const theme = localStorage.getItem("theme") || "system";
 const highContrast = localStorage.getItem("highContrast") === "true";
-
-// Apply classes to the root element
-if (theme === "dark") {
-  document.documentElement.classList.add("dark");
-} else if (theme === "system") {
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  document.documentElement.classList.toggle("dark", prefersDark);
-} else {
-  document.documentElement.classList.remove("dark");
-}
 
 if (highContrast) {
   document.documentElement.classList.add("high-contrast");

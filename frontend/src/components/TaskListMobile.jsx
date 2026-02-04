@@ -61,7 +61,7 @@ const TaskListMobile = ({
     };
 
     const getPriorityColor = (dueDate) => {
-        if (!dueDate) return "text-gray-600";
+        if (!dueDate) return "text-muted-foreground";
         const today = new Date();
         const taskDate = new Date(dueDate);
         const daysUntil = Math.floor((taskDate - today) / (1000 * 60 * 60 * 24));
@@ -69,11 +69,11 @@ const TaskListMobile = ({
         if (daysUntil < 0) return "text-red-600"; // Overdue
         if (daysUntil === 0) return "text-orange-600"; // Today
         if (daysUntil <= 3) return "text-yellow-600"; // Soon
-        return "text-gray-600"; // Normal
+        return "text-muted-foreground"; // Normal
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-md p-4 w-full">
+        <div className="bg-card border border-border rounded-lg shadow-md p-4 w-full">
             {/* Active Tasks Section */}
             <div>
                 <h2 className="text-lg font-semibold mb-3">Active Tasks</h2>
@@ -82,7 +82,7 @@ const TaskListMobile = ({
                         {tasks.map((task) => (
                             <div
                                 key={task.task_id}
-                                className="border border-slate-200 dark:border-slate-800 rounded-lg p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                                className="border border-border rounded-lg p-4 bg-card hover:bg-muted/60 transition"
                             >
                                 {/* Task Name and Status Row */}
                                 <div className="flex justify-between items-start gap-2 mb-2">
@@ -100,7 +100,7 @@ const TaskListMobile = ({
                                                 className="w-full border px-2 py-1 rounded text-sm font-semibold"
                                             />
                                         ) : (
-                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 break-words">
+                                            <h3 className="text-sm font-semibold text-foreground break-words">
                                                 {task.task_description}
                                             </h3>
                                         )}
@@ -143,7 +143,7 @@ const TaskListMobile = ({
                                 </div>
 
                                 {/* Account and Assigned By Row */}
-                                <div className="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400 mb-3 gap-2">
+                                <div className="flex justify-between items-center text-xs text-muted-foreground mb-3 gap-2">
                                     <div className="flex-1">
                                         <span className="font-medium">Account:</span>{" "}
                                         {task.business_name !== "No Account" ? (
@@ -154,12 +154,12 @@ const TaskListMobile = ({
                                                 {task.business_name}
                                             </button>
                                         ) : (
-                                            <span className="text-slate-500 dark:text-slate-400">No Account</span>
+                                            <span className="text-muted-foreground">No Account</span>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="text-xs text-slate-600 dark:text-slate-400 mb-3">
+                                <div className="text-xs text-muted-foreground mb-3">
                                     <span className="font-medium">By:</span> {task.assigned_by_username}
                                 </div>
 
@@ -178,7 +178,7 @@ const TaskListMobile = ({
                                             </button>
                                             <button
                                                 onClick={() => setEditingTask(null)}
-                                                className="text-xs px-3 py-1 rounded bg-slate-400 text-white hover:bg-slate-500 flex-1"
+                                                className="text-xs px-3 py-1 rounded bg-secondary text-secondary-foreground hover:bg-secondary/80 flex-1"
                                             >
                                                 Cancel
                                             </button>
@@ -203,7 +203,7 @@ const TaskListMobile = ({
                                                 className={`text-xs px-3 py-1 rounded flex-1 ${
                                                     task.assigned_by_username === user.username
                                                         ? "bg-blue-600 text-white hover:bg-blue-700"
-                                                        : "bg-slate-300 text-slate-600 cursor-not-allowed"
+                                                        : "bg-muted text-muted-foreground cursor-not-allowed"
                                                 }`}
                                             >
                                                 Edit
@@ -227,7 +227,7 @@ const TaskListMobile = ({
                         ))}
                     </div>
                 ) : (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">No active tasks</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">No active tasks</p>
                 )}
             </div>
 
@@ -249,20 +249,20 @@ const TaskListMobile = ({
                             completedTasks.map((task) => (
                                 <div
                                     key={task.task_id}
-                                    className="border border-slate-200 dark:border-slate-800 rounded-lg p-4 bg-slate-50 dark:bg-slate-900 opacity-75"
+                                    className="border border-border rounded-lg p-4 bg-background opacity-75"
                                 >
                                     {/* Task Name */}
-                                    <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 line-through break-words mb-2">
+                                    <h3 className="text-sm font-semibold text-muted-foreground line-through break-words mb-2">
                                         {task.task_description}
                                     </h3>
 
                                     {/* Due Date */}
-                                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                                    <div className="text-xs text-muted-foreground mb-2">
                                         {format(new Date(task.due_date), "MMM d, yyyy")}
                                     </div>
 
                                     {/* Account Info */}
-                                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-3">
+                                    <div className="text-xs text-muted-foreground mb-3">
                                         <span className="font-medium">Account:</span>{" "}
                                         {task.business_name !== "No Account" ? (
                                             <button
@@ -301,7 +301,7 @@ const TaskListMobile = ({
                                 </div>
                             ))
                         ) : (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">No completed tasks</p>
+                            <p className="text-xs text-muted-foreground text-center py-4">No completed tasks</p>
                         )}
                     </div>
                 )}

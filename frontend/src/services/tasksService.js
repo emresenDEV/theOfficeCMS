@@ -7,7 +7,12 @@ import api from "./api";
 // Create a Task
 export const createTask = async (task) => {
     try {
-        const response = await api.post("tasks", task, {
+        const payload = {
+            ...task,
+            actor_user_id: task.actor_user_id || task.user_id,
+            actor_email: task.actor_email,
+        };
+        const response = await api.post("tasks", payload, {
 
             headers: {
                 "Content-Type": "application/json",
@@ -36,6 +41,16 @@ export const fetchTasks = async (userId) => {
     }
 };
 
+// Fetch All Tasks (Admin)
+export const fetchAllTasks = async () => {
+    try {
+        const response = await api.get("/tasks", { params: { all: true } });
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching all tasks:", error.response?.data || error.message);
+        return [];
+    }
+};
 // Fetch Tasks By Account
 export const fetchTasksByAccount = async (accountId) => {
     try {
@@ -53,7 +68,12 @@ export const fetchTasksByAccount = async (accountId) => {
 // Update a Task (Mark Complete / Edit)
 export const updateTask = async (taskId, updatedData) => {
     try {
-        const response = await api.put(`/tasks/${taskId}`, updatedData);
+        const payload = {
+            ...updatedData,
+            actor_user_id: updatedData.actor_user_id || updatedData.user_id,
+            actor_email: updatedData.actor_email,
+        };
+        const response = await api.put(`/tasks/${taskId}`, payload);
         return response.data;
     } catch (error) {
         console.error("❌ Error updating task:", error.response?.data || error.message);
@@ -62,9 +82,14 @@ export const updateTask = async (taskId, updatedData) => {
 };
 
 // Delete a Task
-export const deleteTask = async (taskId) => {
+export const deleteTask = async (taskId, actorUserId, actorEmail) => {
     try {
-        await api.delete(`/tasks/${taskId}`);
+        const params = new URLSearchParams();
+        if (actorUserId) params.append("actor_user_id", actorUserId);
+        if (actorEmail) params.append("actor_email", actorEmail);
+        const query = params.toString();
+        const url = query ? `/tasks/${taskId}?${query}` : `/tasks/${taskId}`;
+        await api.delete(url);
         return true;
     } catch (error) {
         console.error("❌ Error deleting task:", error.response?.data || error.message);

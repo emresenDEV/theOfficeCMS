@@ -5,7 +5,7 @@ const AccountCardMobile = ({ account, onViewAccount }) => {
     return (
         <button
             onClick={() => onViewAccount(account.account_id)}
-            className="w-full border rounded-lg p-4 bg-white hover:bg-blue-50 transition text-left"
+            className="w-full border rounded-lg p-4 bg-card hover:bg-blue-50 transition text-left"
         >
             {/* Business Name - Clickable Button Style */}
             <h2 className="text-base font-semibold text-blue-600 hover:text-blue-800 mb-3">
@@ -16,29 +16,29 @@ const AccountCardMobile = ({ account, onViewAccount }) => {
             <div className="space-y-2 text-sm">
                 {/* Contact Name */}
                 <div>
-                    <span className="font-medium text-gray-700">Contact:</span>
-                    <span className="text-gray-600 ml-2">{account.contact_name}</span>
+                    <span className="font-medium text-muted-foreground">Contact:</span>
+                    <span className="text-muted-foreground ml-2">{account.contact_name}</span>
                 </div>
 
                 {/* Phone Number */}
                 <div>
-                    <span className="font-medium text-gray-700">Phone:</span>
-                    <span className="text-gray-600 ml-2">{account.phone_number}</span>
+                    <span className="font-medium text-muted-foreground">Phone:</span>
+                    <span className="text-muted-foreground ml-2">{account.phone_number}</span>
                 </div>
 
                 {/* Industry (if available) */}
                 {account.industry && (
                     <div>
-                        <span className="font-medium text-gray-700">Industry:</span>
-                        <span className="text-gray-600 ml-2">{account.industry}</span>
+                        <span className="font-medium text-muted-foreground">Industry:</span>
+                        <span className="text-muted-foreground ml-2">{account.industry}</span>
                     </div>
                 )}
 
                 {/* Revenue (if available) */}
                 {account.revenue && (
                     <div>
-                        <span className="font-medium text-gray-700">Revenue:</span>
-                        <span className="text-gray-600 ml-2">
+                        <span className="font-medium text-muted-foreground">Revenue:</span>
+                        <span className="text-muted-foreground ml-2">
                             ${parseInt(account.revenue).toLocaleString()}
                         </span>
                     </div>
@@ -47,8 +47,8 @@ const AccountCardMobile = ({ account, onViewAccount }) => {
                 {/* Last Invoice Date (if available) */}
                 {account.last_invoice_date && (
                     <div>
-                        <span className="font-medium text-gray-700">Last Invoice:</span>
-                        <span className="text-gray-600 ml-2">
+                        <span className="font-medium text-muted-foreground">Last Invoice:</span>
+                        <span className="text-muted-foreground ml-2">
                             {format(new Date(account.last_invoice_date), "MMM d, yyyy")}
                         </span>
                     </div>
@@ -57,23 +57,23 @@ const AccountCardMobile = ({ account, onViewAccount }) => {
                 {/* Sales Representative */}
                 {account.sales_rep ? (
                     <div>
-                        <span className="font-medium text-gray-700">Sales Rep:</span>
-                        <span className="text-gray-600 ml-2">
+                        <span className="font-medium text-muted-foreground">Sales Rep:</span>
+                        <span className="text-muted-foreground ml-2">
                             {account.sales_rep.first_name} {account.sales_rep.last_name}
                         </span>
                     </div>
                 ) : (
                     <div>
-                        <span className="font-medium text-gray-700">Sales Rep:</span>
-                        <span className="text-gray-500 ml-2">Unassigned</span>
+                        <span className="font-medium text-muted-foreground">Sales Rep:</span>
+                        <span className="text-muted-foreground ml-2">Unassigned</span>
                     </div>
                 )}
 
                 {/* Task Count (if available) */}
                 {typeof account.task_count !== "undefined" && (
                     <div>
-                        <span className="font-medium text-gray-700">Tasks:</span>
-                        <span className="text-gray-600 ml-2">{account.task_count}</span>
+                        <span className="font-medium text-muted-foreground">Tasks:</span>
+                        <span className="text-muted-foreground ml-2">{account.task_count}</span>
                     </div>
                 )}
             </div>

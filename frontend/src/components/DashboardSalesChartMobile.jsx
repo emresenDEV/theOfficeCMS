@@ -153,15 +153,15 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
     // Guard: Only render when we have necessary data
     if (!userData || !userData.user_id || !allSalesReps || allSalesReps.length === 0) {
         return (
-            <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="bg-card rounded-lg shadow-md p-4">
                 <h2 className="text-lg font-semibold mb-3">Sales Overview</h2>
-                <p className="text-center text-gray-500">Loading sales data...</p>
+                <p className="text-center text-muted-foreground">Loading sales data...</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="bg-card rounded-lg shadow-md p-4">
             {/* Collapsible Header */}
             <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -175,11 +175,11 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                 <>
                     {/* Year Selector */}
                     <div className="mb-4 flex gap-2 items-center">
-                        <label className="text-sm font-semibold text-gray-700">Year:</label>
+                        <label className="text-sm font-semibold text-muted-foreground">Year:</label>
                         <select
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                            className="text-sm px-2 py-1 border rounded bg-white"
+                            className="text-sm px-2 py-1 border rounded bg-card"
                         >
                             {availableYears.map(year => (
                                 <option key={year} value={year}>{year}</option>
@@ -197,7 +197,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
                                 activeTab === "company"
                                     ? "bg-blue-600 text-white"
-                                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                    : "bg-muted text-muted-foreground hover:bg-muted"
                             }`}
                         >
                             Company
@@ -210,7 +210,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
                                 activeTab === "branch"
                                     ? "bg-blue-600 text-white"
-                                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                    : "bg-muted text-muted-foreground hover:bg-muted"
                             }`}
                         >
                             Branch
@@ -223,7 +223,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
                                 activeTab === "branchUsers"
                                     ? "bg-blue-600 text-white"
-                                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                    : "bg-muted text-muted-foreground hover:bg-muted"
                             }`}
                         >
                             Sales Reps
@@ -233,11 +233,11 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                     {/* Branch Dropdown */}
                     {activeTab === "branch" && (
                         <div className="mb-4">
-                            <label className="text-sm font-semibold text-gray-700 block mb-2">Select Branch:</label>
+                            <label className="text-sm font-semibold text-muted-foreground block mb-2">Select Branch:</label>
                             <select
                                 value={selectedBranch}
                                 onChange={(e) => setSelectedBranch(e.target.value)}
-                                className="w-full text-sm px-2 py-1 border rounded bg-white"
+                                className="w-full text-sm px-2 py-1 border rounded bg-card"
                             >
                                 <option value="">-- Select a branch --</option>
                                 {Object.keys(branchSales).map(branch => (
@@ -250,7 +250,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                     {/* Sales Reps Toggle Buttons */}
                     {activeTab === "branchUsers" && (
                         <div className="mb-4">
-                            <p className="text-sm font-semibold text-gray-700 mb-2">Select Sales Representatives:</p>
+                            <p className="text-sm font-semibold text-muted-foreground mb-2">Select Sales Representatives:</p>
                             <div className="flex flex-wrap gap-1">
                                 {Object.keys(branchUsersSales).map((repName) => (
                                     <button
@@ -265,7 +265,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                                         className={`text-xs px-2 py-1 rounded transition ${
                                             selectedSalesReps.includes(repName)
                                                 ? "bg-purple-600 text-white"
-                                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                                                : "bg-muted text-muted-foreground hover:bg-muted"
                                         }`}
                                     >
                                         {repName}
@@ -277,7 +277,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
 
                     {/* Loading State */}
                     {loading && (
-                        <div className="flex items-center justify-center h-64 text-gray-500">
+                        <div className="flex items-center justify-center h-64 text-muted-foreground">
                             <p>Loading sales data...</p>
                         </div>
                     )}

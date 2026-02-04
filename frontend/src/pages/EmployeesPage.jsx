@@ -30,13 +30,13 @@ const EmployeesPage = ({ user }) => {
         fetchData();
     }, [user.user_id]);
 
-    if (loading) return <div className="text-slate-500 dark:text-slate-400">Loading...</div>;
+    if (loading) return <div className="text-muted-foreground">Loading...</div>;
     if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100">My Info</h1>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-lg shadow-md text-slate-700 dark:text-slate-200">
+            <h1 className="text-2xl font-bold mb-6 text-foreground">My Info</h1>
+            <div className="bg-card border border-border p-6 rounded-lg shadow-md text-foreground">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Personal Information */}
                         <div>

@@ -59,7 +59,7 @@ const localTime = new Date(payment.date_paid).toLocaleString("en-US", {
 
 
 return (
-    <div className="border p-6 rounded-lg bg-white shadow mb-6 text-base relative">
+    <div className="border p-6 rounded-lg bg-card shadow mb-6 text-base relative">
     <div className="flex justify-between items-center mb-4">
         <p className="font-bold">Confirmation #: {payment.payment_id}</p>
         <button
@@ -194,7 +194,7 @@ return (
 
     {showConfirmDelete && (
         <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-        <div className="bg-white p-6 rounded shadow-md w-80">
+        <div className="bg-card p-6 rounded shadow-md w-80">
             <p className="mb-4 font-semibold">
             Are you sure you want to delete this payment?
             </p>
@@ -207,7 +207,7 @@ return (
             </button>
             <button
                 onClick={() => setShowConfirmDelete(false)}
-                className="bg-gray-400 text-black px-3 py-1 rounded hover:bg-gray-500"
+                className="bg-muted text-black px-3 py-1 rounded hover:bg-muted"
             >
                 Cancel
             </button>

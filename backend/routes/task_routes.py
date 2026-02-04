@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from models import Tasks, Users, Account
 from database import db
+from notifications import create_notification
+from audit import create_audit_log
 
 task_bp = Blueprint("tasks", __name__)
 
@@ -9,12 +11,20 @@ task_bp = Blueprint("tasks", __name__)
 @task_bp.route("/", methods=["GET"])
 def get_tasks():
     user_id = request.args.get("assigned_to", type=int)
+    include_all = request.args.get("all", "false").lower() == "true"
+    account_id = request.args.get("account_id", type=int)
     print(f"🔍 DEBUG: Received user_id = {user_id}")  #  Add debugging
 
-    if not user_id:
+    if not user_id and not include_all:
         return jsonify({"message": "User ID required"}), 400
 
-    tasks = Tasks.query.filter(Tasks.assigned_to == user_id).all()
+    query = Tasks.query
+    if user_id:
+        query = query.filter(Tasks.assigned_to == user_id)
+    if account_id:
+        query = query.filter(Tasks.account_id == account_id)
+
+    tasks = query.all()
 
 
     return jsonify([{
@@ -74,6 +84,35 @@ def create_task():
     )
 
     db.session.add(new_task)
+    db.session.flush()
+
+    account = Account.query.get(new_task.account_id) if new_task.account_id else None
+    create_notification(
+        user_id=new_task.assigned_to,
+        notif_type="task_assigned",
+        title="New task assigned",
+        message=account.business_name if account else new_task.task_description,
+        link="/tasks",
+        source_type="task",
+        source_id=new_task.task_id,
+    )
+    create_audit_log(
+        entity_type="task",
+        entity_id=new_task.task_id,
+        action="create",
+        user_id=data.get("actor_user_id") or new_task.user_id,
+        user_email=data.get("actor_email"),
+        after_data={
+            "task_id": new_task.task_id,
+            "user_id": new_task.user_id,
+            "assigned_to": new_task.assigned_to,
+            "task_description": new_task.task_description,
+            "due_date": new_task.due_date,
+            "is_completed": new_task.is_completed,
+            "account_id": new_task.account_id,
+        },
+        account_id=new_task.account_id,
+    )
     db.session.commit()
 
     return jsonify({
@@ -98,13 +137,59 @@ def update_task(task_id):
         return jsonify({"message": "Task not found"}), 404
 
     data = request.json
+    before_data = {
+        "task_id": task.task_id,
+        "user_id": task.user_id,
+        "assigned_to": task.assigned_to,
+        "task_description": task.task_description,
+        "due_date": task.due_date,
+        "is_completed": task.is_completed,
+        "account_id": task.account_id,
+    }
+    assigned_before = task.assigned_to
+    if "user_id" in data:
+        task.user_id = data["user_id"]
+    if "assigned_to" in data:
+        task.assigned_to = data["assigned_to"]
     if "task_description" in data:
         task.task_description = data["task_description"]
     if "due_date" in data:
         task.due_date = data["due_date"]
     if "is_completed" in data:
         task.is_completed = data["is_completed"]
+    if "account_id" in data:
+        task.account_id = data["account_id"]
 
+    if assigned_before != task.assigned_to:
+        account = Account.query.get(task.account_id) if task.account_id else None
+        create_notification(
+            user_id=task.assigned_to,
+            notif_type="task_assigned",
+            title="Task reassigned",
+            message=account.business_name if account else task.task_description,
+            link="/tasks",
+            source_type="task",
+            source_id=task.task_id,
+        )
+
+    create_audit_log(
+        entity_type="task",
+        entity_id=task.task_id,
+        action="update",
+        user_id=data.get("actor_user_id") or task.user_id,
+        user_email=data.get("actor_email"),
+        before_data=before_data,
+        after_data={
+            "task_id": task.task_id,
+            "user_id": task.user_id,
+            "assigned_to": task.assigned_to,
+            "task_description": task.task_description,
+            "due_date": task.due_date,
+            "is_completed": task.is_completed,
+            "account_id": task.account_id,
+        },
+        account_id=task.account_id,
+    )
     db.session.commit()
 
     return jsonify({
@@ -124,7 +209,27 @@ def delete_task(task_id):
     if not task:
         return jsonify({"message": "Task not found"}), 404
 
+    before_data = {
+        "task_id": task.task_id,
+        "user_id": task.user_id,
+        "assigned_to": task.assigned_to,
+        "task_description": task.task_description,
+        "due_date": task.due_date,
+        "is_completed": task.is_completed,
+        "account_id": task.account_id,
+    }
+
     db.session.delete(task)
+    create_audit_log(
+        entity_type="task",
+        entity_id=task_id,
+        action="delete",
+        user_id=request.args.get("actor_user_id", type=int) or task.user_id,
+        user_email=request.args.get("actor_email"),
+        before_data=before_data,
+        after_data=None,
+        account_id=task.account_id,
+    )
     db.session.commit()
 
     return jsonify({"message": "Task deleted successfully"}), 200

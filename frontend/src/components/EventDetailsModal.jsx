@@ -75,6 +75,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                 ...event,
                 start_time: event.start_time ? convertTo12HourFormat(event.start_time) : "12:00 AM",
                 end_time: event.end_time ? convertTo12HourFormat(event.end_time) : "1:00 AM",
+                reminder_minutes: event.reminder_minutes ?? "",
             };
             console.log("🔍 Full Event Data in Modal:", event);
             console.log("📋 Edited Event State:", displayEvent);
@@ -175,6 +176,9 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                 contact_name: editedEvent.contact_name || "",
                 phone_number: editedEvent.phone_number || "",
                 notes: editedEvent.notes || "",
+                reminder_minutes: editedEvent.reminder_minutes
+                    ? parseInt(editedEvent.reminder_minutes, 10)
+                    : null,
                 account_id: editedEvent.account_id || null,
                 user_id: editedEvent.user_id,
             };
@@ -223,15 +227,15 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                <div className="sticky top-0 bg-card border-b border-border p-4 flex justify-between items-center">
+                    <h2 className="text-lg font-bold text-foreground">
                         {isEditMode ? "Edit Event" : "Event Details"}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-2xl font-bold"
+                        className="text-muted-foreground hover:text-foreground text-2xl font-bold"
                         disabled={loading}
                     >
                         ×
@@ -244,14 +248,14 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                         <>
                             {/* Event Title */}
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     Event Title
                                 </label>
                                 <input
                                     type="text"
                                     value={editedEvent.event_title || ""}
                                     onChange={(e) => handleInputChange("event_title", e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded text-sm"
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded text-sm"
                                     placeholder="Enter event title"
                                     disabled={loading}
                                 />
@@ -259,7 +263,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
 
                             {/* Account Search */}
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     Search for an Account
                                 </label>
                                 <input
@@ -267,16 +271,16 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                     value={accountSearch}
                                     onChange={(e) => handleAccountSearch(e.target.value)}
                                     placeholder="Search by account name..."
-                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg text-sm"
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded-lg text-sm"
                                     disabled={loading}
                                 />
                                 {showDropdown && (
-                                    <ul className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full mt-1 rounded shadow-lg max-h-48 overflow-y-auto z-50">
+                                    <ul className="bg-card border border-border w-full mt-1 rounded shadow-lg max-h-48 overflow-y-auto z-50">
                                         {filteredAccounts.map(account => (
                                             <li
                                                 key={account.account_id}
                                                 onClick={() => handleSelectAccount(account)}
-                                                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
+                                                className="p-2 hover:bg-muted cursor-pointer text-sm text-foreground"
                                             >
                                                 {account.business_name}
                                             </li>
@@ -292,34 +296,34 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
 
                             {/* Date */}
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     Start Date
                                 </label>
                                 <input
                                     type="date"
                                     value={editedEvent.start_date || ""}
                                     onChange={(e) => handleInputChange("start_date", e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded text-sm"
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded text-sm"
                                     disabled={loading}
                                 />
                             </div>
 
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     End Date
                                 </label>
                                 <input
                                     type="date"
                                     value={editedEvent.end_date || ""}
                                     onChange={(e) => handleInputChange("end_date", e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded text-sm"
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded text-sm"
                                     disabled={loading}
                                 />
                             </div>
 
                             {/* Time */}
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     Start Time
                                 </label>
                                 <CustomTimePicker
@@ -329,7 +333,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                             </div>
 
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     End Time
                                 </label>
                                 <CustomTimePicker
@@ -340,16 +344,35 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 />
                             </div>
 
+                            {/* Reminder */}
+                            <div>
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
+                                    Reminder
+                                </label>
+                                <select
+                                    value={editedEvent.reminder_minutes ?? ""}
+                                    onChange={(e) => handleInputChange("reminder_minutes", e.target.value)}
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded text-sm"
+                                >
+                                    <option value="">No reminder</option>
+                                    <option value="5">5 minutes before</option>
+                                    <option value="10">10 minutes before</option>
+                                    <option value="15">15 minutes before</option>
+                                    <option value="30">30 minutes before</option>
+                                    <option value="60">1 hour before</option>
+                                </select>
+                            </div>
+
                             {/* Location */}
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     Location
                                 </label>
                                 <input
                                     type="text"
                                     value={editedEvent.location || ""}
                                     onChange={(e) => handleInputChange("location", e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded text-sm"
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded text-sm"
                                     placeholder="Enter location"
                                     disabled={loading}
                                 />
@@ -357,14 +380,14 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
 
                             {/* Contact Name */}
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     Contact Name
                                 </label>
                                 <input
                                     type="text"
                                     value={editedEvent.contact_name || ""}
                                     onChange={(e) => handleInputChange("contact_name", e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded text-sm"
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded text-sm"
                                     placeholder="Enter contact name"
                                     disabled={loading}
                                 />
@@ -372,14 +395,14 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
 
                             {/* Phone Number */}
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     Phone Number
                                 </label>
                                 <input
                                     type="text"
                                     value={editedEvent.phone_number || ""}
                                     onChange={(e) => handleInputChange("phone_number", e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded text-sm"
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded text-sm"
                                     placeholder="Enter phone number"
                                     disabled={loading}
                                 />
@@ -387,13 +410,13 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
 
                             {/* Notes */}
                             <div>
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                                <label className="text-sm font-semibold text-muted-foreground block mb-1">
                                     Notes
                                 </label>
                                 <textarea
                                     value={editedEvent.notes || ""}
                                     onChange={(e) => handleInputChange("notes", e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded text-sm resize-none"
+                                    className="w-full px-3 py-2 border border-border bg-card text-foreground rounded text-sm resize-none"
                                     rows="4"
                                     placeholder="Enter notes"
                                     disabled={loading}
@@ -404,21 +427,30 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                         <>
                             {/* Display Mode */}
                             <div>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">
+                                <h3 className="text-lg font-bold text-foreground mb-2">
                                     {event.event_title}
                                 </h3>
                             </div>
 
-                            <div className="space-y-3 text-sm text-slate-700 dark:text-slate-200">
+                            <div className="space-y-3 text-sm text-foreground">
                                 <div>
                                     <span className="font-semibold">📅 Start Date & Time:</span>
-                                    <p className="text-slate-600 dark:text-slate-400">{formattedDate} at {formattedTime}</p>
+                                    <p className="text-muted-foreground">{formattedDate} at {formattedTime}</p>
                                 </div>
+
+                                {event.reminder_minutes && (
+                                    <div>
+                                        <span className="font-semibold">⏰ Reminder:</span>
+                                        <p className="text-muted-foreground">
+                                            {event.reminder_minutes} minutes before
+                                        </p>
+                                    </div>
+                                )}
 
                                 {event.end_date && event.end_time && (
                                     <div>
                                         <span className="font-semibold">📅 End Date & Time:</span>
-                                        <p className="text-slate-600 dark:text-slate-400">
+                                        <p className="text-muted-foreground">
                                             {DateTime.fromISO(`${event.end_date}T${event.end_time}`).toFormat("MMMM d, yyyy")} at {DateTime.fromISO(`${event.end_date}T${event.end_time}`).toFormat("h:mm a")}
                                         </p>
                                     </div>
@@ -427,57 +459,57 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 {event.contact_name && (
                                     <div>
                                         <span className="font-semibold">👤 Contact:</span>
-                                        <p className="text-slate-600 dark:text-slate-400">{event.contact_name}</p>
+                                        <p className="text-muted-foreground">{event.contact_name}</p>
                                     </div>
                                 )}
 
                                 {event.phone_number && (
                                     <div>
                                         <span className="font-semibold">📱 Phone:</span>
-                                        <p className="text-slate-600 dark:text-slate-400">{event.phone_number}</p>
+                                        <p className="text-muted-foreground">{event.phone_number}</p>
                                     </div>
                                 )}
 
                                 {event.location && (
                                     <div>
                                         <span className="font-semibold">📍 Location:</span>
-                                        <p className="text-slate-600 dark:text-slate-400">{event.location}</p>
+                                        <p className="text-muted-foreground">{event.location}</p>
                                     </div>
                                 )}
 
                                 {event.notes && (
                                     <div>
                                         <span className="font-semibold">📝 Notes:</span>
-                                        <p className="text-slate-600 dark:text-slate-400">{event.notes}</p>
+                                        <p className="text-muted-foreground">{event.notes}</p>
                                     </div>
                                 )}
                             </div>
 
                             {/* Associated Account Section */}
                             {selectedAccount && (
-                                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">Associated Account</h4>
-                                    <div className="space-y-2 text-sm bg-blue-50 dark:bg-slate-800 p-3 rounded-lg">
+                                <div className="mt-4 pt-4 border-t border-border">
+                                    <h4 className="font-semibold text-foreground mb-3">Associated Account</h4>
+                                    <div className="space-y-2 text-sm bg-muted/40 p-3 rounded-lg">
                                         <div>
-                                            <span className="font-semibold text-slate-700 dark:text-slate-300">Business:</span>
-                                            <p className="text-slate-600 dark:text-slate-400">{selectedAccount.business_name}</p>
+                                            <span className="font-semibold text-muted-foreground">Business:</span>
+                                            <p className="text-muted-foreground">{selectedAccount.business_name}</p>
                                         </div>
                                         {selectedAccount.address && (
                                             <div>
-                                                <span className="font-semibold text-slate-700 dark:text-slate-300">Address:</span>
-                                                <p className="text-slate-600 dark:text-slate-400">{selectedAccount.address}, {selectedAccount.city}, {selectedAccount.state} {selectedAccount.zip_code}</p>
+                                                <span className="font-semibold text-muted-foreground">Address:</span>
+                                                <p className="text-muted-foreground">{selectedAccount.address}, {selectedAccount.city}, {selectedAccount.state} {selectedAccount.zip_code}</p>
                                             </div>
                                         )}
                                         {selectedAccount.contact_name && (
                                             <div>
-                                                <span className="font-semibold text-slate-700 dark:text-slate-300">Contact:</span>
-                                                <p className="text-slate-600 dark:text-slate-400">{selectedAccount.contact_name}</p>
+                                                <span className="font-semibold text-muted-foreground">Contact:</span>
+                                                <p className="text-muted-foreground">{selectedAccount.contact_name}</p>
                                             </div>
                                         )}
                                         {selectedAccount.phone_number && (
                                             <div>
-                                                <span className="font-semibold text-slate-700 dark:text-slate-300">Phone:</span>
-                                                <p className="text-slate-600 dark:text-slate-400">{selectedAccount.phone_number}</p>
+                                                <span className="font-semibold text-muted-foreground">Phone:</span>
+                                                <p className="text-muted-foreground">{selectedAccount.phone_number}</p>
                                             </div>
                                         )}
                                     </div>
@@ -488,14 +520,14 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="sticky bottom-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 flex gap-2 justify-between">
+                <div className="sticky bottom-0 bg-background border-t border-border p-4 flex gap-2 justify-between">
                     <div className="flex gap-2">
                         {!isEditMode && (
                             showDeleteConfirm ? (
                                 <>
                                     <button
                                         onClick={cancelDelete}
-                                        className="px-3 py-2 rounded bg-slate-400 text-white text-sm font-semibold hover:bg-slate-500 disabled:opacity-50"
+                                        className="px-3 py-2 rounded bg-secondary text-secondary-foreground text-sm font-semibold hover:bg-secondary/80 disabled:opacity-50"
                                         disabled={loading}
                                     >
                                         Cancel
@@ -527,7 +559,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                         setIsEditMode(false);
                                         setEditedEvent(event);
                                     }}
-                                    className="px-4 py-2 rounded bg-slate-300 text-slate-900 text-sm font-semibold hover:bg-slate-400 disabled:opacity-50"
+                                    className="px-4 py-2 rounded bg-secondary text-secondary-foreground text-sm font-semibold hover:bg-secondary/80 disabled:opacity-50"
                                     disabled={loading}
                                 >
                                     Cancel
@@ -567,6 +599,7 @@ EventDetailsModal.propTypes = {
         contact_name: PropTypes.string,
         phone_number: PropTypes.string,
         notes: PropTypes.string,
+        reminder_minutes: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
         user_id: PropTypes.number,
     }),
     isOpen: PropTypes.bool.isRequired,

@@ -1,19 +1,21 @@
 import { useEffect, useState, useCallback } from "react";
-import SalesChart from "../components/SalesChart";
+import { useNavigate } from "react-router-dom";
 import TasksComponent from "../components/TaskComponent";
 import AccountsTable from "../components/AccountsTable";
 import CreateCalendarEvent from "../components/CreateCalendarEvent";
-import DashboardSalesChartMobile from "../components/DashboardSalesChartMobile";
 import CalendarMobileMini from "../components/CalendarMobileMini";
 import TasksMobileMini from "../components/TasksMobileMini";
 import AccountsMobileMini from "../components/AccountsMobileMini";
 import EventDetailsModal from "../components/EventDetailsModal";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { DashboardCalendarSection } from "../components/DashboardCalendarSection";
+import DashboardSummaryCards from "../components/DashboardSummaryCards";
 import { fetchCalendarEvents } from "../services/calendarService";
 import { fetchTasks } from "../services/tasksService";
 import { fetchUserProfile } from "../services/userService";
-import { fetchUsers } from "../services/userService";
+import { fetchAssignedAccounts, fetchAccountMetrics } from "../services/accountService";
+import { fetchInvoices } from "../services/invoiceService";
+import { fetchCurrentMonthCommissions } from "../services/commissionsService";
 import PropTypes from "prop-types";
 
 const Dashboard = ({ user }) => {
@@ -25,9 +27,14 @@ const Dashboard = ({ user }) => {
     const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
-    const [allSalesReps, setAllSalesReps] = useState([]);
-    const [userSalesData, setUserSalesData] = useState([]);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [summary, setSummary] = useState({
+        totalRevenue: 0,
+        activeAccounts: 0,
+        openInvoices: 0,
+        currentCommission: 0,
+    });
+    const navigate = useNavigate();
 
     // Handle window resize for mobile detection
     useEffect(() => {
@@ -39,30 +46,7 @@ const Dashboard = ({ user }) => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // Fetch sales data for mobile chart
-    useEffect(() => {
-        if (!userData || !userData.user_id) return;
-
-        async function fetchSalesData() {
-            try {
-                const users = await fetchUsers();
-                setAllSalesReps(users);
-
-                // Transform users to sales data format
-                const salesData = users.map((u) => ({
-                    user_id: u.user_id,
-                    name: `${u.first_name} ${u.last_name}`,
-                    branch_id: u.branch_id,
-                    total_sales: u.total_sales || 0,
-                }));
-                setUserSalesData(salesData);
-            } catch (error) {
-                console.error("❌ Error fetching sales data:", error);
-            }
-        }
-
-        fetchSalesData();
-    }, [userData]);
+    // Sales performance moved to Analytics
 
     const refreshDashboardData = useCallback(async (userId) => {
         setLoading(true);
@@ -130,12 +114,49 @@ const Dashboard = ({ user }) => {
         fetchData();
     }, [userData, refreshDashboardData]);
 
+    useEffect(() => {
+        if (!userData || !userData.user_id) return;
+
+        async function loadSummary() {
+            try {
+                const [metrics, accounts, invoices, commissions] = await Promise.all([
+                    fetchAccountMetrics(userData.user_id),
+                    fetchAssignedAccounts(userData.user_id),
+                    fetchInvoices(userData.user_id),
+                    fetchCurrentMonthCommissions(userData.user_id),
+                ]);
+
+                const totalRevenue = Array.isArray(metrics)
+                    ? metrics.reduce((sum, item) => sum + (item.total_revenue || 0), 0)
+                    : 0;
+
+                const openInvoices = Array.isArray(invoices)
+                    ? invoices.filter((inv) => {
+                        const status = (inv.status || "").toLowerCase();
+                        return status && status !== "paid";
+                    }).length
+                    : 0;
+
+                setSummary({
+                    totalRevenue,
+                    activeAccounts: Array.isArray(accounts) ? accounts.length : 0,
+                    openInvoices,
+                    currentCommission: commissions?.total_commissions || 0,
+                });
+            } catch (error) {
+                console.error("❌ Error loading dashboard summary:", error);
+            }
+        }
+
+        loadSummary();
+    }, [userData]);
+
     if (!userData) {
-        return <p className="text-center text-slate-500 dark:text-slate-400">Loading user profile...</p>;
+        return <p className="text-center text-muted-foreground">Loading user profile...</p>;
     }
 
     if (loading) {
-        return <p className="text-center text-slate-500 dark:text-slate-400">Loading dashboard...</p>;
+        return <p className="text-center text-muted-foreground">Loading dashboard...</p>;
     }
 
     const handleRefreshTasks = async () => {
@@ -151,66 +172,64 @@ const Dashboard = ({ user }) => {
                     roleName={userData.role_name || "Sales"}
                 />
 
-                {/* 📊 Sales Chart - Mobile vs Desktop */}
-                {isMobile ? (
-                    <DashboardSalesChartMobile
-                        userData={userData}
-                        userSalesData={userSalesData}
-                        allSalesReps={allSalesReps}
-                    />
-                ) : userData.branch_id ? (
-                    <SalesChart userProfile={userData} />
-                ) : (
-                    <p className="text-center text-slate-500 dark:text-slate-400">Loading Sales Data...</p>
-                )}
-
-                {/* 📅 Calendar - Mobile vs Desktop */}
-                {isMobile ? (
-                    <CalendarMobileMini
-                        events={events}
-                        onEventClick={(event) => {
-                            setSelectedEvent(event);
-                            setShowEventDetailsModal(true);
-                        }}
-                        onCreateEvent={(date) => {
-                            setSelectedDate(date);
-                            setShowCreateModal(true);
-                        }}
-                    />
-                ) : (
-                    <DashboardCalendarSection
-                        events={events}
-                        onAddEvent={(date) => {
-                            setSelectedDate(date);
-                            setShowCreateModal(true);
-                        }}
-                        onEventClick={(event) => {
-                            setSelectedEvent(event);
-                            setShowEventDetailsModal(true);
-                        }}
-                    />
-                )}
-
-                {/* 📋 Tasks - Mobile vs Desktop */}
-                {isMobile ? (
-                    <TasksMobileMini
-                        tasks={tasks}
-                        user={userData}
-                        refreshTasks={handleRefreshTasks}
-                    />
-                ) : (
-                    <TasksComponent
-                        tasks={tasks}
-                        user={userData}
-                        refreshTasks={handleRefreshTasks}
-                    />
-                )}
+                <DashboardSummaryCards
+                    totalRevenue={summary.totalRevenue}
+                    activeAccounts={summary.activeAccounts}
+                    openInvoices={summary.openInvoices}
+                    currentCommission={summary.currentCommission}
+                />
 
                 {/* 🏢 Accounts - Mobile vs Desktop */}
                 {isMobile ? (
                     <AccountsMobileMini user={userData} />
                 ) : (
                     <AccountsTable user={userData} />
+                )}
+
+                {/* Calendar + Tasks */}
+                {isMobile ? (
+                    <>
+                        <CalendarMobileMini
+                            events={events}
+                            onEventClick={(event) => {
+                                setSelectedEvent(event);
+                                setShowEventDetailsModal(true);
+                            }}
+                            onCreateEvent={(date) => {
+                                setSelectedDate(date);
+                                setShowCreateModal(true);
+                            }}
+                        />
+                        <TasksMobileMini
+                            tasks={tasks}
+                            user={userData}
+                            refreshTasks={handleRefreshTasks}
+                        />
+                    </>
+                ) : (
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        <DashboardCalendarSection
+                            events={events}
+                            onAddEvent={(date) => {
+                                setSelectedDate(date);
+                                setShowCreateModal(true);
+                            }}
+                            onDateSelect={(date) => {
+                                if (!date) return;
+                                const formatted = date.toISOString().split("T")[0];
+                                navigate(`/calendar?date=${formatted}`);
+                            }}
+                            onEventClick={(event) => {
+                                setSelectedEvent(event);
+                                setShowEventDetailsModal(true);
+                            }}
+                        />
+                        <TasksComponent
+                            tasks={tasks}
+                            user={userData}
+                            refreshTasks={handleRefreshTasks}
+                        />
+                    </div>
                 )}
             </div>
             {/* EVENT DETAILS MODAL - Mobile */}
@@ -229,7 +248,7 @@ const Dashboard = ({ user }) => {
             {/* MODAL FOR CREATE EVENT */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-                    <div className="bg-white p-6 rounded-lg w-full max-w-3xl shadow-lg">
+                    <div className="bg-card p-6 rounded-lg w-full max-w-3xl shadow-lg">
                         <CreateCalendarEvent
                             userId={userData.user_id}
                             setEvents={setEvents}
