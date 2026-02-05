@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import PipelineStatusBar from "../components/PipelineStatusBar";
-import { addPipelineNote, fetchPipelineDetail, updatePipelineStage } from "../services/pipelineService";
+import { addPipelineNote, fetchPipelineDetail, followPipeline, unfollowPipeline, updatePipelineStage } from "../services/pipelineService";
 import { PIPELINE_STAGES, PIPELINE_STAGE_MAP } from "../utils/pipelineStages";
 import { formatDateInTimeZone, formatDateTimeInTimeZone } from "../utils/timezone";
 
@@ -27,6 +27,7 @@ const PipelineInvoicePage = ({ user }) => {
   const [noteOnly, setNoteOnly] = useState("");
   const [toast, setToast] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const pipeline = detail?.pipeline;
   const invoice = detail?.invoice;
@@ -37,10 +38,11 @@ const PipelineInvoicePage = ({ user }) => {
     let isMounted = true;
     async function loadDetail() {
       setLoading(true);
-      const data = await fetchPipelineDetail(invoiceId);
+      const data = await fetchPipelineDetail(invoiceId, currentUserId);
       if (isMounted) {
         setDetail(data);
         setSelectedStage(data?.effective_stage || data?.pipeline?.current_stage || "");
+        setIsFollowing(!!data?.is_following);
         setLoading(false);
       }
     }
@@ -66,10 +68,12 @@ const PipelineInvoicePage = ({ user }) => {
       actor_email: user?.email,
     });
     if (updated) {
-      const refreshed = await fetchPipelineDetail(invoiceId);
+      const refreshed = await fetchPipelineDetail(invoiceId, currentUserId);
       setDetail(refreshed);
       setStageNote("");
       setToast("Pipeline updated.");
+    } else {
+      setToast("Could not update pipeline. Ensure payment is logged.");
     }
     setSaving(false);
   };
@@ -84,7 +88,7 @@ const PipelineInvoicePage = ({ user }) => {
       actor_email: user?.email,
     });
     if (created) {
-      const refreshed = await fetchPipelineDetail(invoiceId);
+      const refreshed = await fetchPipelineDetail(invoiceId, currentUserId);
       setDetail(refreshed);
       setNoteOnly("");
       setToast("Note added.");
@@ -92,10 +96,39 @@ const PipelineInvoicePage = ({ user }) => {
     setSaving(false);
   };
 
+  const handleFollowToggle = async () => {
+    if (!currentUserId || !invoiceId) return;
+    if (isFollowing) {
+      const res = await unfollowPipeline(invoiceId, currentUserId);
+      if (res) setIsFollowing(false);
+    } else {
+      const res = await followPipeline(invoiceId, currentUserId);
+      if (res) setIsFollowing(true);
+    }
+  };
+
   const formattedHistory = useMemo(() => {
     if (!detail?.history) return [];
     return detail.history;
   }, [detail]);
+
+  const computedTimelineDate = (stageKey) => {
+    if (!pipeline?.payment_received_at) return null;
+    const base = new Date(pipeline.payment_received_at);
+    if (stageKey === "order_packaged") {
+      base.setDate(base.getDate() + 1);
+      return base;
+    }
+    if (stageKey === "order_shipped") {
+      base.setDate(base.getDate() + 2);
+      return base;
+    }
+    if (stageKey === "order_delivered") {
+      base.setDate(base.getDate() + 3);
+      return base;
+    }
+    return null;
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "—";
@@ -150,7 +183,19 @@ const PipelineInvoicePage = ({ user }) => {
               {PIPELINE_STAGE_MAP[detail?.effective_stage]?.label || detail?.effective_stage || pipeline?.current_stage}
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+          <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
+            <button
+              className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+              onClick={handleFollowToggle}
+            >
+              {isFollowing ? "Unfollow Pipeline" : "Follow Pipeline"}
+            </button>
+            <button
+              className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+              onClick={() => navigate(`/invoice/${invoice?.invoice_id}`)}
+            >
+              Open Invoice
+            </button>
             <p className="text-xs uppercase text-muted-foreground">Contact</p>
             {contact?.name ? (
               <div className="mt-1">
@@ -259,6 +304,7 @@ const PipelineInvoicePage = ({ user }) => {
             <tbody className="divide-y divide-border">
               {PIPELINE_STAGES.map((stage) => {
                 const actual = pipeline?.[STAGE_FIELDS[stage.key]];
+                const computed = actual ? null : computedTimelineDate(stage.key);
                 return (
                   <tr key={stage.key} className="hover:bg-muted/40">
                     <td className="px-3 py-2 font-semibold text-foreground">{stage.label}</td>
@@ -266,7 +312,7 @@ const PipelineInvoicePage = ({ user }) => {
                       {formatDate(suggestedDates?.[stage.key])}
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">
-                      {actual ? formatDateTime(actual) : "—"}
+                      {actual ? formatDateTime(actual) : computed ? formatDateTime(computed) : "—"}
                     </td>
                   </tr>
                 );

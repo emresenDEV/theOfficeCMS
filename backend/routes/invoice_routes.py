@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users, TaxRates, AccountContacts, Contact, InvoicePipeline, InvoicePipelineHistory
+from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users, TaxRates, AccountContacts, Contact, InvoicePipeline, InvoicePipelineHistory, InvoicePipelineFollower
 from database import db
 from datetime import datetime
 import pytz
@@ -42,6 +42,40 @@ def _serialize_invoice(invoice):
         "due_date": invoice.due_date.strftime("%Y-%m-%d") if invoice.due_date else None,
         "services": [_serialize_service(s) for s in invoice.invoice_services],
     }
+
+
+def _notify_pipeline_followers(invoice, account, stage, actor_user_id=None, action_required=False):
+    followers = InvoicePipelineFollower.query.filter_by(invoice_id=invoice.invoice_id).all()
+    if not followers:
+        return
+    stage_labels = {
+        "contact_customer": "Contact customer",
+        "order_placed": "Order placed",
+        "payment_not_received": "Payment not received",
+        "payment_received": "Payment received",
+        "order_packaged": "Order packaged",
+        "order_shipped": "Order shipped",
+        "order_delivered": "Order delivered",
+    }
+    step_label = stage_labels.get(stage, stage)
+    title = f"Pipeline update: {step_label}"
+    message = f"{account.business_name} • Invoice #{invoice.invoice_id} • {step_label}"
+    if action_required:
+        message = f"{message} • Action required"
+    for follower in followers:
+        if actor_user_id and follower.user_id == actor_user_id:
+            continue
+        create_notification(
+            user_id=follower.user_id,
+            notif_type="pipeline_update",
+            title=title,
+            message=message,
+            link=f"/pipelines/invoice/{invoice.invoice_id}",
+            account_id=invoice.account_id,
+            invoice_id=invoice.invoice_id,
+            source_type="invoice_pipeline",
+            source_id=invoice.invoice_id,
+        )
 
 # Update Invoice Status (Pending to Paid, Past Due, etc.)
 @invoice_bp.route("/invoices/<int:invoice_id>/update_status", methods=["PUT"])
@@ -536,6 +570,7 @@ def create_invoice():
         invoice_id=new_invoice.invoice_id,
         current_stage="order_placed",
         start_date=(new_invoice.date_created.date() if new_invoice.date_created else datetime.now(central).date()),
+        contacted_at=new_invoice.date_created or datetime.now(central),
         order_placed_at=new_invoice.date_created or datetime.now(central),
     )
     db.session.add(pipeline)
@@ -745,6 +780,13 @@ def log_payment(invoice_id):
                     note="Email sent to contact: payment received update.",
                     actor_user_id=actor_user_id,
                 ))
+                if account:
+                    _notify_pipeline_followers(
+                        invoice,
+                        account,
+                        "payment_received",
+                        actor_user_id=actor_user_id,
+                    )
         else:
             pipeline = InvoicePipeline(
                 invoice_id=invoice_id,
@@ -762,6 +804,13 @@ def log_payment(invoice_id):
                 note="Payment received",
                 actor_user_id=actor_user_id,
             ))
+            if account:
+                _notify_pipeline_followers(
+                    invoice,
+                    account,
+                    "payment_received",
+                    actor_user_id=actor_user_id,
+                )
 
         create_audit_log(
             entity_type="payment",

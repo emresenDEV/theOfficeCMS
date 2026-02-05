@@ -477,11 +477,20 @@ class Notifications(db.Model):
     title = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text)
     link = db.Column(db.String(255))
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.invoice_id"))
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     event_time = db.Column(db.DateTime, nullable=True)
     source_type = db.Column(db.String(50), nullable=True)
     source_id = db.Column(db.Integer, nullable=True)
+
+
+class InvoicePipelineFollower(db.Model):
+    __tablename__ = "invoice_pipeline_followers"
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.invoice_id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), primary_key=True)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 
 class AuditLog(db.Model):

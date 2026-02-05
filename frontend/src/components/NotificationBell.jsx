@@ -41,13 +41,14 @@ const NotificationBell = ({ user }) => {
 
     const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-    const handleRead = async (notification) => {
+    const handleRead = async (notification, linkOverride = null) => {
         if (!notification.is_read) {
             await markNotificationRead(notification.notification_id);
         }
         setOpen(false);
-        if (notification.link) {
-            navigate(notification.link);
+        const target = linkOverride || notification.link;
+        if (target) {
+            navigate(target);
         }
         loadNotifications();
     };
@@ -108,6 +109,34 @@ const NotificationBell = ({ user }) => {
                                 <span className="font-medium text-foreground">{notification.title}</span>
                                 {notification.message && (
                                     <span className="text-xs text-muted-foreground">{notification.message}</span>
+                                )}
+                                {(notification.account_id || notification.invoice_id) && (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {notification.account_id && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRead(notification, `/accounts/details/${notification.account_id}`);
+                                                }}
+                                                className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+                                            >
+                                                Open Account
+                                            </button>
+                                        )}
+                                        {notification.invoice_id && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRead(notification, `/invoice/${notification.invoice_id}`);
+                                                }}
+                                                className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+                                            >
+                                                Open Invoice
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                                 {notification.created_at && (
                                     <span className="text-[11px] text-muted-foreground">

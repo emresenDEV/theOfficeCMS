@@ -74,6 +74,8 @@ def get_notifications():
             "title": n.title,
             "message": n.message,
             "link": n.link,
+            "account_id": n.account_id,
+            "invoice_id": n.invoice_id,
             "is_read": n.is_read,
             "created_at": n.created_at.strftime("%Y-%m-%d %H:%M:%S") if n.created_at else None,
             "event_time": n.event_time.strftime("%Y-%m-%d %H:%M:%S") if n.event_time else None,
@@ -101,6 +103,8 @@ def create_notification_route():
         title=title,
         message=data.get("message"),
         link=data.get("link"),
+        account_id=data.get("account_id"),
+        invoice_id=data.get("invoice_id"),
         source_type=data.get("source_type"),
         source_id=data.get("source_id"),
     )

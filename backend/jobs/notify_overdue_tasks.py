@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from app import app
 from database import db
-from models import Tasks, Account, Invoice, InvoicePipeline, InvoicePipelineHistory
+from models import Tasks, Account, Invoice, InvoicePipeline, InvoicePipelineHistory, Payment, InvoicePipelineFollower
 from notifications import create_notification
 
 
@@ -119,8 +119,10 @@ def notify_overdue_tasks():
             user_id=invoice.sales_rep_id,
             notif_type="pipeline_payment_issue_followup",
             title="Payment issue follow-up",
-            message=f"Invoice #{invoice.invoice_id}: payment issue unresolved for 2+ days. Please call the contact.",
+            message=f"{account.business_name} • Invoice #{invoice.invoice_id} • Payment issue unresolved for 2+ days. Please call the contact.",
             link=f"/pipelines/invoice/{invoice.invoice_id}",
+            account_id=invoice.account_id,
+            invoice_id=invoice.invoice_id,
             source_type="invoice",
             source_id=invoice.invoice_id,
         )
@@ -135,6 +137,105 @@ def notify_overdue_tasks():
 
     if pipeline_issues:
         db.session.commit()
+
+    _advance_paid_pipelines(now)
+
+
+def _advance_paid_pipelines(now):
+    stage_order = [
+        "payment_received",
+        "order_packaged",
+        "order_shipped",
+        "order_delivered",
+    ]
+    stage_fields = {
+        "payment_received": "payment_received_at",
+        "order_packaged": "order_packaged_at",
+        "order_shipped": "order_shipped_at",
+        "order_delivered": "order_delivered_at",
+    }
+    stage_labels = {
+        "payment_received": "Payment received",
+        "order_packaged": "Order packaged",
+        "order_shipped": "Order shipped",
+        "order_delivered": "Order delivered",
+    }
+
+    pipelines = (
+        db.session.query(InvoicePipeline, Invoice, Account)
+        .join(Invoice, Invoice.invoice_id == InvoicePipeline.invoice_id)
+        .join(Account, Account.account_id == Invoice.account_id)
+        .all()
+    )
+
+    for pipeline, invoice, account in pipelines:
+        total_paid = db.session.query(db.func.coalesce(db.func.sum(Payment.total_paid), 0)).filter(
+            Payment.invoice_id == invoice.invoice_id
+        ).scalar() or 0
+        final_total = float(invoice.final_total or 0)
+        if final_total > 0 and total_paid < final_total:
+            continue
+
+        payment_date = pipeline.payment_received_at
+        if not payment_date:
+            latest_payment = db.session.query(db.func.max(Payment.date_paid)).filter(
+                Payment.invoice_id == invoice.invoice_id
+            ).scalar()
+            payment_date = latest_payment
+            if payment_date:
+                pipeline.payment_received_at = payment_date
+
+        if not payment_date:
+            continue
+
+        days_since = (now.date() - payment_date.date()).days
+        if days_since >= 3:
+            target_stage = "order_delivered"
+        elif days_since >= 2:
+            target_stage = "order_shipped"
+        elif days_since >= 1:
+            target_stage = "order_packaged"
+        else:
+            target_stage = "payment_received"
+
+        if pipeline.current_stage not in stage_order:
+            pipeline.current_stage = "payment_received"
+
+        current_index = stage_order.index(pipeline.current_stage)
+        target_index = stage_order.index(target_stage)
+        if target_index <= current_index:
+            continue
+
+        for idx in range(current_index + 1, target_index + 1):
+            stage = stage_order[idx]
+            field = stage_fields.get(stage)
+            if field and getattr(pipeline, field) is None:
+                setattr(pipeline, field, now)
+            pipeline.current_stage = stage
+            pipeline.updated_at = now
+            db.session.add(InvoicePipelineHistory(
+                invoice_id=invoice.invoice_id,
+                stage=stage,
+                action="status_change",
+                note=stage_labels.get(stage, stage),
+                actor_user_id=None,
+            ))
+
+            followers = InvoicePipelineFollower.query.filter_by(invoice_id=invoice.invoice_id).all()
+            for follower in followers:
+                create_notification(
+                    user_id=follower.user_id,
+                    notif_type="pipeline_update",
+                    title=f"Pipeline update: {stage_labels.get(stage, stage)}",
+                    message=f"{account.business_name} • Invoice #{invoice.invoice_id} • {stage_labels.get(stage, stage)}",
+                    link=f"/pipelines/invoice/{invoice.invoice_id}",
+                    account_id=invoice.account_id,
+                    invoice_id=invoice.invoice_id,
+                    source_type="invoice_pipeline",
+                    source_id=invoice.invoice_id,
+                )
+
+    db.session.commit()
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import PipelineStatusBar from "../components/PipelineStatusBar";
 import { fetchPipelineList, fetchPipelineSummary } from "../services/pipelineService";
+import { fetchUsers } from "../services/userService";
 import { PIPELINE_STAGES, PIPELINE_STAGE_MAP } from "../utils/pipelineStages";
 import { formatDateInTimeZone } from "../utils/timezone";
 import { cn } from "../lib/utils";
@@ -13,6 +14,13 @@ const PipelineDashboard = ({ user }) => {
   const [summary, setSummary] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState([]);
+  const [salesRepId, setSalesRepId] = useState("");
+  const [accountSearch, setAccountSearch] = useState("");
+  const [invoiceIdSearch, setInvoiceIdSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [dateField, setDateField] = useState("created");
   const currentUserId = user?.user_id ?? user?.id ?? null;
 
   const stageParam = searchParams.get("stage") || "order_placed";
@@ -36,25 +44,37 @@ const PipelineDashboard = ({ user }) => {
     });
   };
 
+  const filters = useMemo(
+    () => ({
+      sales_rep_id: salesRepId || undefined,
+      account_search: accountSearch || undefined,
+      invoice_id: invoiceIdSearch || undefined,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+      date_field: dateField || undefined,
+    }),
+    [salesRepId, accountSearch, invoiceIdSearch, dateFrom, dateTo, dateField]
+  );
+
   useEffect(() => {
     if (!currentUserId) return;
     let isMounted = true;
     async function loadSummary() {
-      const data = await fetchPipelineSummary(currentUserId);
+      const data = await fetchPipelineSummary(currentUserId, filters);
       if (isMounted) setSummary(Array.isArray(data) ? data : []);
     }
     loadSummary();
     return () => {
       isMounted = false;
     };
-  }, [currentUserId]);
+  }, [currentUserId, filters]);
 
   useEffect(() => {
     if (!currentUserId) return;
     let isMounted = true;
     async function loadRows() {
       setLoading(true);
-      const data = await fetchPipelineList(stageParam, currentUserId);
+      const data = await fetchPipelineList(stageParam, currentUserId, filters);
       if (isMounted) {
         setRows(Array.isArray(data) ? data : []);
         setLoading(false);
@@ -64,7 +84,15 @@ const PipelineDashboard = ({ user }) => {
     return () => {
       isMounted = false;
     };
-  }, [stageParam, currentUserId]);
+  }, [stageParam, currentUserId, filters]);
+
+  useEffect(() => {
+    async function loadUsers() {
+      const data = await fetchUsers();
+      setUsers(Array.isArray(data) ? data : []);
+    }
+    loadUsers();
+  }, []);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -118,6 +146,74 @@ const PipelineDashboard = ({ user }) => {
                 {stage.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-lg border border-border bg-card p-4">
+          <h2 className="text-sm font-semibold text-foreground">Filters</h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-6">
+            <div className="md:col-span-2">
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Account</label>
+              <input
+                className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                placeholder="Search by account name"
+                value={accountSearch}
+                onChange={(e) => setAccountSearch(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Invoice #</label>
+              <input
+                className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                placeholder="ID"
+                value={invoiceIdSearch}
+                onChange={(e) => setInvoiceIdSearch(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Sales Rep</label>
+              <select
+                className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                value={salesRepId}
+                onChange={(e) => setSalesRepId(e.target.value)}
+              >
+                <option value="">All</option>
+                {users.map((rep) => (
+                  <option key={rep.user_id} value={rep.user_id}>
+                    {rep.first_name} {rep.last_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Date Field</label>
+              <select
+                className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                value={dateField}
+                onChange={(e) => setDateField(e.target.value)}
+              >
+                <option value="created">Invoice Created</option>
+                <option value="updated">Pipeline Updated</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">From</label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">To</label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 

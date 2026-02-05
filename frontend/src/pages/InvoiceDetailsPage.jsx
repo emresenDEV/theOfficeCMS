@@ -25,8 +25,8 @@ import PaidBox from "../components/PaidBox";
 import { fetchAccountDetails } from "../services/accountService";
 import { formatDateInTimeZone } from "../utils/timezone";
 import PipelineStatusBar from "../components/PipelineStatusBar";
-import { fetchPipelineDetail, updatePipelineStage } from "../services/pipelineService";
-import { PIPELINE_STAGES, PIPELINE_STAGE_MAP } from "../utils/pipelineStages";
+import { fetchPipelineDetail, followPipeline, unfollowPipeline, updatePipelineStage } from "../services/pipelineService";
+import { PIPELINE_STAGES } from "../utils/pipelineStages";
 import PropTypes from "prop-types";
 
 const PIPELINE_STAGE_FIELDS = {
@@ -92,6 +92,7 @@ const [pipelineStage, setPipelineStage] = useState("order_placed");
 const [pipelineNote, setPipelineNote] = useState("");
 const [pipelineSaving, setPipelineSaving] = useState(false);
 const [pipelineToast, setPipelineToast] = useState("");
+const [pipelineFollowing, setPipelineFollowing] = useState(false);
 
 const openPaymentModal = () => {
     setPaymentForm({
@@ -176,10 +177,12 @@ useEffect(() => {
 
 useEffect(() => {
     async function loadPipeline() {
-        const detail = await fetchPipelineDetail(invoiceId);
+        const actorId = user?.user_id ?? user?.id;
+        const detail = await fetchPipelineDetail(invoiceId, actorId);
         if (detail) {
             setPipelineDetail(detail);
             setPipelineStage(detail.effective_stage || detail.pipeline?.current_stage || "order_placed");
+            setPipelineFollowing(!!detail.is_following);
         }
     }
     loadPipeline();
@@ -402,12 +405,26 @@ const handleUpdatePipeline = async () => {
         actor_email: user?.email,
     });
     if (updated) {
-        const refreshed = await fetchPipelineDetail(invoiceId);
+        const refreshed = await fetchPipelineDetail(invoiceId, actorId);
         setPipelineDetail(refreshed);
         setPipelineNote("");
         setPipelineToast("Pipeline updated.");
+    } else {
+        setPipelineToast("Could not update pipeline. Ensure payment is logged.");
     }
     setPipelineSaving(false);
+};
+
+const handleTogglePipelineFollow = async () => {
+    const actorId = user?.user_id ?? user?.id;
+    if (!actorId) return;
+    if (pipelineFollowing) {
+        const res = await unfollowPipeline(invoiceId, actorId);
+        if (res) setPipelineFollowing(false);
+    } else {
+        const res = await followPipeline(invoiceId, actorId);
+        if (res) setPipelineFollowing(true);
+    }
 };
 const handleDeleteService = async (index) => {
     const serviceToDelete = services[index];
@@ -521,13 +538,21 @@ if (!invoice)
                     {pipelineToast}
                 </div>
             )}
-            <div className="flex justify-between items-center mb-4">
-                <button
-                    onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
-                    className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
-                >
-                    ← Back to Account
-                </button>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
+                        className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
+                    >
+                        ← Back to Account
+                    </button>
+                    <button
+                        onClick={() => setShowEditInvoiceForm((prev) => !prev)}
+                        className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
+                    >
+                        {showEditInvoiceForm ? "Close Edit" : "Edit"}
+                    </button>
+                </div>
 
                 {/* Status Icon Badge on Right Side */}
                 <div>
@@ -622,17 +647,10 @@ if (!invoice)
                 </div>
             </div>
             {/* Edit Invoice Form */}
+            {showEditInvoiceForm && (
             <section className="mb-6 border p-4 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                     <h2 className="text-xl font-semibold text-left">Edit Invoice</h2>
-                    {!showEditInvoiceForm && (
-                    <button
-                        onClick={() => setShowEditInvoiceForm(true)}
-                        className="bg-primary text-primary-foreground px-3 py-1 rounded hover:bg-primary/90"
-                    >
-                        Edit Invoice
-                    </button>
-                    )}
                 </div>
 
                 {showEditInvoiceForm && (
@@ -747,16 +765,21 @@ if (!invoice)
                     </div>
                 )}
                 </section>
+            )}
 
 
             {/* SERVICES TABLE */}
             <section className="mb-6 border p-4 rounded-lg">
             <div className="flex justify-between items-center mb-2">
                 <h2 className="text-xl font-semibold text-left">Services</h2>
-                <button
-                onClick={handleAddServiceRow}
-                className="bg-primary text-primary-foreground px-3 py-1 rounded shadow hover:bg-primary/90"
-                >Add Service</button>
+                {showEditInvoiceForm && (
+                    <button
+                        onClick={handleAddServiceRow}
+                        className="bg-primary text-primary-foreground px-3 py-1 rounded shadow hover:bg-primary/90"
+                    >
+                        Add Service
+                    </button>
+                )}
             </div>
             <div className="overflow-y-auto max-h-64 border rounded-lg">
                 <table className="w-full">
@@ -1017,32 +1040,51 @@ if (!invoice)
                             <p><strong>Due Date:</strong> {formatDate(invoice.due_date)}</p>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-3">
-                            <div>
-                                <p className="text-sm font-semibold text-foreground">Share Invoice</p>
-                                <p className="text-xs text-muted-foreground">Send or download the invoice.</p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                {accountDetails ? (
-                                    <InvoiceActions
-                                        invoice={invoice}
-                                        services={services}
-                                        salesRep={{
-                                            first_name: invoice.sales_rep_name?.split(" ")[0] || "",
-                                            last_name: invoice.sales_rep_name?.split(" ")[1] || "",
-                                            email: invoice.sales_rep_email,
-                                            phone_number: invoice.sales_rep_phone,
-                                        }}
-                                        branch={branch}
-                                        accountDetails={accountDetails}
-                                        payment={invoice.payments?.[0] || null}
-                                        user={user}
-                                    />
-                                ) : (
-                                    <p>Loading account details...</p>
-                                )}
+                        <div className="mt-4 rounded-lg border border-border bg-background p-3">
+                            <p className="text-sm font-semibold text-foreground mb-2">Service Breakdown</p>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-xs">
+                                    <thead className="bg-muted/40 text-[11px] uppercase text-muted-foreground">
+                                        <tr>
+                                            <th className="px-2 py-1 text-left">Service</th>
+                                            <th className="px-2 py-1 text-right">Price/Unit</th>
+                                            <th className="px-2 py-1 text-right">Qty</th>
+                                            <th className="px-2 py-1 text-right">Disc %</th>
+                                            <th className="px-2 py-1 text-right">Disc $</th>
+                                            <th className="px-2 py-1 text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border">
+                                        {services.map((service) => {
+                                            const discountPercent = (service.discount_percent || 0) * 100;
+                                            const discountTotal = service.price_per_unit * service.quantity * (service.discount_percent || 0);
+                                            const total = service.price_per_unit * service.quantity * (1 - (service.discount_percent || 0));
+                                            return (
+                                                <tr key={service.invoice_service_id || service.service_id}>
+                                                    <td className="px-2 py-1 text-foreground">{service.service_name}</td>
+                                                    <td className="px-2 py-1 text-right text-muted-foreground">
+                                                        {formatCurrency(service.price_per_unit)}
+                                                    </td>
+                                                    <td className="px-2 py-1 text-right text-muted-foreground">
+                                                        {service.quantity}
+                                                    </td>
+                                                    <td className="px-2 py-1 text-right text-muted-foreground">
+                                                        {discountPercent.toFixed(0)}%
+                                                    </td>
+                                                    <td className="px-2 py-1 text-right text-muted-foreground">
+                                                        {formatCurrency(discountTotal)}
+                                                    </td>
+                                                    <td className="px-2 py-1 text-right text-muted-foreground">
+                                                        {formatCurrency(total)}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
+
                     </div>
 
                     <div className="flex flex-col items-end gap-3">
@@ -1052,6 +1094,27 @@ if (!invoice)
                         >
                             Log Payment
                         </button>
+                        {accountDetails ? (
+                            <div className="flex flex-col items-end gap-2">
+                                <p className="text-xs text-muted-foreground">Share Invoice</p>
+                                <InvoiceActions
+                                    invoice={invoice}
+                                    services={services}
+                                    salesRep={{
+                                        first_name: invoice.sales_rep_name?.split(" ")[0] || "",
+                                        last_name: invoice.sales_rep_name?.split(" ")[1] || "",
+                                        email: invoice.sales_rep_email,
+                                        phone_number: invoice.sales_rep_phone,
+                                    }}
+                                    branch={branch}
+                                    accountDetails={accountDetails}
+                                    payment={invoice.payments?.[0] || null}
+                                    user={user}
+                                />
+                            </div>
+                        ) : (
+                            <p>Loading account details...</p>
+                        )}
                     </div>
                 </div>
             </section>
@@ -1063,12 +1126,20 @@ if (!invoice)
                         <h2 className="text-lg font-semibold text-foreground">Paper Sales Pipeline</h2>
                         <p className="text-xs text-muted-foreground">Track invoice progress and customer updates.</p>
                     </div>
-                    <button
-                        className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
-                        onClick={() => navigate(`/pipelines/invoice/${invoice.invoice_id}`)}
-                    >
-                        Open Pipeline
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                            onClick={handleTogglePipelineFollow}
+                        >
+                            {pipelineFollowing ? "Unfollow Pipeline" : "Follow Pipeline"}
+                        </button>
+                        <button
+                            className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                            onClick={() => navigate(`/pipelines/invoice/${invoice.invoice_id}`)}
+                        >
+                            Open Pipeline
+                        </button>
+                    </div>
                 </div>
 
                 <div className="mt-4 rounded-lg border border-border bg-background p-4">
@@ -1125,11 +1196,33 @@ if (!invoice)
                             {PIPELINE_STAGES.map((stage) => {
                                 const suggested = pipelineDetail?.suggested_dates?.[stage.key];
                                 const actual = pipelineDetail?.pipeline?.[PIPELINE_STAGE_FIELDS[stage.key]];
+                                let computed = null;
+                                const paymentDate = pipelineDetail?.pipeline?.payment_received_at
+                                    ? new Date(pipelineDetail.pipeline.payment_received_at)
+                                    : null;
+                                if (!actual && paymentDate) {
+                                    if (stage.key === "order_packaged") {
+                                        paymentDate.setDate(paymentDate.getDate() + 1);
+                                        computed = paymentDate;
+                                    } else if (stage.key === "order_shipped") {
+                                        paymentDate.setDate(paymentDate.getDate() + 2);
+                                        computed = paymentDate;
+                                    } else if (stage.key === "order_delivered") {
+                                        paymentDate.setDate(paymentDate.getDate() + 3);
+                                        computed = paymentDate;
+                                    }
+                                }
                                 return (
                                     <div key={stage.key} className="flex items-center justify-between gap-2">
                                         <span className="text-muted-foreground">{stage.label}</span>
                                         <span className="text-xs text-foreground">
-                                            {actual ? formatDate(actual) : suggested ? formatDate(suggested) : "—"}
+                                            {actual
+                                                ? formatDate(actual)
+                                                : computed
+                                                  ? formatDate(computed)
+                                                  : suggested
+                                                    ? formatDate(suggested)
+                                                    : "—"}
                                         </span>
                                     </div>
                                 );
