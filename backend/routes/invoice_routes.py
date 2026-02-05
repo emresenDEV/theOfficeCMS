@@ -193,6 +193,7 @@ def get_invoice_by_id(invoice_id):
             "zip_code": account.zip_code if account else None,
             "phone_number": account.phone_number if account else None,
             "email": account.email if account else None,
+            "contact_name": account.contact_name if account else None,
 
             # Sales rep details
             "sales_rep_name": f"{getattr(sales_rep, 'first_name', '')} {getattr(sales_rep, 'last_name', '')}".strip() if sales_rep else None,
@@ -220,6 +221,15 @@ def get_invoices_by_account(account_id):
     try:
         status_filter = request.args.get("status")  # optional query param
 
+        payment_totals = (
+            db.session.query(
+                Payment.invoice_id.label("invoice_id"),
+                func.coalesce(func.sum(Payment.total_paid), 0).label("total_paid"),
+            )
+            .group_by(Payment.invoice_id)
+            .subquery()
+        )
+
         query = (
             db.session.query(
                 Invoice.invoice_id,
@@ -234,9 +244,11 @@ def get_invoices_by_account(account_id):
                 Invoice.date_created,
                 Invoice.date_updated,
                 Invoice.due_date,
-                func.sum(Commissions.commission_amount).label("commission_amount")
+                func.sum(Commissions.commission_amount).label("commission_amount"),
+                func.coalesce(payment_totals.c.total_paid, 0).label("total_paid"),
             )
             .outerjoin(Commissions, Commissions.invoice_id == Invoice.invoice_id)
+            .outerjoin(payment_totals, payment_totals.c.invoice_id == Invoice.invoice_id)
             .filter(Invoice.account_id == account_id)
         )
 
@@ -256,7 +268,8 @@ def get_invoices_by_account(account_id):
                 Invoice.status,
                 Invoice.date_created,
                 Invoice.date_updated,
-                Invoice.due_date
+                Invoice.due_date,
+                payment_totals.c.total_paid
             )
             .all()
         )
@@ -276,7 +289,8 @@ def get_invoices_by_account(account_id):
                 "date_created": inv.date_created.strftime('%Y-%m-%d') if inv.date_created else None,
                 "date_updated": inv.date_updated.strftime('%Y-%m-%d') if inv.date_updated else None,
                 "due_date": inv.due_date.strftime('%Y-%m-%d') if inv.due_date else None,
-                "commission_amount": float(inv.commission_amount or 0)
+                "commission_amount": float(inv.commission_amount or 0),
+                "total_paid": float(inv.total_paid or 0),
             })
 
         return jsonify(result), 200

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { formatDateTimeInTimeZone } from "../utils/timezone";
 import { fetchUsers } from "../services/userService";
 import { fetchAccounts, createAccount, updateAccount, deleteAccount } from "../services/accountService";
 import { fetchAllInvoices, createInvoice, updateInvoice, deleteInvoice, fetchInvoiceById, fetchPaymentMethods, logInvoicePayment } from "../services/invoiceService";
@@ -551,7 +552,17 @@ const AdminPage = ({ user }) => {
           <div className="rounded-md border border-border bg-card p-4 shadow-card">
             <p className="text-xs uppercase text-muted-foreground">Changes (7d)</p>
             <p className="text-2xl font-semibold text-foreground">{auditSummary?.total || 0}</p>
-            <p className="text-xs text-muted-foreground">Last: {auditSummary?.latest_at ? new Date(auditSummary.latest_at).toLocaleString() : "—"}</p>
+            <p className="text-xs text-muted-foreground">
+              Last: {auditSummary?.latest_at
+                ? formatDateTimeInTimeZone(auditSummary.latest_at, null, {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "—"}
+            </p>
           </div>
         </div>
       )}

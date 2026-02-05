@@ -158,7 +158,7 @@ const AccountDetailsPage = ({ user }) => {
             <NotesSection 
                 notes={notes}
                 accountId={account?.account_id || 0}
-                userId={user?.id || 0}
+                userId={user?.user_id ?? user?.id ?? 0}
                 setNotes={setNotes}
                 refreshNotes={refreshNotes}
                 invoiceId={invoices.length > 0 ? invoices[0].invoice_id : null}
@@ -167,7 +167,7 @@ const AccountDetailsPage = ({ user }) => {
             <TasksSection
                 tasks={tasks}
                 users={users}  
-                userId={user?.id || 0}  
+                userId={user?.user_id ?? user?.id ?? 0}  
                 accountId={account?.account_id || 0}  
                 setTasks={setTasks}
                 refreshTasks={refreshTasks}

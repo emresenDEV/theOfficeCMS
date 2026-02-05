@@ -3,6 +3,7 @@ from models import Users, Branches, Departments, UserRoles
 from database import db
 from werkzeug.security import generate_password_hash
 from audit import create_audit_log
+from notifications import create_notification
 
 user_bp = Blueprint("users", __name__)
 
@@ -36,7 +37,10 @@ def get_users():
             "department_id": user.department_id,
             "reports_to": user.reports_to,
             "email": user.email,
-            "branch_id": user.branch_id
+            "branch_id": user.branch_id,
+            "timezone": user.timezone,
+            "timezone_mode": user.timezone_mode,
+            "contacts_autosave": user.contacts_autosave,
         } for user in users
     ]), 200
 
@@ -120,6 +124,9 @@ def update_user(user_id):
         "department_id": user.department_id,
         "branch_id": user.branch_id,
         "is_active": user.is_active,
+        "timezone": user.timezone,
+        "timezone_mode": user.timezone_mode,
+        "contacts_autosave": user.contacts_autosave,
     }
 
     user.username = data.get("username", user.username)
@@ -136,6 +143,10 @@ def update_user(user_id):
     user.commission_rate = data.get("commission_rate", user.commission_rate)
     user.receives_commission = data.get("receives_commission", user.receives_commission)
     user.is_active = data.get("is_active", user.is_active)
+    user.timezone = data.get("timezone", user.timezone)
+    user.timezone_mode = data.get("timezone_mode", user.timezone_mode)
+    if "contacts_autosave" in data:
+        user.contacts_autosave = data.get("contacts_autosave")
 
     if "password" in data and data["password"]:
         password = data["password"]
@@ -153,7 +164,29 @@ def update_user(user_id):
         "department_id": user.department_id,
         "branch_id": user.branch_id,
         "is_active": user.is_active,
+        "timezone": user.timezone,
+        "timezone_mode": user.timezone_mode,
+        "contacts_autosave": user.contacts_autosave,
     }
+
+    if before_data.get("timezone") != after_data.get("timezone") or before_data.get("timezone_mode") != after_data.get("timezone_mode"):
+        detected_tz = data.get("detected_timezone")
+        selected_tz = after_data.get("timezone") or detected_tz
+        message_parts = []
+        if detected_tz:
+            message_parts.append(f"System detected {detected_tz}.")
+        if selected_tz:
+            message_parts.append(f"You selected {selected_tz}.")
+        message_parts.append("Open Settings to review your timezone.")
+        create_notification(
+            user_id=user.user_id,
+            notif_type="timezone_change",
+            title="Timezone updated. Open Settings",
+            message=" ".join(message_parts),
+            link="/settings?highlight=timezone",
+            source_type="user",
+            source_id=user.user_id,
+        )
 
     create_audit_log(
         entity_type="user",
@@ -277,6 +310,9 @@ def get_user_by_id(user_id):
         "receives_commission": user.receives_commission,
         "date_created": user.date_created.isoformat() if user.date_created else None,
         "date_updated": user.date_updated.isoformat() if user.date_updated else None,
+        "timezone": user.timezone,
+        "timezone_mode": user.timezone_mode,
+        "contacts_autosave": user.contacts_autosave,
     }), 200
     
 @user_bp.route("/sales_reps", methods=["GET"])

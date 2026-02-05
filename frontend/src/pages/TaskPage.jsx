@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchTasks, createTask, updateTask, deleteTask, fetchDepartments, fetchEmployees, fetchUsers } from "../services/tasksService";
 import { fetchBranches } from "../services/branchService";
 import { fetchAccounts } from "../services/accountService";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { format } from "date-fns";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
@@ -12,6 +12,7 @@ import CreateTaskModal from "../components/CreateTaskModal";
 
 const TasksPage = ({ user }) => {
 const navigate = useNavigate();
+const location = useLocation();
 const [tasks, setTasks] = useState([]);
 const [completedTasks, setCompletedTasks] = useState([]);
 const [accounts, setAccounts] = useState([]);
@@ -26,6 +27,8 @@ const [completingTask, setCompletingTask] = useState({});
 const [confirmDelete, setConfirmDelete] = useState(null);
 const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 const [showCreateModal, setShowCreateModal] = useState(false);
+const [highlightTaskId, setHighlightTaskId] = useState(null);
+const currentUserId = user?.user_id ?? user?.id ?? null;
 
 // Handle window resize for mobile detection
 useEffect(() => {
@@ -38,12 +41,12 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-    if (!user || !user.id) return;
+    if (!user || !currentUserId) return;
 
     async function loadData() {
         try {
             // Fetch sequentially to avoid overwhelming Cloudflare tunnel
-            const fetchedTasks = await fetchTasks(user.id);
+            const fetchedTasks = await fetchTasks(currentUserId);
             const fetchedAccounts = await fetchAccounts();
             const fetchedUsers = await fetchUsers();
 
@@ -65,7 +68,26 @@ useEffect(() => {
     }
 
     loadData();
-}, [user]); 
+}, [user, currentUserId]); 
+
+useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const taskId = params.get("taskId");
+    if (!taskId) return;
+    setHighlightTaskId(taskId);
+    const targetId = `task-row-${taskId}`;
+    const timeoutId = setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, 150);
+    const clearId = setTimeout(() => setHighlightTaskId(null), 10000);
+    return () => {
+        clearTimeout(timeoutId);
+        clearTimeout(clearId);
+    };
+}, [location.search, tasks, completedTasks]);
 
 
 useEffect(() => {
@@ -124,7 +146,7 @@ const handleTaskCompletion = (task) => {
         // After 5 seconds, finalize completion
         const timeoutId = setTimeout(async () => {
             try {
-                const updatedTask = { ...task, is_completed: true, actor_user_id: user.id, actor_email: user.email };
+            const updatedTask = { ...task, is_completed: true, actor_user_id: currentUserId, actor_email: user.email };
                 await updateTask(task.task_id, updatedTask);
 
                 setTasks((prevTasks) => prevTasks.filter((t) => t.task_id !== task.task_id));
@@ -150,7 +172,7 @@ const handleTaskCompletion = (task) => {
     // If task is already completed, Undo instantly
     (async () => {
         try {
-            const updatedTask = { ...task, is_completed: false, actor_user_id: user.id, actor_email: user.email };
+        const updatedTask = { ...task, is_completed: false, actor_user_id: currentUserId, actor_email: user.email };
             await updateTask(task.task_id, updatedTask);
 
             setCompletedTasks((prevCompletedTasks) => prevCompletedTasks.filter((t) => t.task_id !== task.task_id));
@@ -197,7 +219,7 @@ const handleEditTask = async () => {
             due_date: editingTask.due_date 
                 ? new Date(editingTask.due_date).toISOString().replace("T", " ").split(".")[0]
                 : null,
-            actor_user_id: user.id,
+            actor_user_id: currentUserId,
             actor_email: user.email,
         };
 
@@ -236,7 +258,7 @@ const handleEditTask = async () => {
 const handleDeleteTask = async (taskId) => {
     if (confirmDelete === taskId) {
         try {
-            const deleted = await deleteTask(taskId, user.id, user.email);
+            const deleted = await deleteTask(taskId, currentUserId, user.email);
             if (deleted) {
                 setTasks((prevTasks) => prevTasks.filter((task) => task.task_id !== taskId));
                 setCompletedTasks((prevCompletedTasks) => prevCompletedTasks.filter((task) => task.task_id !== taskId));
@@ -267,13 +289,13 @@ const handleCreateTask = async (taskPayload) => {
     try {
         await createTask({
             ...taskPayload,
-            user_id: user.id,
-            actor_user_id: user.id,
+            user_id: currentUserId,
+            actor_user_id: currentUserId,
             actor_email: user.email,
         });
 
         // Reload tasks
-        const fetchedTasks = await fetchTasks(user.id);
+        const fetchedTasks = await fetchTasks(currentUserId);
         const fetchedAccounts = await fetchAccounts();
         const fetchedUsers = await fetchUsers();
 
@@ -315,6 +337,7 @@ return (
                         onDeleteTask={(taskId) => handleDeleteTask(taskId)}
                         onAccountClick={(accountId) => navigate(`/accounts/details/${accountId}`)}
                         user={user}
+                        highlightTaskId={highlightTaskId}
                     />
                 </div>
                 <CreateTaskModal
@@ -333,7 +356,7 @@ return (
             departments={departments}
             employees={employees}
             accounts={accounts}
-            onCreateTask={createTask}
+            onCreateTask={handleCreateTask}
             />
         )}
 
@@ -354,7 +377,11 @@ return (
             </thead>
             <tbody>
             {tasks.map((task) => (
-                <tr key={task.task_id} className="border-b">
+                <tr
+                    key={task.task_id}
+                    id={`task-row-${task.task_id}`}
+                    className={`border-b ${highlightTaskId === String(task.task_id) ? "bg-accent/40" : ""}`}
+                >
                 <td className="p-3 text-left">
                     {editingTask?.task_id === task.task_id ? (
                         <input
@@ -449,11 +476,11 @@ return (
                         <>
                             {/* Edit Button */}
                             <button
-                                className={`px-3 py-1 rounded-lg transition-colors ${
-                                    task.assigned_by_username === user.username
-                                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                                        : "bg-muted text-muted-foreground cursor-not-allowed"
-                                }`}
+                        className={`px-3 py-1 rounded-lg transition-colors ${
+                            task.assigned_by_username === user.username
+                                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                        }`}
                                 onClick={() => handleEditTaskClick(task)}
                                 disabled={task.assigned_by_username !== user.username}
                             >
@@ -511,7 +538,11 @@ return (
             </thead>
             <tbody>
                 {completedTasks.map((task, index) => (
-                    <tr key={`completed-${task.task_id}-${index}`} className="border-b">
+                    <tr
+                        key={`completed-${task.task_id}-${index}`}
+                        id={`task-row-${task.task_id}`}
+                        className={`border-b ${highlightTaskId === String(task.task_id) ? "bg-accent/40" : ""}`}
+                    >
 
                     <td className="p-3 text-left">{task.task_description}</td>
                     <td className="p-3 text-left">{format(new Date(task.due_date), "MM/dd/yyyy")}</td>

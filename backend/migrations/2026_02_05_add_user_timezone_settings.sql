@@ -1,0 +1,5 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS timezone VARCHAR(64);
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS timezone_mode VARCHAR(16) DEFAULT 'system';

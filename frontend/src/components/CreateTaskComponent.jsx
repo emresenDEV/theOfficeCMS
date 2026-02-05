@@ -8,6 +8,7 @@ branches,
 accounts,
 onCreateTask,
 }) => {
+const currentUserId = user?.user_id ?? user?.id ?? "";
 const [newTask, setNewTask] = useState({
     task_description: "",
     due_date: "",
@@ -21,7 +22,7 @@ const [selectedBranch, setSelectedBranch] = useState(user.branch_id || "");
 const [selectedDepartment, setSelectedDepartment] = useState(
     user.department_id || ""
 );
-const [selectedEmployee, setSelectedEmployee] = useState(user.id || "");
+const [selectedEmployee, setSelectedEmployee] = useState(currentUserId || "");
 const [accountSearch, setAccountSearch] = useState("");
 const [filteredAccounts, setFilteredAccounts] = useState([]);
 const [departments, setDepartments] = useState([]);
@@ -48,7 +49,7 @@ useEffect(() => {
     setUseMyDepartment(true);
     setSelectedBranch(user.branch_id);
     setSelectedDepartment(user.department_id);
-    setSelectedEmployee(user.id);
+    setSelectedEmployee(currentUserId);
     }
 }, [assignedToMe, user]);
 
@@ -108,10 +109,10 @@ const handleCreateTask = () => {
 
     const taskData = {
     ...newTask,
-    user_id: user.id,
+    user_id: currentUserId,
     task_description: newTask.task_description,
     due_date: newTask.due_date,
-    assigned_to: assignedToMe ? user.id : selectedEmployee,
+    assigned_to: assignedToMe ? currentUserId : selectedEmployee,
     branch_id: useMyBranch ? user.branch_id : selectedBranch,
     department_id: useMyDepartment ? user.department_id : selectedDepartment,
     account_id: newTask.account_id || null,
@@ -243,7 +244,7 @@ return (
 
         {/* Employee Dropdown */}
         <select 
-            value={assignedToMe ? user.id : selectedEmployee} 
+            value={assignedToMe ? currentUserId : selectedEmployee} 
             onChange={(e) => setSelectedEmployee(e.target.value)} 
             disabled={assignedToMe} // Disabled when "Assigned to Me" is checked
             className="border p-2 rounded w-full"

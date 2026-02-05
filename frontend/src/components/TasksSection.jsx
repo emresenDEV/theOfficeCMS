@@ -55,7 +55,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
         const taskData = {
             account_id: accountId,
             user_id: userId,
-            assigned_to: assignedTo || null,
+            assigned_to: assignedTo || userId,
             task_description: newTaskDescription.trim(),
             due_date: dueDate || null,
             actor_user_id: userId,
@@ -156,11 +156,11 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
             </div>
 
             {/* Create New Task Section */}
-            <div className="flex items-center mb-4 space-x-2">
+            <div className="grid items-center gap-2 mb-4 md:grid-cols-[2fr,2fr,1fr,auto]">
                 <input
                     type="text"
                     placeholder="New task..."
-                    className="border border-border bg-card text-foreground p-2 rounded flex-grow"
+                    className="border border-border bg-card text-foreground p-2 rounded w-full"
                     value={newTaskDescription}
                     onChange={(e) => setNewTaskDescription(e.target.value)}
                 />
@@ -188,7 +188,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 </div>
                 <input
                     type="date"
-                    className="border border-border bg-card text-foreground p-2 rounded w-1/4"
+                    className="border border-border bg-card text-foreground p-2 rounded w-full"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                 />

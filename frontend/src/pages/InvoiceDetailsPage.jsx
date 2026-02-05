@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import {
     fetchInvoiceById,
     updateInvoice,
@@ -14,8 +14,9 @@ createService,
 updateService,
 } from "../services/servicesService";
 import { fetchNotesByInvoice } from "../services/notesService";
-import { fetchSalesReps } from "../services/userService";
+import { fetchSalesReps, fetchUsers } from "../services/userService";
 import { updatePayment, deletePayment } from "../services/paymentService";
+import { createTask, fetchTasksByInvoice, updateTask } from "../services/tasksService";
 // import Sidebar from "../components/Sidebar";
 import NotesSection from "../components/NotesSection";
 import AuditSection from "../components/AuditSection";
@@ -29,6 +30,7 @@ import PropTypes from "prop-types";
 const InvoiceDetailsPage = ({ user }) => {
 const { invoiceId } = useParams();
 const navigate = useNavigate();
+const location = useLocation();
 const [salesReps, setSalesReps] = useState([]);
 const [invoice, setInvoice] = useState(null);
 const [notes, setNotes] = useState([]);
@@ -66,6 +68,12 @@ const [editingIndex, setEditingIndex] = useState(null);
 
 const [accountDetails, setAccountDetails] = useState(null);
 const [branch, setBranch] = useState(null);
+const [invoiceTasks, setInvoiceTasks] = useState([]);
+const [taskUsers, setTaskUsers] = useState([]);
+const [newTaskDescription, setNewTaskDescription] = useState("");
+const [newTaskDueDate, setNewTaskDueDate] = useState("");
+const [newTaskAssignee, setNewTaskAssignee] = useState("");
+const [highlightTaskId, setHighlightTaskId] = useState(null);
 
 useEffect(() => {
     async function loadData() {
@@ -131,6 +139,36 @@ useEffect(() => {
 }, [invoiceId]);
 
 useEffect(() => {
+    const loadTasks = async () => {
+        const [tasks, usersList] = await Promise.all([
+            fetchTasksByInvoice(invoiceId),
+            fetchUsers(),
+        ]);
+        setInvoiceTasks(tasks || []);
+        setTaskUsers(usersList || []);
+    };
+    loadTasks();
+}, [invoiceId]);
+
+useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const taskId = params.get("taskId");
+    if (!taskId) return;
+    setHighlightTaskId(taskId);
+    const timeoutId = setTimeout(() => {
+        const element = document.getElementById(`invoice-task-${taskId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, 150);
+    const clearId = setTimeout(() => setHighlightTaskId(null), 10000);
+    return () => {
+        clearTimeout(timeoutId);
+        clearTimeout(clearId);
+    };
+}, [location.search, invoiceTasks]);
+
+useEffect(() => {
     async function loadAccountBranch() {
         if (!invoice?.account_id) return;
     
@@ -161,6 +199,50 @@ const formatDate = (rawDate) => {
         } catch (e) {
         console.error("❌ formatDate error:", rawDate, e);
         return "Invalid Date";
+    }
+};
+
+const refreshInvoiceTasks = async () => {
+    const tasks = await fetchTasksByInvoice(invoiceId);
+    setInvoiceTasks(tasks || []);
+};
+
+const handleCreateInvoiceTask = async () => {
+    if (!newTaskDescription.trim()) {
+        alert("Task description is required.");
+        return;
+    }
+    const actorId = user?.user_id ?? user?.id;
+    const payload = {
+        account_id: invoice?.account_id || null,
+        invoice_id: Number(invoiceId),
+        task_description: newTaskDescription.trim(),
+        due_date: newTaskDueDate
+            ? new Date(newTaskDueDate).toISOString().replace("T", " ").split(".")[0]
+            : null,
+        assigned_to: newTaskAssignee ? Number(newTaskAssignee) : actorId,
+        user_id: actorId,
+        actor_user_id: actorId,
+        actor_email: user?.email,
+    };
+    const created = await createTask(payload);
+    if (created) {
+        setNewTaskDescription("");
+        setNewTaskDueDate("");
+        setNewTaskAssignee("");
+        refreshInvoiceTasks();
+    }
+};
+
+const handleToggleInvoiceTask = async (task) => {
+    const actorId = user?.user_id ?? user?.id;
+    const updated = await updateTask(task.task_id, {
+        is_completed: !task.is_completed,
+        actor_user_id: actorId,
+        actor_email: user?.email,
+    });
+    if (updated) {
+        refreshInvoiceTasks();
     }
 };
 
@@ -361,7 +443,7 @@ if (!invoice)
             <div className="flex justify-between items-center mb-4">
                 <button
                     onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
-                    className="bg-muted text-black px-4 py-2 rounded hover:bg-muted"
+                    className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
                 >
                     ← Back to Account
                 </button>
@@ -410,6 +492,9 @@ if (!invoice)
             <div className="flex justify-between mb-6">
                 <div className="text-left">
                     <p className="text-lg font-semibold">{invoice.business_name}</p>
+                    {invoice.contact_name && (
+                        <p className="text-sm text-muted-foreground">Contact: {invoice.contact_name}</p>
+                    )}
                     <p>{invoice.address}, {invoice.city}, {invoice.state} {invoice.zip_code}</p>
                     <p className="text-blue-600 font-medium">{invoice.email}</p>
                     <p>{invoice.phone_number}</p>              
@@ -580,11 +665,11 @@ if (!invoice)
                         const displayDiscount = (s.discount_percent || 0) * 100;
 
                         return (
-                        <tr key={index} className={index % 2 === 0 ? "bg-blue-50" : "bg-card"}>
+                        <tr key={index} className={index % 2 === 0 ? "bg-muted/40" : "bg-card"}>
                         <td className="p-2 border-b border-r text-left">
                             {editingIndex === index ? (
                             <select
-                                className="w-full p-1 border rounded"
+                                className="w-full p-1 border border-border bg-card text-foreground rounded"
                                 value={s.service_name}
                                 onChange={(e) => {
                                 const selected = allServiceOptions.find(
@@ -619,7 +704,7 @@ if (!invoice)
                         <td className="p-2 border-b border-r text-right">
                             {editingIndex === index ? (
                             <input
-                                className="w-full p-1 border rounded text-right"
+                                className="w-full p-1 border border-border bg-card text-foreground rounded text-right"
                                 type="number"
                                 value={s.quantity}
                                 onChange={(e) =>
@@ -634,7 +719,7 @@ if (!invoice)
                         <td className="p-2 border-b border-r text-right">
                             {editingIndex === index ? (
                             <input
-                                className="w-full p-1 border rounded text-right"
+                                className="w-full p-1 border border-border bg-card text-foreground rounded text-right"
                                 type="number"
                                 value={isNaN(displayDiscount) ? "" : displayDiscount}
                                 onChange={(e) =>
@@ -674,7 +759,7 @@ if (!invoice)
                                 </button>
                                 <button
                                 onClick={() => setEditingIndex(null)}
-                                className="bg-muted text-white px-2 py-1 rounded"
+                                className="bg-secondary text-secondary-foreground px-2 py-1 rounded"
                                 >
                                 Cancel
                                 </button>
@@ -700,10 +785,10 @@ if (!invoice)
                     )})}
                     {/* Add New Row at the Bottom if Adding */}
                     {editingIndex === null && addingService && (
-                        <tr className="bg-green-50">
+                        <tr className="bg-accent/40">
                         <td className="p-2 border-b border-r text-left">
                             <select
-                            className="w-full p-1 border rounded"
+                            className="w-full p-1 border border-border bg-card text-foreground rounded"
                             value={newServiceRow.service_name}
                             onChange={(e) => {
                                 const selected = allServiceOptions.find(
@@ -726,7 +811,7 @@ if (!invoice)
                         </td>
                         <td className="p-2 border-b border-r text-right">
                             <input
-                            className="w-full p-1 border rounded text-right"
+                            className="w-full p-1 border border-border bg-card text-foreground rounded text-right"
                             type="number"
                             value={newServiceRow.price_per_unit}
                             readOnly
@@ -734,7 +819,7 @@ if (!invoice)
                         </td>
                         <td className="p-2 border-b border-r text-right">
                             <input
-                            className="w-full p-1 border rounded text-right"
+                            className="w-full p-1 border border-border bg-card text-foreground rounded text-right"
                             type="number"
                             value={newServiceRow.quantity}
                             onChange={(e) =>
@@ -747,7 +832,7 @@ if (!invoice)
                         </td>
                         <td className="p-2 border-b border-r text-right">
                             <input
-                            className="w-full p-1 border rounded text-right"
+                            className="w-full p-1 border border-border bg-card text-foreground rounded text-right"
                             type="number"
                             value={(newServiceRow.discount_percent || 0) * 100}
                             onChange={(e) =>
@@ -975,11 +1060,118 @@ if (!invoice)
             </div>
             </section>
 
+            {/* TASKS */}
+            <section id="invoice-tasks" className="mb-6 border border-border p-4 rounded-lg bg-card">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h2 className="text-xl font-semibold text-left text-foreground">Tasks</h2>
+                    <span className="text-xs text-muted-foreground">
+                        {invoiceTasks.length} task{invoiceTasks.length === 1 ? "" : "s"}
+                    </span>
+                </div>
+                <div className="grid gap-2 md:grid-cols-[2fr,1fr,1fr,auto]">
+                    <input
+                        type="text"
+                        placeholder="New task for this invoice..."
+                        className="border border-border bg-card text-foreground p-2 rounded w-full"
+                        value={newTaskDescription}
+                        onChange={(e) => setNewTaskDescription(e.target.value)}
+                    />
+                    <input
+                        type="date"
+                        className="border border-border bg-card text-foreground p-2 rounded w-full"
+                        value={newTaskDueDate}
+                        onChange={(e) => setNewTaskDueDate(e.target.value)}
+                    />
+                    <select
+                        className="border border-border bg-card text-foreground p-2 rounded w-full"
+                        value={newTaskAssignee}
+                        onChange={(e) => setNewTaskAssignee(e.target.value)}
+                    >
+                        <option value="">Assign to me</option>
+                        {taskUsers.map((u) => (
+                            <option key={u.user_id} value={u.user_id}>
+                                {u.first_name} {u.last_name}
+                            </option>
+                        ))}
+                    </select>
+                    <button
+                        onClick={handleCreateInvoiceTask}
+                        className="bg-blue-600 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
+                    >
+                        Add Task
+                    </button>
+                </div>
+
+                <div className="mt-4 overflow-y-auto max-h-64 border border-border rounded-lg">
+                    <table className="w-full text-foreground text-sm">
+                        <thead className="sticky top-0 bg-card shadow-sm">
+                            <tr>
+                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Task</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Assigned To</th>
+                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Due</th>
+                                <th className="font-bold p-2 border-b text-center text-muted-foreground">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {invoiceTasks.length > 0 ? (
+                                invoiceTasks.map((task, index) => {
+                                    const assignee =
+                                        taskUsers.find((u) => Number(u.user_id) === Number(task.assigned_to)) || null;
+                                    return (
+                                        <tr
+                                            key={task.task_id}
+                                            id={`invoice-task-${task.task_id}`}
+                                            className={`hover:bg-muted/60 ${
+                                                highlightTaskId === String(task.task_id)
+                                                    ? "bg-accent/40"
+                                                    : index % 2 === 0
+                                                        ? "bg-muted/40"
+                                                        : "bg-card"
+                                            }`}
+                                        >
+                                            <td className="p-2 border-b border-r text-left">
+                                                <Link className="text-primary hover:underline" to={`/tasks/${task.task_id}`}>
+                                                    {task.task_description}
+                                                </Link>
+                                            </td>
+                                            <td className="p-2 border-b border-r text-left">
+                                                {assignee ? `${assignee.first_name} ${assignee.last_name}` : "Unassigned"}
+                                            </td>
+                                            <td className="p-2 border-b border-r text-left">
+                                                {task.due_date ? format(new Date(task.due_date), "MM/dd/yyyy") : "—"}
+                                            </td>
+                                            <td className="p-2 border-b text-center">
+                                                <button
+                                                    onClick={() => handleToggleInvoiceTask(task)}
+                                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                        task.is_completed
+                                                            ? "bg-green-500 text-white"
+                                                            : "bg-yellow-500 text-white"
+                                                    }`}
+                                                >
+                                                    {task.is_completed ? "Completed" : "Active"}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="p-4 text-center text-muted-foreground">
+                                        No tasks for this invoice.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             {/* NOTES TABLE */}
             <NotesSection
                 notes={notes}
                 accountId={invoice.account_id}
-                userId={user.id}
+                userId={user.user_id ?? user.id ?? 0}
                 setNotes={setNotes}
                 refreshNotes={async () => {
                     const updated = await fetchNotesByInvoice(invoiceId);

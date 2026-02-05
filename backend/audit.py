@@ -20,6 +20,7 @@ def create_audit_log(
     user_email=None,
     account_id=None,
     invoice_id=None,
+    contact_id=None,
     before_data=None,
     after_data=None,
 ):
@@ -32,6 +33,7 @@ def create_audit_log(
         user_email=resolved_email,
         account_id=account_id,
         invoice_id=invoice_id,
+        contact_id=contact_id,
         before_data=before_data,
         after_data=after_data,
     )

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { formatDateTimeInTimeZone } from "../utils/timezone";
 
 const PaidBox = ({
 payment,
@@ -48,13 +49,12 @@ const methodFromBackend = payment.method_name;
 const methodFromList = paymentMethods.find(pm => pm.method_id === payment.payment_method);
 const methodName = methodFromList?.method_name || methodFromBackend || "N/A";
 
-const localTime = new Date(payment.date_paid).toLocaleString("en-US", {
-    timeZone: "America/Chicago", // or use Intl.DateTimeFormat().resolvedOptions().timeZone for auto
+const localTime = formatDateTimeInTimeZone(payment.date_paid, null, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
 });
 
 
@@ -148,15 +148,7 @@ return (
             />
         ) : (
             <p>
-            {new Date(payment.date_paid).toLocaleString("en-US", {
-                timezone: "America/Chicago)",
-                month: "2-digit",
-                day: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-            })}
+            {localTime}
             </p>
         )}
         </div>

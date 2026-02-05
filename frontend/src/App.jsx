@@ -22,6 +22,7 @@ import PaidInvoicesPage from "./pages/PaidInvoicesPage";
 import PastDueInvoicesPage from "./pages/PastDueInvoicesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import TasksPage from "./pages/TaskPage";
+import TaskDetailsPage from "./pages/TaskDetailsPage";
 import UnpaidInvoicesPage from "./pages/UnpaidInvoicesPage";
 import UpdateAccountPage from "./pages/UpdateAccountPage";
 import Layout from "./components/Layout";
@@ -56,6 +57,12 @@ function App() {
         // Save to React state + localStorage
         setUser(fullUser);
         localStorage.setItem("user", JSON.stringify(fullUser));
+        if (fullUser?.timezone_mode) {
+          localStorage.setItem("timezone_mode", fullUser.timezone_mode);
+        }
+        if (fullUser?.timezone) {
+          localStorage.setItem("timezone", fullUser.timezone);
+        }
       } catch (error) {
         console.error("❌ Session Check Failed:", error);
       } finally {
@@ -145,6 +152,7 @@ const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
           <Route path="/employees" element={<ProtectedRoute user={user} loading={loading}><EmployeesPage user={user} /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute user={user} loading={loading}><AdminPage user={user} /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute user={user} loading={loading}><TasksPage user={user} /></ProtectedRoute>} />
+          <Route path="/tasks/:taskId" element={<ProtectedRoute user={user} loading={loading}><TaskDetailsPage user={user} /></ProtectedRoute>} />
 
           {/* Calendar Routes */}
           <Route path="/calendar" element={<ProtectedRoute user={user} loading={loading}><CalendarPage user={user} /></ProtectedRoute>} />

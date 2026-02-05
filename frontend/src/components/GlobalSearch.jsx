@@ -95,12 +95,15 @@ const GlobalSearch = ({ user }) => {
                 const text = task.task_description || task.description || task.title || "";
                 const haystack = `${text}`.toLowerCase();
                 if (haystack.includes(trimmedQuery)) {
+                    const taskHref = task.invoice_id
+                        ? `/invoice/${task.invoice_id}?taskId=${task.task_id}`
+                        : `/tasks/${task.task_id}`;
                     matches.push({
                         id: `task-${task.task_id}`,
                         title: text || "Task",
                         subtitle: task.account_name || "Task",
                         type: "Task",
-                        href: "/tasks",
+                        href: taskHref,
                     });
                 }
             });

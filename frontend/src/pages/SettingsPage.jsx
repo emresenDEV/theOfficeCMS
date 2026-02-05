@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useTheme } from "../components/ThemeContext";
 import { ThemeToggle } from "../components/ThemeToggle";
 import PropTypes from "prop-types";
+import { getSystemTimeZone } from "../utils/timezone";
+import { updateUser } from "../services/userService";
 
 /**
  * SettingsPage Component
@@ -18,10 +21,35 @@ import PropTypes from "prop-types";
  * @returns {JSX.Element} - The rendered SettingsPage component.
  */
 const SettingsPage = ({ user }) => {
+  const location = useLocation();
   // State for theme, font size, high contrast
   const { setTheme } = useTheme();
   const [fontSize, setFontSize] = useState(parseInt(localStorage.getItem("fontSize")) || 16);
   const [highContrast, setHighContrast] = useState(localStorage.getItem("highContrast") === "true");
+  const detectedTimeZone = useMemo(() => getSystemTimeZone(), []);
+  const [timezoneMode, setTimezoneMode] = useState(
+    user?.timezone_mode || localStorage.getItem("timezone_mode") || "system"
+  );
+  const [timezoneValue, setTimezoneValue] = useState(
+    user?.timezone || localStorage.getItem("timezone") || detectedTimeZone
+  );
+  const [timezoneSaving, setTimezoneSaving] = useState(false);
+  const [timezoneHighlight, setTimezoneHighlight] = useState(false);
+
+  const timeZones = useMemo(() => {
+    if (typeof Intl.supportedValuesOf === "function") {
+      return Intl.supportedValuesOf("timeZone");
+    }
+    return [
+      "America/New_York",
+      "America/Chicago",
+      "America/Denver",
+      "America/Los_Angeles",
+      "America/Phoenix",
+      "America/Anchorage",
+      "Pacific/Honolulu",
+    ];
+  }, []);
 
   // Apply high contrast mode
   useEffect(() => {
@@ -35,15 +63,53 @@ const SettingsPage = ({ user }) => {
     localStorage.setItem("fontSize", fontSize);
   }, [fontSize]);
 
+  useEffect(() => {
+    localStorage.setItem("system_timezone", detectedTimeZone);
+  }, [detectedTimeZone]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("highlight") !== "timezone") return;
+    setTimezoneHighlight(true);
+    const timeoutId = setTimeout(() => setTimezoneHighlight(false), 60_000);
+    return () => clearTimeout(timeoutId);
+  }, [location.search]);
+
   // Handle system preference changes
   // Reset all settings to default
   const resetSettings = () => {
     setTheme("system");
     setFontSize(16);
     setHighContrast(false);
+    setTimezoneMode("system");
+    setTimezoneValue(detectedTimeZone);
     localStorage.removeItem("theme");
     localStorage.removeItem("fontSize");
     localStorage.removeItem("highContrast");
+    localStorage.removeItem("timezone_mode");
+    localStorage.removeItem("timezone");
+  };
+
+  const saveTimezone = async () => {
+    if (!user?.user_id) return;
+    setTimezoneSaving(true);
+    const payload = {
+      timezone_mode: timezoneMode,
+      timezone: timezoneMode === "fixed" ? timezoneValue : null,
+      detected_timezone: detectedTimeZone,
+      actor_user_id: user.user_id,
+      actor_email: user.email,
+    };
+    const response = await updateUser(user.user_id, payload);
+    if (response) {
+      localStorage.setItem("timezone_mode", timezoneMode);
+      if (timezoneMode === "fixed") {
+        localStorage.setItem("timezone", timezoneValue);
+      } else {
+        localStorage.removeItem("timezone");
+      }
+    }
+    setTimezoneSaving(false);
   };
 
   return (
@@ -91,6 +157,69 @@ const SettingsPage = ({ user }) => {
           </button>
         </div>
 
+        {/* Timezone Settings */}
+        <div
+          className={`mt-6 rounded-lg border border-border bg-card p-4 ${
+            timezoneHighlight ? "ring-2 ring-primary" : ""
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-foreground">Timezone</p>
+              <p className="text-xs text-muted-foreground">
+                System detected: {detectedTimeZone}
+              </p>
+            </div>
+            <button
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold"
+              onClick={saveTimezone}
+              disabled={timezoneSaving}
+            >
+              {timezoneSaving ? "Saving..." : "Save Timezone"}
+            </button>
+          </div>
+          <div className="mt-4 space-y-3 text-sm text-foreground">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="timezoneMode"
+                value="system"
+                checked={timezoneMode === "system"}
+                onChange={() => setTimezoneMode("system")}
+              />
+              Use system timezone (recommended if you travel often)
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="timezoneMode"
+                value="fixed"
+                checked={timezoneMode === "fixed"}
+                onChange={() => setTimezoneMode("fixed")}
+              />
+              Use fixed timezone across all devices
+            </label>
+          </div>
+          {timezoneMode === "fixed" && (
+            <div className="mt-4">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Select timezone
+              </label>
+              <select
+                className="mt-2 w-full rounded-lg border border-border bg-card p-2 text-sm text-foreground"
+                value={timezoneValue}
+                onChange={(e) => setTimezoneValue(e.target.value)}
+              >
+                {timeZones.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
         {/* Reset to Default Settings */}
         <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-card p-4">
           <span className="font-semibold text-foreground">Reset Settings</span>
@@ -110,6 +239,11 @@ SettingsPage.propTypes = {
     firstName: PropTypes.string,
     lastName: PropTypes.string,
     role: PropTypes.string,
+    user_id: PropTypes.number,
+    id: PropTypes.number,
+    email: PropTypes.string,
+    timezone: PropTypes.string,
+    timezone_mode: PropTypes.string,
   }).isRequired,
 };
 

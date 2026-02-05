@@ -35,6 +35,17 @@ export const fetchUserProfile = async (userId) => {
     }
 };
 
+// Update user settings/profile
+export const updateUser = async (userId, payload) => {
+    try {
+        const response = await api.put(`/users/${userId}`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error updating user:", error.response?.data || error.message);
+        return null;
+    }
+};
+
 // Fetch Sales Representatives
 export const fetchSalesReps = async () => {
     try {

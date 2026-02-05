@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import Notes, Users
 from database import db
+from audit import create_audit_log
 
 notes_bp = Blueprint("note", __name__)
 
@@ -59,6 +60,27 @@ def create_note():
         )
 
         db.session.add(new_note)
+        db.session.flush()
+
+        create_audit_log(
+            entity_type="note",
+            entity_id=new_note.note_id,
+            action="create",
+            user_id=user_id,
+            account_id=account_id,
+            invoice_id=invoice_id,
+            after_data={
+                "note_id": new_note.note_id,
+                "account_id": new_note.account_id,
+                "user_id": new_note.user_id,
+                "invoice_id": new_note.invoice_id,
+                "note_text": new_note.note_text,
+                "date_created": new_note.date_created.strftime("%Y-%m-%d %H:%M:%S")
+                if new_note.date_created
+                else None,
+            },
+        )
+
         db.session.commit()
         
         return jsonify({
@@ -113,18 +135,21 @@ def get_notes_by_account(account_id):
 @notes_bp.route("/invoice/<int:invoice_id>", methods=["GET"])
 def get_notes_by_invoice(invoice_id):
     try:
-        notes = Notes.query.filter_by(invoice_id=invoice_id).all()
+        notes = db.session.query(Notes, Users.username).join(
+            Users, Notes.user_id == Users.user_id
+        ).filter(Notes.invoice_id == invoice_id).all()
         if not notes:
             return jsonify([]), 200  # Return an empty list if no notes found
 
         notes_list = [
             {
-                "note_id": note.note_id,
-                "account_id": note.account_id,
-                "user_id": note.user_id,
-                "invoice_id": note.invoice_id,
-                "note_text": note.note_text,
-                "date_created": note.date_created.strftime("%Y-%m-%d %H:%M:%S") if note.date_created else None,
+                "note_id": note.Notes.note_id,
+                "account_id": note.Notes.account_id,
+                "user_id": note.Notes.user_id,
+                "username": note.username,
+                "invoice_id": note.Notes.invoice_id,
+                "note_text": note.Notes.note_text,
+                "date_created": note.Notes.date_created.strftime("%Y-%m-%d %H:%M:%S") if note.Notes.date_created else None,
             }
             for note in notes
         ]

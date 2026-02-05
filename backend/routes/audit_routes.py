@@ -8,6 +8,10 @@ audit_bp = Blueprint("audit", __name__)
 
 
 def _build_link(entry):
+    if entry.entity_type == "contact" or entry.contact_id:
+        contact_id = entry.contact_id or entry.entity_id
+        if contact_id:
+            return f"/contacts/{contact_id}"
     if entry.entity_type == "invoice" or entry.invoice_id:
         invoice_id = entry.invoice_id or entry.entity_id
         if invoice_id:
@@ -17,6 +21,8 @@ def _build_link(entry):
         if account_id:
             return f"/accounts/details/{account_id}"
     if entry.entity_type == "task":
+        if entry.entity_id:
+            return f"/tasks/{entry.entity_id}"
         return "/tasks"
     if entry.entity_type == "calendar_event":
         return "/calendar"
@@ -37,6 +43,7 @@ def get_audit_logs():
     entity_id = request.args.get("entity_id", type=int)
     account_id = request.args.get("account_id", type=int)
     invoice_id = request.args.get("invoice_id", type=int)
+    contact_id = request.args.get("contact_id", type=int)
     user_id = request.args.get("user_id", type=int)
     limit = request.args.get("limit", type=int) or 200
 
@@ -62,6 +69,13 @@ def get_audit_logs():
                 (AuditLog.entity_type == "invoice") & (AuditLog.entity_id == invoice_id),
             )
         )
+    if contact_id:
+        query = query.filter(
+            or_(
+                AuditLog.contact_id == contact_id,
+                (AuditLog.entity_type == "contact") & (AuditLog.entity_id == contact_id),
+            )
+        )
 
     logs = query.order_by(AuditLog.created_at.desc()).limit(limit).all()
 
@@ -75,6 +89,7 @@ def get_audit_logs():
             "user_email": log.user_email,
             "account_id": log.account_id,
             "invoice_id": log.invoice_id,
+            "contact_id": log.contact_id,
             "before_data": log.before_data,
             "after_data": log.after_data,
             "created_at": log.created_at.isoformat() if log.created_at else None,

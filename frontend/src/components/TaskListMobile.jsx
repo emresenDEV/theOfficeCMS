@@ -10,7 +10,8 @@ const TaskListMobile = ({
     onEditTask,
     onDeleteTask,
     onAccountClick,
-    user
+    user,
+    highlightTaskId,
 }) => {
     const [showCompleted, setShowCompleted] = useState(false);
     const [completingTask, setCompletingTask] = useState({});
@@ -82,7 +83,12 @@ const TaskListMobile = ({
                         {tasks.map((task) => (
                             <div
                                 key={task.task_id}
-                                className="border border-border rounded-lg p-4 bg-card hover:bg-muted/60 transition"
+                                id={`task-row-${task.task_id}`}
+                                className={`border border-border rounded-lg p-4 transition ${
+                                    highlightTaskId === String(task.task_id)
+                                        ? "bg-accent/40"
+                                        : "bg-card hover:bg-muted/60"
+                                }`}
                             >
                                 {/* Task Name and Status Row */}
                                 <div className="flex justify-between items-start gap-2 mb-2">
@@ -249,7 +255,12 @@ const TaskListMobile = ({
                             completedTasks.map((task) => (
                                 <div
                                     key={task.task_id}
-                                    className="border border-border rounded-lg p-4 bg-background opacity-75"
+                                    id={`task-row-${task.task_id}`}
+                                    className={`border border-border rounded-lg p-4 opacity-75 ${
+                                        highlightTaskId === String(task.task_id)
+                                            ? "bg-accent/30"
+                                            : "bg-background"
+                                    }`}
                                 >
                                     {/* Task Name */}
                                     <h3 className="text-sm font-semibold text-muted-foreground line-through break-words mb-2">
@@ -319,6 +330,7 @@ TaskListMobile.propTypes = {
     onDeleteTask: PropTypes.func.isRequired,
     onAccountClick: PropTypes.func.isRequired,
     user: PropTypes.object.isRequired,
+    highlightTaskId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
 export default TaskListMobile;

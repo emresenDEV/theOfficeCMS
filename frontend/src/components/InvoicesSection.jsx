@@ -24,39 +24,43 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
         }).format(amount);
     };
 
-        // Get status badge styling
-        const getStatusBadge = (status) => {
-            switch (status) {
-                case "Paid":
-                    return "bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
-                case "Partial":
-                    return "bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
-                case "Past Due":
-                    return "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
-                case "Pending":
-                    return "bg-muted text-white px-2 py-1 rounded-full text-xs font-semibold";
-                default:
-                    return "bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs font-semibold";
-            }
-        };
+    const getComputedStatus = (invoice) => {
+        const paidTotal = Number(invoice.total_paid || 0);
+        const finalTotal = Number(invoice.final_total || 0);
+        const dueDate = invoice.due_date ? new Date(invoice.due_date) : null;
+        const today = new Date();
+
+        if (paidTotal >= finalTotal && finalTotal > 0) return "Paid";
+        if (dueDate && dueDate < today && paidTotal < finalTotal) return "Past Due";
+        if (paidTotal > 0 && paidTotal < finalTotal) return "Partial";
+        return "Pending";
+    };
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case "Paid":
+                return "bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+            case "Partial":
+                return "bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+            case "Past Due":
+                return "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+            case "Pending":
+                return "bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+            default:
+                return "bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs font-semibold";
+        }
+    };
     
 
     // Filter invoices based on search input and selected status filter
     const filteredInvoices = invoices.filter((inv) => {
-        const invoiceDueDate = new Date(inv.due_date);
-        const today = new Date();
-        const isPastDue = invoiceDueDate < today && inv.status !== "Paid";
-
+        const computedStatus = getComputedStatus(inv);
         return (
             (searchInvoices === "" ||
                 inv.invoice_id.toString().includes(searchInvoices) ||
-                inv.status.toLowerCase().includes(searchInvoices.toLowerCase()) ||
+                computedStatus.toLowerCase().includes(searchInvoices.toLowerCase()) ||
                 inv.final_total.toString().includes(searchInvoices)) &&
-            (invoiceFilter === "all" ||
-                (invoiceFilter === "Paid" && inv.status === "Paid") ||
-                (invoiceFilter === "Pending" && inv.status === "Pending") ||
-                (invoiceFilter === "Past Due" && isPastDue) ||
-                (invoiceFilter === "Partial" && inv.status === "Partial"))
+            (invoiceFilter === "all" || computedStatus === invoiceFilter)
         );
     });
     
@@ -81,26 +85,16 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                 />
                 <div>
                     <button 
-                        onClick={() => {
-                            refreshInvoices("Paid")}
-                        }
+                        onClick={() => setInvoiceFilter("Paid")}
                         className="bg-green-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-green-600 transition-colors"
                     >
                         Paid
                     </button>
                     <button 
-                        onClick={() => {
-                            refreshInvoices("Past Due")}                            
-                        }
+                        onClick={() => setInvoiceFilter("Past Due")}                            
                         className="bg-red-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-red-600 transition-colors"
                     >
                         Past Due
-                    </button>
-                    <button 
-                        onClick={() => refreshInvoices("Pending")} 
-                        className="bg-yellow-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-yellow-600 transition-colors"
-                    >
-                        Pending
                     </button>
                     <button 
                         onClick={() => setInvoiceFilter("Partial")} 
@@ -108,15 +102,21 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                     >
                         Partial
                     </button>
+                    <button 
+                        onClick={() => setInvoiceFilter("Pending")} 
+                        className="bg-yellow-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-yellow-600 transition-colors"
+                    >
+                        Pending
+                    </button>
 
                     <button 
                         onClick={() => {
                             setInvoiceFilter("all");
                             setSearchInvoices("");
-                            refreshInvoices(); // fetch all invoices, no status filter
+                            refreshInvoices();
                         }} 
                         className="bg-muted text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-secondary/80 transition-colors"
-                        >
+                    >
                         Clear
                     </button>
 
@@ -158,7 +158,27 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                                     <td className="p-2 border-b border-r text-left">{formatTotalAmount(inv.final_total)}</td>
                                     {/* 🏷️ Invoice Status Badge */}
                                     <td className="p-2 border-b border-r text-left">
-                                        <span className={getStatusBadge(inv.status)}>{inv.status}</span>
+                                        {(() => {
+                                            const computedStatus = getComputedStatus(inv);
+                                            const paidTotal = Number(inv.total_paid || 0);
+                                            const finalTotal = Number(inv.final_total || 0);
+                                            const balance = Math.max(finalTotal - paidTotal, 0);
+                                            let amountLabel = "";
+                                            if (computedStatus === "Paid") {
+                                                amountLabel = formatTotalAmount(paidTotal || finalTotal);
+                                            } else if (computedStatus === "Partial") {
+                                                amountLabel = `${formatTotalAmount(paidTotal)}/${formatTotalAmount(finalTotal)}`;
+                                            } else if (computedStatus === "Past Due") {
+                                                amountLabel = formatTotalAmount(balance || finalTotal);
+                                            } else {
+                                                amountLabel = formatTotalAmount(finalTotal);
+                                            }
+                                            return (
+                                                <span className={getStatusBadge(computedStatus)}>
+                                                    {computedStatus} {amountLabel}
+                                                </span>
+                                            );
+                                        })()}
                                     </td>
                                     <td className="p-2 border-b text-center">
                                         <button

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
+import { formatDateTimeInTimeZone } from "../utils/timezone";
 import { fetchAuditLogs } from "../services/auditService";
 
 const renderValue = (value) => {
@@ -98,6 +98,9 @@ const AuditSection = ({ title, filters, limit = 50 }) => {
                   Entity
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Invoice
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Changes
                 </th>
                 <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -109,7 +112,13 @@ const AuditSection = ({ title, filters, limit = 50 }) => {
               {rows.map((row) => (
                 <tr key={row.audit_id} className="hover:bg-muted/40">
                   <td className="px-3 py-2 text-muted-foreground">
-                    {row.created_at ? format(new Date(row.created_at), "MMM d, yyyy h:mm a") : "—"}
+                    {row.created_at ? formatDateTimeInTimeZone(row.created_at, null, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }) : "—"}
                   </td>
                   <td className="px-3 py-2 text-foreground">
                     {row.user_email || "System"}
@@ -118,6 +127,15 @@ const AuditSection = ({ title, filters, limit = 50 }) => {
                   <td className="px-3 py-2 text-foreground">
                     {row.entity_type}
                     {row.entity_id ? ` #${row.entity_id}` : ""}
+                  </td>
+                  <td className="px-3 py-2 text-foreground">
+                    {row.invoice_id ? (
+                      <Link className="text-primary hover:underline" to={`/invoice/${row.invoice_id}`}>
+                        #{row.invoice_id}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-muted-foreground">
                     {row.changes.length === 0 ? (

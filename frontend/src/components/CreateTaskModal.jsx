@@ -9,6 +9,7 @@ const CreateTaskModal = ({
     employees = [],
     user
 }) => {
+    const currentUserId = user?.user_id ?? user?.id ?? null;
     const [taskDescription, setTaskDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [accountId, setAccountId] = useState("");
@@ -46,8 +47,7 @@ const CreateTaskModal = ({
         }
 
         if (!assignedUserId) {
-            setError("Assigned user is required");
-            return;
+            setAssignedUserId(currentUserId || "");
         }
 
         setIsCreating(true);
@@ -58,7 +58,8 @@ const CreateTaskModal = ({
                 task_description: taskDescription,
                 due_date: new Date(dueDate).toISOString().replace("T", " ").split(".")[0],
                 account_id: parseInt(accountId),
-                user_id: parseInt(assignedUserId),
+                user_id: Number(currentUserId),
+                assigned_to: Number(assignedUserId || currentUserId),
             };
 
             await onCreateTask(taskPayload);

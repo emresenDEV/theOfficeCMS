@@ -63,6 +63,28 @@ export const fetchTasksByAccount = async (accountId) => {
     }
 };
 
+// Fetch Tasks By Invoice
+export const fetchTasksByInvoice = async (invoiceId) => {
+    try {
+        const response = await api.get(`/tasks/invoice/${invoiceId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Error fetching tasks for invoice ID ${invoiceId}:`, error.response?.data || error.message);
+        return [];
+    }
+};
+
+// Fetch Task By ID
+export const fetchTaskById = async (taskId) => {
+    try {
+        const response = await api.get(`/tasks/${taskId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Error fetching task ${taskId}:`, error.response?.data || error.message);
+        return null;
+    }
+};
+
 
 
 // Update a Task (Mark Complete / Edit)

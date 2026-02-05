@@ -10,6 +10,8 @@ class Account(db.Model):
     account_id = db.Column(db.Integer, primary_key=True)
     business_name = db.Column(db.String(100), nullable=False)
     contact_name = db.Column(db.String(100))
+    contact_first_name = db.Column(db.String(100))
+    contact_last_name = db.Column(db.String(100))
     phone_number = db.Column(db.String(20))
     email = db.Column(db.String(100))
     address = db.Column(db.String(255))
@@ -35,6 +37,11 @@ class Account(db.Model):
     )
 
     payments = db.relationship("Payment", back_populates="account", foreign_keys='Payment.account_id')
+    contacts = db.relationship(
+        "Contact",
+        secondary="account_contacts",
+        back_populates="accounts",
+    )
 
     # Convert object to dictionary for JSON responses
     def to_dict(self):
@@ -42,6 +49,8 @@ class Account(db.Model):
             "account_id": self.account_id,
             "business_name": self.business_name,
             "contact_name": self.contact_name,
+            "contact_first_name": self.contact_first_name,
+            "contact_last_name": self.contact_last_name,
             "phone_number": self.phone_number,
             "email": self.email,
             "address": self.address,
@@ -66,6 +75,60 @@ class Branches(db.Model):
     state = db.Column(db.String(2))
     zip_code = db.Column(db.String(10))
     phone_number = db.Column(db.String(20))
+
+
+class Contact(db.Model):
+    __tablename__ = "contacts"
+    contact_id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(100))
+    last_name = db.Column(db.String(100))
+    title = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
+    email = db.Column(db.String(100))
+    status = db.Column(db.String(20), default="active")
+    do_not_call = db.Column(db.Boolean, default=False)
+    do_not_call_date = db.Column(db.DateTime)
+    email_opt_out = db.Column(db.Boolean, default=False)
+    email_opt_out_date = db.Column(db.DateTime)
+    contact_owner_user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    contact_owner = db.relationship("Users", foreign_keys=[contact_owner_user_id])
+    accounts = db.relationship(
+        "Account",
+        secondary="account_contacts",
+        back_populates="contacts",
+    )
+
+
+class AccountContacts(db.Model):
+    __tablename__ = "account_contacts"
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), primary_key=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey("contacts.contact_id"), primary_key=True)
+    is_primary = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+
+class ContactFollowers(db.Model):
+    __tablename__ = "contact_followers"
+    contact_id = db.Column(db.Integer, db.ForeignKey("contacts.contact_id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), primary_key=True)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+
+class ContactInteractions(db.Model):
+    __tablename__ = "contact_interactions"
+    interaction_id = db.Column(db.Integer, primary_key=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey("contacts.contact_id"), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
+    interaction_type = db.Column(db.String(20), nullable=False)
+    subject = db.Column(db.String(255))
+    notes = db.Column(db.Text)
+    phone_number = db.Column(db.String(20))
+    email_address = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     
 
 class CalendarEvent(db.Model):
@@ -242,11 +305,14 @@ class Tasks(db.Model):
     task_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.account_id'))
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.invoice_id'))
+    contact_id = db.Column(db.Integer, db.ForeignKey('contacts.contact_id'))
     assigned_to = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     task_description = db.Column(db.Text)
     due_date = db.Column(db.DateTime)
     is_completed = db.Column(db.Boolean)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+    overdue_notified_at = db.Column(db.Date)
 
 class UserRoles(db.Model):
     __tablename__ = 'user_roles'
@@ -291,6 +357,9 @@ class Users(db.Model):
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'))
+    timezone = db.Column(db.String(64))
+    timezone_mode = db.Column(db.String(16), default="system")
+    contacts_autosave = db.Column(db.Boolean, default=True)
     
     # Relationships
     accounts = db.relationship(
@@ -362,6 +431,7 @@ class AuditLog(db.Model):
     user_email = db.Column(db.String(100), nullable=True)
     account_id = db.Column(db.Integer, db.ForeignKey("accounts.account_id"), nullable=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.invoice_id"), nullable=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey("contacts.contact_id"), nullable=True)
     before_data = db.Column(db.JSON, nullable=True)
     after_data = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())

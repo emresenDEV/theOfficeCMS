@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { createNote, fetchNotesByAccount } from "../services/notesService";
 import { validateInvoiceForAccount } from "../services/invoiceService";
+import { formatDateInTimeZone, formatTimeInTimeZone } from "../utils/timezone";
 
 const NotesSection = ({ notes, accountId, userId, setNotes, refreshNotes, invoiceId }) => {
 const navigate = useNavigate();
@@ -75,20 +76,18 @@ const handleCreateNote = async () => {
 
 // Format date and time for display
 const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
+    return formatDateInTimeZone(dateString, null, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
     });
 };
 
 const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
+    return formatTimeInTimeZone(dateString, null, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
     });
 };
 
