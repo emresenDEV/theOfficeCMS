@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from datetime import datetime
 from models import Tasks, TaskNotes, Users, Account, ContactFollowers
 from database import db
 from notifications import create_notification
@@ -307,7 +308,27 @@ def update_task(task_id):
     if not task:
         return jsonify({"message": "Task not found"}), 404
 
-    data = request.json
+    data = request.json or {}
+
+    def _clean_int(value):
+        if value in (None, "", "null"):
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return value
+
+    def _parse_datetime(value):
+        if value in (None, "", "null"):
+            return None
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                return value
+        return value
     before_data = {
         "task_id": task.task_id,
         "user_id": task.user_id,
@@ -323,30 +344,30 @@ def update_task(task_id):
     assigned_before = task.assigned_to
     was_completed = task.is_completed
     if "user_id" in data:
-        task.user_id = data["user_id"]
+        task.user_id = _clean_int(data["user_id"])
     if "assigned_to" in data:
-        task.assigned_to = data["assigned_to"]
+        task.assigned_to = _clean_int(data["assigned_to"])
     if "task_description" in data:
         task.task_description = data["task_description"]
     if "due_date" in data:
-        task.due_date = data["due_date"]
+        task.due_date = _parse_datetime(data["due_date"])
         task.reminder_sent_at = None
         task.overdue_notified_at = None
     if "is_completed" in data:
         task.is_completed = data["is_completed"]
     if "account_id" in data:
-        task.account_id = data["account_id"]
+        task.account_id = _clean_int(data["account_id"])
     if "invoice_id" in data:
-        task.invoice_id = data["invoice_id"]
+        task.invoice_id = _clean_int(data["invoice_id"])
     if "contact_id" in data:
-        task.contact_id = data["contact_id"]
+        task.contact_id = _clean_int(data["contact_id"])
     if "is_followup" in data:
         task.is_followup = data["is_followup"]
 
     notification_link = f"/tasks/{task.task_id}"
     contact_link = f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else notification_link
 
-    if assigned_before != task.assigned_to:
+    if assigned_before != task.assigned_to and task.assigned_to:
         account = Account.query.get(task.account_id) if task.account_id else None
 
         create_notification(
