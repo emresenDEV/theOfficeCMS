@@ -10,7 +10,7 @@ const Layout = ({ children, sidebarOpen, setSidebarOpen, user, handleLogout }) =
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     return (
         <TooltipProvider delayDuration={0}>
-            <div className="flex min-h-screen w-full bg-background text-foreground">
+            <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
                 {/* Sidebar */}
                 <Sidebar
                     isOpen={sidebarOpen}

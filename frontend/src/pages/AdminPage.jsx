@@ -131,16 +131,17 @@ const AdminPage = ({ user }) => {
 
   useEffect(() => {
     const next = new URLSearchParams(location.search);
+    const current = next.get("tab");
+    if (current === activeTab) return;
     next.set("tab", activeTab);
     navigate({ search: next.toString() }, { replace: true });
-  }, [activeTab, navigate]);
+  }, [activeTab, location.search, navigate]);
 
   useEffect(() => {
     const nextTab = new URLSearchParams(location.search).get("tab");
-    if (nextTab && nextTab !== activeTab && tabIds.has(nextTab)) {
-      setActiveTab(nextTab);
-    }
-  }, [location.search, activeTab, tabIds]);
+    if (!nextTab || !tabIds.has(nextTab)) return;
+    setActiveTab((prev) => (prev === nextTab ? prev : nextTab));
+  }, [location.search, tabIds]);
 
   useEffect(() => {
     const load = async () => {

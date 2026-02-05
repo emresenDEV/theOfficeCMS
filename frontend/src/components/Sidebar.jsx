@@ -18,7 +18,6 @@ import {
     LogOut,
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
@@ -157,26 +156,22 @@ const Sidebar = ({ user, handleLogout, isOpen, toggleSidebar }) => {
                             </p>
                         </div>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => setCollapsed(!collapsed)}
+                        className={cn(
+                            "rounded-md border border-sidebar-border bg-sidebar-accent p-1 text-sidebar-foreground/80 hover:text-sidebar-foreground",
+                            collapsed ? "ml-0" : "ml-auto"
+                        )}
+                        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    >
+                        {collapsed ? (
+                            <ChevronRight className="h-4 w-4" />
+                        ) : (
+                            <ChevronLeft className="h-4 w-4" />
+                        )}
+                    </button>
                 </div>
-
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCollapsed(!collapsed)}
-                    className={cn(
-                        "w-full text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                        collapsed && "px-2"
-                    )}
-                >
-                    {collapsed ? (
-                        <ChevronRight className="h-4 w-4" />
-                    ) : (
-                        <>
-                            <ChevronLeft className="h-4 w-4 mr-2" />
-                            <span>Collapse</span>
-                        </>
-                    )}
-                </Button>
 
                 {handleLogout && (
                     <button
