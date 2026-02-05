@@ -16,6 +16,9 @@ import { fetchUserProfile } from "../services/userService";
 import { fetchAssignedAccounts, fetchAccountMetrics } from "../services/accountService";
 import { fetchInvoices } from "../services/invoiceService";
 import { fetchCurrentMonthCommissions } from "../services/commissionsService";
+import { fetchPipelineSummary } from "../services/pipelineService";
+import { PIPELINE_STAGES, PIPELINE_STAGE_MAP } from "../utils/pipelineStages";
+import PipelineStatusBar from "../components/PipelineStatusBar";
 import PropTypes from "prop-types";
 
 const Dashboard = ({ user }) => {
@@ -34,6 +37,7 @@ const Dashboard = ({ user }) => {
         openInvoices: 0,
         currentCommission: 0,
     });
+    const [pipelineSummary, setPipelineSummary] = useState([]);
     const navigate = useNavigate();
 
     // Handle window resize for mobile detection
@@ -151,6 +155,15 @@ const Dashboard = ({ user }) => {
         loadSummary();
     }, [userData]);
 
+    useEffect(() => {
+        if (!userData?.user_id) return;
+        async function loadPipelineSummary() {
+            const data = await fetchPipelineSummary(userData.user_id);
+            setPipelineSummary(Array.isArray(data) ? data : []);
+        }
+        loadPipelineSummary();
+    }, [userData]);
+
     if (!userData) {
         return <p className="text-center text-muted-foreground">Loading user profile...</p>;
     }
@@ -163,6 +176,17 @@ const Dashboard = ({ user }) => {
         const updatedTasks = await fetchTasks(userData.user_id);
         setTasks(updatedTasks);
     };
+
+    const pipelineSummaryMap = pipelineSummary.reduce((acc, item) => {
+        acc[item.stage] = item;
+        return acc;
+    }, {});
+
+    const topStage = PIPELINE_STAGES.reduce((best, stage) => {
+        const count = pipelineSummaryMap[stage.key]?.invoice_count || 0;
+        if (!best || count > (pipelineSummaryMap[best.key]?.invoice_count || 0)) return stage;
+        return best;
+    }, null);
 
     return (
         <div className="w-full">
@@ -178,6 +202,43 @@ const Dashboard = ({ user }) => {
                     openInvoices={summary.openInvoices}
                     currentCommission={summary.currentCommission}
                 />
+
+                <div className="rounded-lg border border-border bg-card p-5 shadow-lg">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 className="text-lg font-semibold text-foreground">Pipeline Snapshot</h2>
+                            <p className="text-xs text-muted-foreground">Invoices by current pipeline stage.</p>
+                        </div>
+                        <button
+                            className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                            onClick={() => navigate("/pipelines")}
+                        >
+                            Open Pipeline
+                        </button>
+                    </div>
+                    <div className="mt-4 rounded-lg border border-border bg-background p-4">
+                        <PipelineStatusBar currentStage={topStage?.key || "order_placed"} compact />
+                        <div className="mt-4 grid gap-2 md:grid-cols-4">
+                            {PIPELINE_STAGES.map((stage) => (
+                                <button
+                                    key={stage.key}
+                                    className="rounded-md border border-border p-3 text-left transition hover:bg-muted/60"
+                                    onClick={() => navigate(`/pipelines?stage=${stage.key}`)}
+                                >
+                                    <p className="text-[11px] uppercase text-muted-foreground">
+                                        {PIPELINE_STAGE_MAP[stage.key]?.label || stage.label}
+                                    </p>
+                                    <p className="mt-1 text-lg font-semibold text-foreground">
+                                        {pipelineSummaryMap[stage.key]?.invoice_count || 0}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {pipelineSummaryMap[stage.key]?.account_count || 0} accounts
+                                    </p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
 
                 {/* 🏢 Accounts - Mobile vs Desktop */}
                 {isMobile ? (

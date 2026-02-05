@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users, TaxRates, AccountContacts, Contact
+from models import Invoice, Account, PaymentMethods, InvoiceServices, Service, Payment, Commissions, Users, TaxRates, AccountContacts, Contact, InvoicePipeline, InvoicePipelineHistory
 from database import db
 from datetime import datetime
 import pytz
@@ -532,6 +532,24 @@ def create_invoice():
     db.session.add(new_invoice)
     db.session.flush()
 
+    pipeline = InvoicePipeline(
+        invoice_id=new_invoice.invoice_id,
+        current_stage="order_placed",
+        start_date=(new_invoice.date_created.date() if new_invoice.date_created else datetime.now(central).date()),
+        order_placed_at=new_invoice.date_created or datetime.now(central),
+    )
+    db.session.add(pipeline)
+    db.session.flush()
+
+    actor_user_id = data.get("actor_user_id") or data.get("created_by") or data.get("user_id") or new_invoice.sales_rep_id
+    db.session.add(InvoicePipelineHistory(
+        invoice_id=new_invoice.invoice_id,
+        stage="order_placed",
+        action="status_change",
+        note="Order placed",
+        actor_user_id=actor_user_id,
+    ))
+
     # Totals we’ll calculate from services
     subtotal = Decimal("0.00")
     service_discount_total = Decimal("0.00")
@@ -586,7 +604,7 @@ def create_invoice():
         entity_type="invoice",
         entity_id=new_invoice.invoice_id,
         action="create",
-        user_id=data.get("actor_user_id") or data.get("created_by") or data.get("user_id") or new_invoice.sales_rep_id,
+        user_id=actor_user_id,
         user_email=data.get("actor_email"),
         after_data=_serialize_invoice(new_invoice),
         account_id=new_invoice.account_id,
@@ -706,6 +724,44 @@ def log_payment(invoice_id):
             invoice.status = "Past Due"
         else:
             invoice.status = "Partial"
+
+        pipeline = InvoicePipeline.query.get(invoice_id)
+        if pipeline:
+            if pipeline.current_stage in ("contact_customer", "order_placed", "payment_not_received"):
+                pipeline.current_stage = "payment_received"
+                pipeline.payment_received_at = pipeline.payment_received_at or datetime.now(central)
+                pipeline.updated_at = datetime.now(central)
+                db.session.add(InvoicePipelineHistory(
+                    invoice_id=invoice_id,
+                    stage="payment_received",
+                    action="status_change",
+                    note="Payment received",
+                    actor_user_id=actor_user_id,
+                ))
+                db.session.add(InvoicePipelineHistory(
+                    invoice_id=invoice_id,
+                    stage="payment_received",
+                    action="email",
+                    note="Email sent to contact: payment received update.",
+                    actor_user_id=actor_user_id,
+                ))
+        else:
+            pipeline = InvoicePipeline(
+                invoice_id=invoice_id,
+                current_stage="payment_received",
+                start_date=invoice.date_created.date() if invoice and invoice.date_created else today,
+                order_placed_at=invoice.date_created if invoice else datetime.now(central),
+                payment_received_at=datetime.now(central),
+            )
+            db.session.add(pipeline)
+            db.session.flush()
+            db.session.add(InvoicePipelineHistory(
+                invoice_id=invoice_id,
+                stage="payment_received",
+                action="status_change",
+                note="Payment received",
+                actor_user_id=actor_user_id,
+            ))
 
         create_audit_log(
             entity_type="payment",

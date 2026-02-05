@@ -232,6 +232,37 @@ class Invoice(db.Model):
         overlaps="invoice_services,service,invoice"
     )
     payments = db.relationship('Payment', back_populates='invoice', cascade="all, delete-orphan")
+    pipeline = db.relationship('InvoicePipeline', uselist=False, backref='invoice', cascade='all, delete-orphan')
+    pipeline_history = db.relationship('InvoicePipelineHistory', backref='invoice', cascade='all, delete-orphan')
+
+
+class InvoicePipeline(db.Model):
+    __tablename__ = "invoice_pipelines"
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.invoice_id"), primary_key=True)
+    current_stage = db.Column(db.String(32), nullable=False, default="order_placed")
+    start_date = db.Column(db.Date)
+    contacted_at = db.Column(db.DateTime)
+    order_placed_at = db.Column(db.DateTime)
+    payment_not_received_at = db.Column(db.DateTime)
+    payment_received_at = db.Column(db.DateTime)
+    order_packaged_at = db.Column(db.DateTime)
+    order_shipped_at = db.Column(db.DateTime)
+    order_delivered_at = db.Column(db.DateTime)
+    payment_issue_notified_at = db.Column(db.DateTime)
+    payment_issue_escalated_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+
+class InvoicePipelineHistory(db.Model):
+    __tablename__ = "invoice_pipeline_history"
+    history_id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoices.invoice_id"), nullable=False)
+    stage = db.Column(db.String(32))
+    action = db.Column(db.String(32), nullable=False, default="status_change")
+    note = db.Column(db.Text)
+    actor_user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"))
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 
 

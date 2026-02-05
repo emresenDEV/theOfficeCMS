@@ -12,6 +12,7 @@ import {
     BarChart3,
     Calendar,
     CheckSquare,
+    Truck,
     UserCog,
     ChevronLeft,
     ChevronRight,
@@ -33,6 +34,7 @@ const mainNavItems = [
 const toolsNavItems = [
     { title: "Analytics", href: "/analytics", icon: BarChart3 },
     { title: "Calendar", href: "/calendar", icon: Calendar },
+    { title: "Pipeline", href: "/pipelines", icon: Truck },
     { title: "Tasks", href: "/tasks", icon: CheckSquare },
 ];
 

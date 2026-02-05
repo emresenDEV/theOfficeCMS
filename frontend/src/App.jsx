@@ -19,6 +19,8 @@ import InvoicesPage from "./pages/InvoicesPage";
 import InvoiceDetailsPage from "./pages/InvoiceDetailsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import PaymentsPage from "./pages/PaymentsPage";
+import PipelineDashboard from "./pages/PipelineDashboard";
+import PipelineInvoicePage from "./pages/PipelineInvoicePage";
 import SettingsPage from "./pages/SettingsPage";
 import PaidInvoicesPage from "./pages/PaidInvoicesPage";
 import PastDueInvoicesPage from "./pages/PastDueInvoicesPage";
@@ -173,6 +175,10 @@ const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
           {/* Calendar Routes */}
           <Route path="/calendar" element={<ProtectedRoute user={user} loading={loading}><CalendarPage user={user} /></ProtectedRoute>} />
           <Route path="/calendar/create" element={<ProtectedRoute user={user} loading={loading} ><CreateCalendarEvent user={user} userId={user.id} setEvents={() => {}} closeForm={() => {}}/></ProtectedRoute>} />
+
+          {/* Pipeline Routes */}
+          <Route path="/pipelines" element={<ProtectedRoute user={user} loading={loading}><PipelineDashboard user={user} /></ProtectedRoute>} />
+          <Route path="/pipelines/invoice/:invoiceId" element={<ProtectedRoute user={user} loading={loading}><PipelineInvoicePage user={user} /></ProtectedRoute>} />
 
           {/* Invoice Routes */}
           <Route path="/invoices" element={<ProtectedRoute user={user} loading={loading}><InvoicesPage user={user} /></ProtectedRoute>} />
