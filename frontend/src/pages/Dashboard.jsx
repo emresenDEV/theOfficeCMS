@@ -224,100 +224,101 @@ const Dashboard = ({ user }) => {
 
     return (
         <div className="w-full">
-            <div className="flex-1 px-4 pb-6 pt-0 sm:px-6 sm:pb-6 sm:pt-0 space-y-6">
+            <div className="flex-1 px-4 pb-6 pt-0 sm:px-6 sm:pb-6 sm:pt-0">
                 <DashboardHeader
                     userName={`${userData.first_name} ${userData.last_name}`}
                     roleName={userData.role_name || "Sales"}
                 />
 
-                <DashboardSummaryCards
-                    totalRevenue={summary.totalRevenue}
-                    activeAccounts={summary.activeAccounts}
-                    openInvoices={summary.openInvoices}
-                    currentCommission={summary.currentCommission}
-                />
+                <div className="mt-3 space-y-6">
+                    <DashboardSummaryCards
+                        totalRevenue={summary.totalRevenue}
+                        activeAccounts={summary.activeAccounts}
+                        openInvoices={summary.openInvoices}
+                        currentCommission={summary.currentCommission}
+                    />
 
-                <div className="rounded-lg border border-border bg-card p-5 shadow-lg">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h2 className="text-lg font-semibold text-foreground">Pipeline Snapshot</h2>
-                            <p className="text-xs text-muted-foreground">Invoices by current pipeline stage.</p>
+                    <div className="rounded-lg border border-border bg-card p-5 shadow-lg">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h2 className="text-lg font-semibold text-foreground">Pipeline Snapshot</h2>
+                                <p className="text-xs text-muted-foreground">Invoices by current pipeline stage.</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                                    onClick={() => navigate("/pipelines")}
+                                >
+                                    Open Pipeline
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <button
-                                className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
-                                onClick={() => navigate("/pipelines")}
-                            >
-                                Open Pipeline
-                            </button>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {[
+                                { key: "all", label: "All" },
+                                { key: "day", label: "Day" },
+                                { key: "week", label: "Week" },
+                                { key: "month", label: "Month" },
+                                { key: "quarter", label: "Quarter" },
+                                { key: "year", label: "Year" },
+                            ].map((range) => (
+                                <button
+                                    key={range.key}
+                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                        pipelineRange === range.key
+                                            ? "bg-primary text-primary-foreground"
+                                            : "bg-muted text-muted-foreground"
+                                    }`}
+                                    onClick={() => setPipelineRange(range.key)}
+                                >
+                                    {range.label}
+                                </button>
+                            ))}
                         </div>
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                        {[
-                            { key: "all", label: "All" },
-                            { key: "day", label: "Day" },
-                            { key: "week", label: "Week" },
-                            { key: "month", label: "Month" },
-                            { key: "quarter", label: "Quarter" },
-                            { key: "year", label: "Year" },
-                        ].map((range) => (
-                            <button
-                                key={range.key}
-                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                    pipelineRange === range.key
-                                        ? "bg-primary text-primary-foreground"
-                                        : "bg-muted text-muted-foreground"
-                                }`}
-                                onClick={() => setPipelineRange(range.key)}
-                            >
-                                {range.label}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="mt-4 rounded-lg border border-border bg-background p-4">
-                        <PipelineStatusBar currentStage={topStage?.key || "order_placed"} compact />
-                        <div className="mt-4 overflow-x-auto">
-                            <div className="grid min-w-[980px] grid-cols-7 gap-2">
-                                {PIPELINE_STAGES.map((stage) => (
-                                    <button
-                                        key={stage.key}
-                                        className="rounded-md border border-border p-3 text-left transition hover:bg-muted/60"
-                                        onClick={() => navigate(`/pipelines?stage=${stage.key}`)}
-                                    >
-                                        <p className="text-[11px] uppercase text-muted-foreground">
-                                            {PIPELINE_STAGE_MAP[stage.key]?.label || stage.label}
-                                        </p>
-                                        <p className="mt-1 text-lg font-semibold text-foreground">
-                                            {pipelineSummaryMap[stage.key]?.invoice_count || 0}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {pipelineSummaryMap[stage.key]?.account_count || 0} accounts
-                                        </p>
-                                    </button>
-                                ))}
+                        <div className="mt-4 rounded-lg border border-border bg-background p-4">
+                            <PipelineStatusBar currentStage={topStage?.key || "order_placed"} compact />
+                            <div className="mt-4 overflow-x-auto">
+                                <div className="grid min-w-[980px] grid-cols-7 gap-2">
+                                    {PIPELINE_STAGES.map((stage) => (
+                                        <button
+                                            key={stage.key}
+                                            className="rounded-md border border-border p-3 text-left transition hover:bg-muted/60"
+                                            onClick={() => navigate(`/pipelines?stage=${stage.key}`)}
+                                        >
+                                            <p className="text-[11px] uppercase text-muted-foreground">
+                                                {PIPELINE_STAGE_MAP[stage.key]?.label || stage.label}
+                                            </p>
+                                            <p className="mt-1 text-lg font-semibold text-foreground">
+                                                {pipelineSummaryMap[stage.key]?.invoice_count || 0}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {pipelineSummaryMap[stage.key]?.account_count || 0} accounts
+                                            </p>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
                 {/* 🏢 Accounts - Mobile vs Desktop */}
-                {isMobile ? (
-                    <AccountsMobileMini user={userData} />
-                ) : (
-                    <AccountsTable user={userData} />
-                )}
+                    {isMobile ? (
+                        <AccountsMobileMini user={userData} />
+                    ) : (
+                        <AccountsTable user={userData} />
+                    )}
 
                 {/* Calendar + Tasks */}
-                {isMobile ? (
-                    <>
-                        <CalendarMobileMini
-                            events={events}
-                            onEventClick={(event) => {
-                                setSelectedEvent(event);
-                                setShowEventDetailsModal(true);
-                            }}
-                            onCreateEvent={(date) => {
-                                setSelectedDate(date);
+                    {isMobile ? (
+                        <>
+                            <CalendarMobileMini
+                                events={events}
+                                onEventClick={(event) => {
+                                    setSelectedEvent(event);
+                                    setShowEventDetailsModal(true);
+                                }}
+                                onCreateEvent={(date) => {
+                                    setSelectedDate(date);
                                 setShowCreateModal(true);
                             }}
                         />
