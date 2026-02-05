@@ -236,7 +236,7 @@ const AccountDetailsPage = ({ user }) => {
                         </button>
                         <button
                             className="rounded-full px-3 py-1 font-semibold bg-muted text-muted-foreground"
-                            onClick={() => setPurchaseSort((prev) => ({ ...prev, order: prev.order === \"desc\" ? \"asc\" : \"desc\" }))}
+                            onClick={() => setPurchaseSort((prev) => ({ ...prev, order: prev.order === "desc" ? "asc" : "desc" }))}
                         >
                             {purchaseSort.order === "desc" ? "Desc" : "Asc"}
                         </button>
