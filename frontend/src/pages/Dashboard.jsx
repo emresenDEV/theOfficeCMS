@@ -38,6 +38,7 @@ const Dashboard = ({ user }) => {
         currentCommission: 0,
     });
     const [pipelineSummary, setPipelineSummary] = useState([]);
+    const [pipelineRange, setPipelineRange] = useState("month");
     const navigate = useNavigate();
 
     // Handle window resize for mobile detection
@@ -155,14 +156,44 @@ const Dashboard = ({ user }) => {
         loadSummary();
     }, [userData]);
 
+    const getPipelineDateRange = (range) => {
+        const now = new Date();
+        let start = new Date(now);
+        if (range === "day") {
+            start.setHours(0, 0, 0, 0);
+        } else if (range === "week") {
+            start.setDate(now.getDate() - 6);
+            start.setHours(0, 0, 0, 0);
+        } else if (range === "month") {
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (range === "quarter") {
+            const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+            start = new Date(now.getFullYear(), quarterStart, 1);
+        } else if (range === "year") {
+            start = new Date(now.getFullYear(), 0, 1);
+        }
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        const fmt = (date) => date.toISOString().split("T")[0];
+        return {
+            date_from: fmt(start),
+            date_to: fmt(end),
+        };
+    };
+
     useEffect(() => {
         if (!userData?.user_id) return;
         async function loadPipelineSummary() {
-            const data = await fetchPipelineSummary(userData.user_id);
+            const range = getPipelineDateRange(pipelineRange);
+            const data = await fetchPipelineSummary(userData.user_id, {
+                date_from: range.date_from,
+                date_to: range.date_to,
+                date_field: "created",
+            });
             setPipelineSummary(Array.isArray(data) ? data : []);
         }
         loadPipelineSummary();
-    }, [userData]);
+    }, [userData, pipelineRange]);
 
     if (!userData) {
         return <p className="text-center text-muted-foreground">Loading user profile...</p>;
@@ -209,33 +240,58 @@ const Dashboard = ({ user }) => {
                             <h2 className="text-lg font-semibold text-foreground">Pipeline Snapshot</h2>
                             <p className="text-xs text-muted-foreground">Invoices by current pipeline stage.</p>
                         </div>
-                        <button
-                            className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
-                            onClick={() => navigate("/pipelines")}
-                        >
-                            Open Pipeline
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                                onClick={() => navigate("/pipelines")}
+                            >
+                                Open Pipeline
+                            </button>
+                        </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {[
+                            { key: "day", label: "Day" },
+                            { key: "week", label: "Week" },
+                            { key: "month", label: "Month" },
+                            { key: "quarter", label: "Quarter" },
+                            { key: "year", label: "Year" },
+                        ].map((range) => (
+                            <button
+                                key={range.key}
+                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                    pipelineRange === range.key
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted text-muted-foreground"
+                                }`}
+                                onClick={() => setPipelineRange(range.key)}
+                            >
+                                {range.label}
+                            </button>
+                        ))}
                     </div>
                     <div className="mt-4 rounded-lg border border-border bg-background p-4">
                         <PipelineStatusBar currentStage={topStage?.key || "order_placed"} compact />
-                        <div className="mt-4 grid gap-2 md:grid-cols-4">
-                            {PIPELINE_STAGES.map((stage) => (
-                                <button
-                                    key={stage.key}
-                                    className="rounded-md border border-border p-3 text-left transition hover:bg-muted/60"
-                                    onClick={() => navigate(`/pipelines?stage=${stage.key}`)}
-                                >
-                                    <p className="text-[11px] uppercase text-muted-foreground">
-                                        {PIPELINE_STAGE_MAP[stage.key]?.label || stage.label}
-                                    </p>
-                                    <p className="mt-1 text-lg font-semibold text-foreground">
-                                        {pipelineSummaryMap[stage.key]?.invoice_count || 0}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {pipelineSummaryMap[stage.key]?.account_count || 0} accounts
-                                    </p>
-                                </button>
-                            ))}
+                        <div className="mt-4 overflow-x-auto">
+                            <div className="grid min-w-[980px] grid-cols-7 gap-2">
+                                {PIPELINE_STAGES.map((stage) => (
+                                    <button
+                                        key={stage.key}
+                                        className="rounded-md border border-border p-3 text-left transition hover:bg-muted/60"
+                                        onClick={() => navigate(`/pipelines?stage=${stage.key}`)}
+                                    >
+                                        <p className="text-[11px] uppercase text-muted-foreground">
+                                            {PIPELINE_STAGE_MAP[stage.key]?.label || stage.label}
+                                        </p>
+                                        <p className="mt-1 text-lg font-semibold text-foreground">
+                                            {pipelineSummaryMap[stage.key]?.invoice_count || 0}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {pipelineSummaryMap[stage.key]?.account_count || 0} accounts
+                                        </p>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

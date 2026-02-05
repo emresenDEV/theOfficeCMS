@@ -9,13 +9,13 @@ const getGreeting = () => {
 
 export function DashboardHeader({ userName, roleName }) {
     return (
-        <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 bg-card/90 backdrop-blur border-b border-border">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-card/90 backdrop-blur border-b border-border">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
                     {getGreeting()}, {userName}
                 </h1>
-                <p className="mt-1 text-sm text-muted-foreground">{roleName} Dashboard</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{roleName} Dashboard</p>
             </div>
             </div>
         </div>
