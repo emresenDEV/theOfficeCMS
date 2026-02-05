@@ -301,14 +301,14 @@ const Dashboard = ({ user }) => {
                         </div>
                     </div>
 
-                {/* 🏢 Accounts - Mobile vs Desktop */}
+                    {/* 🏢 Accounts - Mobile vs Desktop */}
                     {isMobile ? (
                         <AccountsMobileMini user={userData} />
                     ) : (
                         <AccountsTable user={userData} />
                     )}
 
-                {/* Calendar + Tasks */}
+                    {/* Calendar + Tasks */}
                     {isMobile ? (
                         <>
                             <CalendarMobileMini
@@ -319,41 +319,42 @@ const Dashboard = ({ user }) => {
                                 }}
                                 onCreateEvent={(date) => {
                                     setSelectedDate(date);
-                                setShowCreateModal(true);
-                            }}
-                        />
-                        <TasksMobileMini
-                            tasks={tasks}
-                            user={userData}
-                            refreshTasks={handleRefreshTasks}
-                        />
-                    </>
-                ) : (
-                    <div className="grid gap-6 lg:grid-cols-2">
-                        <DashboardCalendarSection
-                            events={events}
-                            onAddEvent={(date) => {
-                                setSelectedDate(date);
-                                setShowCreateModal(true);
-                            }}
-                            onDateSelect={(date) => {
-                                if (!date) return;
-                                const formatted = date.toISOString().split("T")[0];
-                                navigate(`/calendar?date=${formatted}`);
-                            }}
-                            onEventClick={(event) => {
-                                setSelectedEvent(event);
-                                setShowEventDetailsModal(true);
-                            }}
-                        />
-                        <TasksComponent
-                            tasks={tasks}
-                            user={userData}
-                            refreshTasks={handleRefreshTasks}
-                        />
-                    </div>
-                )}
+                                    setShowCreateModal(true);
+                                }}
+                            />
+                            <TasksMobileMini
+                                tasks={tasks}
+                                user={userData}
+                                refreshTasks={handleRefreshTasks}
+                            />
+                        </>
+                    ) : (
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <DashboardCalendarSection
+                                events={events}
+                                onAddEvent={(date) => {
+                                    setSelectedDate(date);
+                                    setShowCreateModal(true);
+                                }}
+                                onDateSelect={(date) => {
+                                    if (!date) return;
+                                    const formatted = date.toISOString().split("T")[0];
+                                    navigate(`/calendar?date=${formatted}`);
+                                }}
+                                onEventClick={(event) => {
+                                    setSelectedEvent(event);
+                                    setShowEventDetailsModal(true);
+                                }}
+                            />
+                            <TasksComponent
+                                tasks={tasks}
+                                user={userData}
+                                refreshTasks={handleRefreshTasks}
+                            />
+                        </div>
+                    )}
             </div>
+        </div>
             {/* EVENT DETAILS MODAL - Mobile */}
             <EventDetailsModal
                 event={selectedEvent}
