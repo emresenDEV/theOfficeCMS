@@ -11,7 +11,9 @@ import {
 } from "../services/contactService";
 import { fetchAccounts } from "../services/accountService";
 import { fetchUsers } from "../services/userService";
-import { createTask } from "../services/tasksService";
+import { createTask, fetchTasksByAccount, updateTask } from "../services/tasksService";
+import { fetchAllInvoices } from "../services/invoiceService";
+import { fetchBranches } from "../services/branchService";
 import AuditSection from "../components/AuditSection";
 import { formatDateTimeInTimeZone, formatDateInTimeZone } from "../utils/timezone";
 
@@ -22,9 +24,12 @@ const ContactDetailsPage = ({ user }) => {
   const [contact, setContact] = useState(null);
   const [form, setForm] = useState(null);
   const [accounts, setAccounts] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [interactions, setInteractions] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [accountTaskCounts, setAccountTaskCounts] = useState({});
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,6 +64,16 @@ const ContactDetailsPage = ({ user }) => {
   });
   const [highlightTaskId, setHighlightTaskId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [toolTab, setToolTab] = useState("followup");
+  const [auditTab, setAuditTab] = useState("general");
+  const [taskAssigneeQuery, setTaskAssigneeQuery] = useState("");
+  const [followupAssigneeQuery, setFollowupAssigneeQuery] = useState("");
+  const [ownerSearch, setOwnerSearch] = useState("");
+  const [followupCompleteTask, setFollowupCompleteTask] = useState(null);
+  const [followupCompleteNote, setFollowupCompleteNote] = useState("");
+  const [followupCompleting, setFollowupCompleting] = useState(false);
 
   const storedAutosave = localStorage.getItem("contacts_autosave");
   const autosaveDefault = user?.contacts_autosave ?? (storedAutosave === null ? true : storedAutosave === "true");
@@ -97,40 +112,59 @@ const ContactDetailsPage = ({ user }) => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
-      const [contactData, accountsData, usersData] = await Promise.all([
+      const [contactData, accountsData, usersData, branchesData, invoiceData] = await Promise.all([
         fetchContactById(contactId, user?.user_id),
         fetchAccounts(),
         fetchUsers(),
+        fetchBranches(),
+        fetchAllInvoices(),
       ]);
       if (!mounted) return;
       setContact(contactData);
-      setForm(contactData ? {
-        first_name: contactData.first_name || "",
-        last_name: contactData.last_name || "",
-        title: contactData.title || "",
-        phone: contactData.phone || "",
-        email: contactData.email || "",
-        status: contactData.status || "active",
-        do_not_call: !!contactData.do_not_call,
-        email_opt_out: !!contactData.email_opt_out,
-        contact_owner_user_id: contactData.contact_owner_user_id || "",
-      } : null);
+      setForm(
+        contactData
+          ? {
+              first_name: contactData.first_name || "",
+              last_name: contactData.last_name || "",
+              title: contactData.title || "",
+              phone: contactData.phone || "",
+              email: contactData.email || "",
+              status: contactData.status || "active",
+              do_not_call: !!contactData.do_not_call,
+              email_opt_out: !!contactData.email_opt_out,
+              contact_owner_user_id: contactData.contact_owner_user_id || "",
+            }
+          : null
+      );
       setAccounts(accountsData);
       setUsers(usersData);
+      setBranches(branchesData || []);
+      setInvoices(invoiceData || []);
       setInteractions(contactData?.interactions || []);
       setTasks(contactData?.tasks || []);
       setIsFollowing(!!contactData?.is_following);
+
+      const ownerId = contactData?.contact_owner_user_id || user?.user_id || "";
+      const ownerUser = usersData?.find((u) => u.user_id === ownerId);
+      const ownerName = ownerUser ? `${ownerUser.first_name || ""} ${ownerUser.last_name || ""}`.trim() : "";
+      const currentUser = usersData?.find((u) => u.user_id === (user?.user_id ?? user?.id));
+      const currentUserName = currentUser
+        ? `${currentUser.first_name || ""} ${currentUser.last_name || ""}`.trim()
+        : "";
+
       setFollowupForm((prev) => ({
         ...prev,
-        assigned_to: contactData?.contact_owner_user_id || user?.user_id || "",
+        assigned_to: ownerId,
       }));
+      setFollowupAssigneeQuery(ownerName);
+      setTaskAssigneeQuery(currentUserName);
       setLoading(false);
     };
     load();
     return () => {
       mounted = false;
     };
-  }, [contactId, user?.user_id]);
+  }, [contactId, user?.user_id, user?.id]);
 
   useEffect(() => {
     if (!autosaveEnabled || !dirty || !form) return;
@@ -165,11 +199,47 @@ const ContactDetailsPage = ({ user }) => {
   }, [accountAdds, accountRemoves, contact, user?.user_id, user?.email]);
 
   useEffect(() => {
+    let active = true;
+    const loadAccountTaskCounts = async () => {
+      if (!contact?.accounts?.length) {
+        setAccountTaskCounts({});
+        return;
+      }
+      const entries = await Promise.all(
+        contact.accounts.map(async (acc) => {
+          const accountTasks = await fetchTasksByAccount(acc.account_id);
+          const openCount = (accountTasks || []).filter((task) => !task.is_completed).length;
+          return [acc.account_id, openCount];
+        })
+      );
+      if (!active) return;
+      const next = {};
+      entries.forEach(([accountId, count]) => {
+        next[accountId] = count;
+      });
+      setAccountTaskCounts(next);
+    };
+    loadAccountTaskCounts();
+    return () => {
+      active = false;
+    };
+  }, [contact?.accounts]);
+
+  useEffect(() => {
     if (!highlightTaskId) return;
-    const row = document.getElementById(`contact-task-${highlightTaskId}`);
-    if (row) {
-      row.scrollIntoView({ behavior: "smooth", block: "center" });
+    const targetTask = tasks.find((item) => item.task_id === highlightTaskId);
+    if (targetTask?.task_description?.toLowerCase().startsWith("follow up with")) {
+      setAuditTab("followup");
+    } else if (targetTask) {
+      setAuditTab("tasks");
     }
+    const timeoutId = setTimeout(() => {
+      const row = document.getElementById(`contact-task-${highlightTaskId}`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 150);
+    return () => clearTimeout(timeoutId);
   }, [highlightTaskId, tasks]);
 
   useEffect(() => {
@@ -178,10 +248,37 @@ const ContactDetailsPage = ({ user }) => {
       if (event.key.toLowerCase() !== "m") return;
       if (!user?.user_id) return;
       setFollowupForm((prev) => ({ ...prev, assigned_to: user.user_id }));
+      const me = users.find((u) => u.user_id === user.user_id);
+      if (me) {
+        setFollowupAssigneeQuery(`${me.first_name || ""} ${me.last_name || ""}`.trim());
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [user?.user_id]);
+  }, [user?.user_id, users]);
+
+  useEffect(() => {
+    if (!showEditModal || !form) return;
+    const owner = users.find((u) => u.user_id === Number(form.contact_owner_user_id));
+    const ownerName = owner ? `${owner.first_name || ""} ${owner.last_name || ""}`.trim() : "";
+    setOwnerSearch(ownerName);
+  }, [showEditModal, form, users]);
+
+  useEffect(() => {
+    if (!users.length) return;
+    if (!taskAssigneeQuery && taskForm.assigned_to) {
+      const current = users.find((u) => u.user_id === Number(taskForm.assigned_to));
+      if (current) {
+        setTaskAssigneeQuery(`${current.first_name || ""} ${current.last_name || ""}`.trim());
+      }
+    }
+    if (!followupAssigneeQuery && followupForm.assigned_to) {
+      const current = users.find((u) => u.user_id === Number(followupForm.assigned_to));
+      if (current) {
+        setFollowupAssigneeQuery(`${current.first_name || ""} ${current.last_name || ""}`.trim());
+      }
+    }
+  }, [users, taskAssigneeQuery, followupAssigneeQuery, taskForm.assigned_to, followupForm.assigned_to]);
 
   const userMap = useMemo(() => {
     const map = new Map();
@@ -198,6 +295,27 @@ const ContactDetailsPage = ({ user }) => {
     });
     return map;
   }, [accounts]);
+
+  const branchMap = useMemo(() => {
+    const map = new Map();
+    branches.forEach((branch) => {
+      map.set(branch.branch_id, branch.branch_name);
+    });
+    return map;
+  }, [branches]);
+
+  const invoiceCountsByAccount = useMemo(() => {
+    const map = new Map();
+    invoices.forEach((inv) => {
+      if (!inv.account_id) return;
+      const entry = map.get(inv.account_id) || { total: 0, byStatus: {} };
+      const status = inv.status || "Unknown";
+      entry.total += 1;
+      entry.byStatus[status] = (entry.byStatus[status] || 0) + 1;
+      map.set(inv.account_id, entry);
+    });
+    return map;
+  }, [invoices]);
 
   const associatedAccountIds = useMemo(() => {
     return contact?.accounts?.map((acc) => acc.account_id) || [];
@@ -223,11 +341,74 @@ const ContactDetailsPage = ({ user }) => {
     return Array.from(emails);
   }, [contact]);
 
+  const getUserDisplay = (userId) => {
+    return userMap.get(userId) || "—";
+  };
+
+  const filterUsers = (query) => {
+    const term = query.trim().toLowerCase();
+    if (!term) return [];
+    return users
+      .filter((u) => {
+        const name = `${u.first_name || ""} ${u.last_name || ""}`.trim().toLowerCase();
+        const username = (u.username || "").toLowerCase();
+        return name.includes(term) || username.includes(term);
+      })
+      .slice(0, 8);
+  };
+
+  const taskAssigneeResults = useMemo(() => {
+    return filterUsers(taskAssigneeQuery);
+  }, [taskAssigneeQuery, users]);
+
+  const followupAssigneeResults = useMemo(() => {
+    return filterUsers(followupAssigneeQuery);
+  }, [followupAssigneeQuery, users]);
+
+  const ownerResults = useMemo(() => {
+    return filterUsers(ownerSearch);
+  }, [ownerSearch, users]);
+
   const displayName = useMemo(() => {
     if (!contact) return "";
     const name = `${contact.first_name || ""} ${contact.last_name || ""}`.trim();
     return name || "Unnamed Contact";
   }, [contact]);
+
+  const isFollowupTask = (task) => {
+    if (!task?.task_description) return false;
+    return task.task_description.toLowerCase().startsWith("follow up with");
+  };
+
+  const followupTasks = useMemo(() => {
+    return tasks.filter((task) => isFollowupTask(task) && !task.is_completed);
+  }, [tasks]);
+
+  const nonFollowupTasks = useMemo(() => {
+    return tasks.filter((task) => !isFollowupTask(task));
+  }, [tasks]);
+
+  const parseDateValue = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === "string") {
+      const normalized = value.includes("T") ? value : value.replace(" ", "T");
+      const parsed = new Date(normalized);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const getCustomerSince = (value) => {
+    const createdAt = parseDateValue(value);
+    if (!createdAt) return null;
+    const now = new Date();
+    const diffDays = Math.max(0, Math.floor((now - createdAt) / (1000 * 60 * 60 * 24)));
+    const years = Math.floor(diffDays / 365);
+    const days = diffDays % 365;
+    return { createdAt, years, days, diffDays };
+  };
 
   const setOverride = (value) => {
     setAutosaveOverride(value);
@@ -355,6 +536,12 @@ const ContactDetailsPage = ({ user }) => {
         due_date: "",
         account_id: "",
       });
+      const current = users.find((u) => u.user_id === (user?.user_id || user?.id));
+      if (current) {
+        setTaskAssigneeQuery(`${current.first_name || ""} ${current.last_name || ""}`.trim());
+      } else {
+        setTaskAssigneeQuery("");
+      }
     }
   };
 
@@ -379,8 +566,70 @@ const ContactDetailsPage = ({ user }) => {
     const created = await createTask(payload);
     if (created) {
       setTasks((prev) => [created, ...prev]);
-      setFollowupForm({ due_date: "", note: "", account_id: "" });
+      const ownerId = contact.contact_owner_user_id || user?.user_id || "";
+      const owner = users.find((u) => u.user_id === ownerId);
+      setFollowupForm({
+        due_date: "",
+        note: "",
+        account_id: "",
+        assigned_to: ownerId,
+      });
+      setFollowupAssigneeQuery(owner ? `${owner.first_name || ""} ${owner.last_name || ""}`.trim() : "");
     }
+  };
+
+  const handleManualSave = async () => {
+    await handleSave();
+    setShowEditModal(false);
+  };
+
+  const handleToggleTaskStatus = async (task) => {
+    const updated = await updateTask(task.task_id, {
+      is_completed: !task.is_completed,
+      actor_user_id: user?.user_id,
+      actor_email: user?.email,
+    });
+    if (updated) {
+      setTasks((prev) =>
+        prev.map((item) =>
+          item.task_id === task.task_id
+            ? { ...item, is_completed: updated.is_completed ?? !task.is_completed }
+            : item
+        )
+      );
+    }
+  };
+
+  const handleCompleteFollowup = async () => {
+    if (!followupCompleteTask) return;
+    setFollowupCompleting(true);
+    const updated = await updateTask(followupCompleteTask.task_id, {
+      is_completed: true,
+      actor_user_id: user?.user_id,
+      actor_email: user?.email,
+    });
+    if (updated) {
+      setTasks((prev) =>
+        prev.map((item) =>
+          item.task_id === followupCompleteTask.task_id ? { ...item, is_completed: true } : item
+        )
+      );
+      const interactionPayload = {
+        interaction_type: "followup",
+        subject: "Follow-up completed",
+        notes: followupCompleteNote || followupCompleteTask.task_description,
+        account_id: followupCompleteTask.account_id ? Number(followupCompleteTask.account_id) : null,
+        actor_user_id: user?.user_id,
+        actor_email: user?.email,
+      };
+      const created = await createContactInteraction(contact.contact_id, interactionPayload);
+      if (created) {
+        setInteractions((prev) => [created, ...prev]);
+      }
+    }
+    setFollowupCompleteTask(null);
+    setFollowupCompleteNote("");
+    setFollowupCompleting(false);
   };
 
   if (loading) {
@@ -399,24 +648,19 @@ const ContactDetailsPage = ({ user }) => {
         </div>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <button
-            className="text-sm text-primary hover:underline"
-            onClick={() => navigate("/contacts")}
-          >
-            ← Back to Contacts
-          </button>
-          <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
-          <p className="text-sm text-muted-foreground">Contact details and activity</p>
-        </div>
+        <button
+          className="text-sm text-primary hover:underline"
+          onClick={() => navigate("/contacts")}
+        >
+          ← Back to Contacts
+        </button>
         <div className="flex items-center gap-2">
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              form.status === "inactive" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
-            }`}
+          <button
+            className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+            onClick={() => setShowEditModal(true)}
           >
-            {form.status || "active"}
-          </span>
+            Edit Contact
+          </button>
           <button
             className={`rounded-lg px-4 py-2 text-sm font-semibold ${
               isFollowing ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground"
@@ -428,15 +672,701 @@ const ContactDetailsPage = ({ user }) => {
         </div>
       </div>
 
+      <div className="mt-4 rounded-lg border border-border bg-card p-4">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
+            {contact.title && <p className="text-sm text-muted-foreground">{contact.title}</p>}
+            <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+              <p>
+                <span className="font-semibold text-foreground">Phone:</span> {contact.phone || "—"}
+              </p>
+              <p>
+                <span className="font-semibold text-foreground">Email:</span> {contact.email || "—"}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-foreground">Status:</span>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  form.status === "inactive" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+                }`}
+              >
+                {form.status || "active"}
+              </span>
+            </div>
+            <p>
+              <span className="font-semibold text-foreground">Owner:</span>{" "}
+              {contact.contact_owner_name || getUserDisplay(contact.contact_owner_user_id)}
+            </p>
+            <p>
+              <span className="font-semibold text-foreground">Do Not Call:</span>{" "}
+              {contact.do_not_call ? "Yes" : "No"}
+              {contact.do_not_call_date && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  ({formatDateInTimeZone(contact.do_not_call_date, user)})
+                </span>
+              )}
+            </p>
+            <p>
+              <span className="font-semibold text-foreground">Email Opt Out:</span>{" "}
+              {contact.email_opt_out ? "Yes" : "No"}
+              {contact.email_opt_out_date && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  ({formatDateInTimeZone(contact.email_opt_out_date, user)})
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-[2fr,1fr]">
         <div className="space-y-6">
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold text-foreground">Profile</h2>
-              <div className="text-xs text-muted-foreground">
-                {autosaveEnabled ? "Auto-save on" : "Auto-save off"}
-                {saveMessage ? ` • ${saveMessage}` : ""}
+              <h2 className="text-lg font-semibold text-foreground">Accounts</h2>
+              <button
+                className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted"
+                onClick={() => setShowAccountModal(true)}
+              >
+                Move to New Company +
+              </button>
+            </div>
+            {contact.accounts?.length ? (
+              <div className="mt-4 space-y-4">
+                {contact.accounts.map((acc) => {
+                  const fullAccount = accountMap.get(acc.account_id) || acc;
+                  const salesRep = users.find((u) => u.user_id === fullAccount.sales_rep_id);
+                  const branchName = branchMap.get(salesRep?.branch_id || fullAccount.branch_id);
+                  const invoiceInfo = invoiceCountsByAccount.get(acc.account_id) || { total: 0, byStatus: {} };
+                  const customerSince = getCustomerSince(fullAccount.date_created);
+                  const lastOpened = fullAccount.date_updated || fullAccount.date_created;
+                  return (
+                    <div key={acc.account_id} className="rounded-md border border-border bg-card p-4 shadow-sm">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <button
+                            className="text-base font-semibold text-primary hover:underline"
+                            onClick={() => navigate(`/accounts/details/${acc.account_id}`)}
+                          >
+                            {fullAccount.business_name || acc.business_name}
+                          </button>
+                          <p className="text-sm text-muted-foreground">{fullAccount.address || "—"}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {fullAccount.city || ""}
+                            {fullAccount.city && fullAccount.state ? ", " : ""}
+                            {fullAccount.state || ""} {fullAccount.zip_code || ""}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Region: {fullAccount.region_name || fullAccount.region || "—"}
+                          </p>
+                        </div>
+                        {customerSince && (
+                          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground">
+                            Customer since {formatDateInTimeZone(fullAccount.date_created, user, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })} • {customerSince.years}y {customerSince.days}d
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <p>
+                            <span className="font-semibold text-foreground">Assigned Rep:</span>{" "}
+                            {salesRep
+                              ? `${salesRep.first_name || ""} ${salesRep.last_name || ""}`.trim()
+                              : "—"}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-foreground">Branch:</span> {branchName || "—"}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-foreground">Rep Phone:</span> {salesRep?.phone_number || "—"}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-foreground">Rep Email:</span> {salesRep?.email || "—"}
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                          <p className="text-xs uppercase text-muted-foreground">Snapshot</p>
+                          <p className="mt-2 text-foreground">Invoices: {invoiceInfo.total || 0}</p>
+                          <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            {Object.keys(invoiceInfo.byStatus || {}).length === 0 ? (
+                              <span>No invoices yet</span>
+                            ) : (
+                              Object.entries(invoiceInfo.byStatus).map(([status, count]) => (
+                                <span key={status} className="rounded-full border border-border bg-card px-2 py-0.5">
+                                  {status}: {count}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                          <p className="mt-2 text-foreground">Open tasks: {accountTaskCounts[acc.account_id] ?? 0}</p>
+                          <p className="mt-1 text-muted-foreground">
+                            Last opened:{" "}
+                            {lastOpened
+                              ? formatDateInTimeZone(lastOpened, user, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })
+                              : "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">No linked accounts.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Contact Tools</h2>
+              <span className="text-xs text-muted-foreground">Forms</span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+              <button
+                className={`rounded-full px-3 py-1 ${
+                  toolTab === "followup" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+                onClick={() => setToolTab("followup")}
+              >
+                Followup
+              </button>
+              <button
+                className={`rounded-full px-3 py-1 ${
+                  toolTab === "interaction" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+                onClick={() => setToolTab("interaction")}
+              >
+                Log Interaction
+              </button>
+              <button
+                className={`rounded-full px-3 py-1 ${
+                  toolTab === "task" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+                onClick={() => setToolTab("task")}
+              >
+                Tasks
+              </button>
+            </div>
+            <div className="mt-4">
+              {toolTab === "followup" && (
+                <div className="space-y-3">
+                  <input
+                    type="date"
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    value={followupForm.due_date}
+                    onChange={(e) => setFollowupForm((prev) => ({ ...prev, due_date: e.target.value }))}
+                  />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                        placeholder="Assign to..."
+                        value={followupAssigneeQuery}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFollowupAssigneeQuery(value);
+                          setFollowupForm((prev) => ({ ...prev, assigned_to: value ? "" : prev.assigned_to }));
+                        }}
+                      />
+                      {followupAssigneeResults.length > 0 && followupAssigneeQuery && (
+                        <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+                          {followupAssigneeResults.map((assignee) => (
+                            <button
+                              key={assignee.user_id}
+                              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                              onClick={() => {
+                                setFollowupForm((prev) => ({ ...prev, assigned_to: assignee.user_id }));
+                                setFollowupAssigneeQuery(
+                                  `${assignee.first_name || ""} ${assignee.last_name || ""}`.trim()
+                                );
+                              }}
+                            >
+                              <span>
+                                {assignee.first_name} {assignee.last_name}
+                              </span>
+                              <span className="text-xs text-muted-foreground">ID {assignee.user_id}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="rounded-md border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted/40"
+                      onClick={() => {
+                        setFollowupForm((prev) => ({ ...prev, assigned_to: user?.user_id }));
+                        const me = users.find((u) => u.user_id === (user?.user_id || user?.id));
+                        if (me) {
+                          setFollowupAssigneeQuery(`${me.first_name || ""} ${me.last_name || ""}`.trim());
+                        }
+                      }}
+                      title="Assign to me (Alt+M)"
+                    >
+                      Me
+                    </button>
+                  </div>
+                  <select
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    value={followupForm.account_id}
+                    onChange={(e) => setFollowupForm((prev) => ({ ...prev, account_id: e.target.value }))}
+                  >
+                    <option value="">Related account (optional)</option>
+                    {contact.accounts?.map((acc) => (
+                      <option key={acc.account_id} value={acc.account_id}>
+                        {acc.business_name}
+                      </option>
+                    ))}
+                  </select>
+                  <textarea
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    placeholder="Follow-up notes (optional)"
+                    rows={3}
+                    value={followupForm.note}
+                    onChange={(e) => setFollowupForm((prev) => ({ ...prev, note: e.target.value }))}
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                      onClick={handleFollowupCreate}
+                    >
+                      Create Follow-up Task
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {toolTab === "interaction" && (
+                <div className="space-y-3">
+                  <select
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    value={interactionForm.interaction_type}
+                    onChange={(e) => setInteractionForm((prev) => ({ ...prev, interaction_type: e.target.value }))}
+                  >
+                    <option value="call">Phone Call</option>
+                    <option value="email">Email</option>
+                  </select>
+                  <select
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    value={interactionForm.account_id}
+                    onChange={(e) => setInteractionForm((prev) => ({ ...prev, account_id: e.target.value }))}
+                  >
+                    <option value="">Related account (optional)</option>
+                    {contact.accounts?.map((acc) => (
+                      <option key={acc.account_id} value={acc.account_id}>
+                        {acc.business_name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    placeholder="Subject"
+                    value={interactionForm.subject}
+                    onChange={(e) => setInteractionForm((prev) => ({ ...prev, subject: e.target.value }))}
+                  />
+                  <textarea
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    placeholder="Notes"
+                    rows={3}
+                    value={interactionForm.notes}
+                    onChange={(e) => setInteractionForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  />
+                  <select
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    value={interactionForm.phone_option}
+                    onChange={(e) => setInteractionForm((prev) => ({ ...prev, phone_option: e.target.value }))}
+                  >
+                    <option value="">Phone (optional)</option>
+                    {accountPhoneOptions.map((phone) => (
+                      <option key={phone} value={`account:${phone}`}>
+                        Account phone: {phone}
+                      </option>
+                    ))}
+                    {contact.phone && (
+                      <option value={`contact:${contact.phone}`}>Contact phone: {contact.phone}</option>
+                    )}
+                    <option value="custom">Custom number</option>
+                  </select>
+                  {interactionForm.phone_option === "custom" && (
+                    <input
+                      className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                      placeholder="Custom phone"
+                      value={interactionForm.phone_custom}
+                      onChange={(e) => setInteractionForm((prev) => ({ ...prev, phone_custom: e.target.value }))}
+                    />
+                  )}
+                  <select
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    value={interactionForm.email_option}
+                    onChange={(e) => setInteractionForm((prev) => ({ ...prev, email_option: e.target.value }))}
+                  >
+                    <option value="">Email (optional)</option>
+                    {accountEmailOptions.map((email) => (
+                      <option key={email} value={`account:${email}`}>
+                        Account email: {email}
+                      </option>
+                    ))}
+                    {contact.email && (
+                      <option value={`contact:${contact.email}`}>Contact email: {contact.email}</option>
+                    )}
+                    <option value="custom">Custom email</option>
+                  </select>
+                  {interactionForm.email_option === "custom" && (
+                    <input
+                      className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                      placeholder="Custom email"
+                      value={interactionForm.email_custom}
+                      onChange={(e) => setInteractionForm((prev) => ({ ...prev, email_custom: e.target.value }))}
+                    />
+                  )}
+                  <div className="flex justify-end">
+                    <button
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                      onClick={handleInteractionSubmit}
+                    >
+                      Log Interaction
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {toolTab === "task" && (
+                <div className="space-y-3">
+                  <input
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    placeholder="Task description"
+                    value={taskForm.task_description}
+                    onChange={(e) => setTaskForm((prev) => ({ ...prev, task_description: e.target.value }))}
+                  />
+                  <div className="relative">
+                    <input
+                      className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                      placeholder="Assign to..."
+                      value={taskAssigneeQuery}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setTaskAssigneeQuery(value);
+                        setTaskForm((prev) => ({ ...prev, assigned_to: value ? "" : prev.assigned_to }));
+                      }}
+                    />
+                    {taskAssigneeResults.length > 0 && taskAssigneeQuery && (
+                      <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+                        {taskAssigneeResults.map((assignee) => (
+                          <button
+                            key={assignee.user_id}
+                            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                            onClick={() => {
+                              setTaskForm((prev) => ({ ...prev, assigned_to: assignee.user_id }));
+                              setTaskAssigneeQuery(
+                                `${assignee.first_name || ""} ${assignee.last_name || ""}`.trim()
+                              );
+                            }}
+                          >
+                            <span>
+                              {assignee.first_name} {assignee.last_name}
+                            </span>
+                            <span className="text-xs text-muted-foreground">ID {assignee.user_id}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="date"
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    value={taskForm.due_date}
+                    onChange={(e) => setTaskForm((prev) => ({ ...prev, due_date: e.target.value }))}
+                  />
+                  <select
+                    className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                    value={taskForm.account_id}
+                    onChange={(e) => setTaskForm((prev) => ({ ...prev, account_id: e.target.value }))}
+                  >
+                    <option value="">Linked account (optional)</option>
+                    {contact.accounts?.map((acc) => (
+                      <option key={acc.account_id} value={acc.account_id}>
+                        {acc.business_name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex justify-end">
+                    <button
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                      onClick={handleTaskCreate}
+                    >
+                      Create Task
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Contact Audit</h2>
+              <span className="text-xs text-muted-foreground">Activity</span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+              <button
+                className={`rounded-full px-3 py-1 ${
+                  auditTab === "general" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+                onClick={() => setAuditTab("general")}
+              >
+                General
+              </button>
+              <button
+                className={`rounded-full px-3 py-1 ${
+                  auditTab === "followup" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+                onClick={() => setAuditTab("followup")}
+              >
+                Followups
+              </button>
+              <button
+                className={`rounded-full px-3 py-1 ${
+                  auditTab === "interactions" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+                onClick={() => setAuditTab("interactions")}
+              >
+                Interactions
+              </button>
+              <button
+                className={`rounded-full px-3 py-1 ${
+                  auditTab === "tasks" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+                onClick={() => setAuditTab("tasks")}
+              >
+                Tasks
+              </button>
+            </div>
+            <div className="mt-4">
+              {auditTab === "general" && (
+                <AuditSection title="Contact Audit" filters={{ contact_id: Number(contactId) }} />
+              )}
+
+              {auditTab === "followup" && (
+                <div>
+                  {followupTasks.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No open followups.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="text-xs uppercase text-muted-foreground">
+                          <tr>
+                            <th className="px-3 py-2 text-left">Task</th>
+                            <th className="px-3 py-2 text-left">Due</th>
+                            <th className="px-3 py-2 text-left">Assigned To</th>
+                            <th className="px-3 py-2 text-left">Account</th>
+                            <th className="px-3 py-2 text-left">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {followupTasks.map((task) => (
+                            <tr
+                              key={task.task_id}
+                              id={`contact-task-${task.task_id}`}
+                              className={`hover:bg-muted/40 ${
+                                highlightTaskId === task.task_id ? "bg-primary/10 ring-2 ring-primary/40" : ""
+                              }`}
+                            >
+                              <td className="px-3 py-2 text-foreground">{task.task_description}</td>
+                              <td className="px-3 py-2 text-muted-foreground">
+                                {task.due_date ? formatDateInTimeZone(task.due_date, user) : "—"}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">
+                                {getUserDisplay(task.assigned_to)}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">
+                                {task.account_id ? (
+                                  <button
+                                    className="text-primary hover:underline"
+                                    onClick={() => navigate(`/accounts/details/${task.account_id}`)}
+                                  >
+                                    {accountMap.get(task.account_id)?.business_name || `Account #${task.account_id}`}
+                                  </button>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                              <td className="px-3 py-2">
+                                <button
+                                  className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+                                  onClick={() => {
+                                    setFollowupCompleteTask(task);
+                                    setFollowupCompleteNote("");
+                                  }}
+                                >
+                                  Complete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Completed followups move to Interactions and are stored there.
+                  </p>
+                </div>
+              )}
+
+              {auditTab === "interactions" && (
+                <div>
+                  {interactions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No interactions yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {interactions.map((interaction) => (
+                        <div key={interaction.interaction_id} className="rounded-md border border-border bg-muted/40 p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-foreground">
+                              {(interaction.interaction_type || "interaction").replace(/_/g, " ")}
+                              {interaction.subject ? ` • ${interaction.subject}` : ""}
+                            </p>
+                            <span className="text-xs text-muted-foreground">
+                              {interaction.created_at
+                                ? formatDateTimeInTimeZone(interaction.created_at, user, {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  })
+                                : ""}
+                            </span>
+                          </div>
+                          {interaction.notes && (
+                            <p className="mt-2 text-sm text-muted-foreground">{interaction.notes}</p>
+                          )}
+                          <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                            {interaction.phone_number && <span>📞 {interaction.phone_number}</span>}
+                            {interaction.email_address && <span>✉️ {interaction.email_address}</span>}
+                            {interaction.account_id && (
+                              <button
+                                className="text-primary hover:underline"
+                                onClick={() => navigate(`/accounts/details/${interaction.account_id}`)}
+                              >
+                                {accountMap.get(interaction.account_id)?.business_name ||
+                                  `Account #${interaction.account_id}`}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {auditTab === "tasks" && (
+                <div>
+                  {nonFollowupTasks.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No tasks logged yet.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="text-xs uppercase text-muted-foreground">
+                          <tr>
+                            <th className="px-3 py-2 text-left">Task</th>
+                            <th className="px-3 py-2 text-left">Assigned By</th>
+                            <th className="px-3 py-2 text-left">Assigned To</th>
+                            <th className="px-3 py-2 text-left">Due</th>
+                            <th className="px-3 py-2 text-left">Status</th>
+                            <th className="px-3 py-2 text-left">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {nonFollowupTasks.map((task) => (
+                            <tr
+                              key={task.task_id}
+                              id={`contact-task-${task.task_id}`}
+                              className={`hover:bg-muted/40 ${
+                                highlightTaskId === task.task_id ? "bg-primary/10 ring-2 ring-primary/40" : ""
+                              }`}
+                            >
+                              <td className="px-3 py-2">
+                                <button
+                                  className="text-primary hover:underline"
+                                  onClick={() => navigate(`/tasks/${task.task_id}`)}
+                                >
+                                  {task.task_description}
+                                </button>
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground">{getUserDisplay(task.user_id)}</td>
+                              <td className="px-3 py-2 text-muted-foreground">{getUserDisplay(task.assigned_to)}</td>
+                              <td className="px-3 py-2 text-muted-foreground">
+                                {task.due_date ? formatDateInTimeZone(task.due_date, user) : "—"}
+                              </td>
+                              <td className="px-3 py-2">
+                                {task.is_completed ? (
+                                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
+                                    Done
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
+                                    Open
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2">
+                                <button
+                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                    task.is_completed
+                                      ? "bg-secondary text-secondary-foreground"
+                                      : "bg-primary text-primary-foreground"
+                                  }`}
+                                  onClick={() => handleToggleTaskStatus(task)}
+                                >
+                                  {task.is_completed ? "Undo" : "Complete"}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Edit Contact</h2>
+                <p className="text-xs text-muted-foreground">
+                  {autosaveEnabled ? "Auto-save on" : "Auto-save off"}
+                  {saveMessage ? ` • ${saveMessage}` : ""}
+                </p>
+              </div>
+              <button
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setShowEditModal(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <input
@@ -457,18 +1387,41 @@ const ContactDetailsPage = ({ user }) => {
                 value={form.title}
                 onChange={(e) => handleFieldChange("title", e.target.value)}
               />
-              <select
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={form.contact_owner_user_id}
-                onChange={(e) => handleFieldChange("contact_owner_user_id", e.target.value)}
-              >
-                <option value="">Contact owner</option>
-                {users.map((u) => (
-                  <option key={u.user_id} value={u.user_id}>
-                    {u.first_name} {u.last_name} (ID {u.user_id})
-                  </option>
-                ))}
-              </select>
+              <div className="relative md:col-span-2">
+                <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
+                  Contact Owner
+                </label>
+                <input
+                  className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                  placeholder="Search owner..."
+                  value={ownerSearch}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setOwnerSearch(value);
+                    setForm((prev) => ({ ...prev, contact_owner_user_id: value ? "" : prev.contact_owner_user_id }));
+                    setDirty(true);
+                  }}
+                />
+                {ownerResults.length > 0 && ownerSearch && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+                    {ownerResults.map((owner) => (
+                      <button
+                        key={owner.user_id}
+                        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                        onClick={() => {
+                          handleFieldChange("contact_owner_user_id", owner.user_id);
+                          setOwnerSearch(`${owner.first_name || ""} ${owner.last_name || ""}`.trim());
+                        }}
+                      >
+                        <span>
+                          {owner.first_name} {owner.last_name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">ID {owner.user_id}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <input
                 className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
                 placeholder="Phone"
@@ -521,7 +1474,7 @@ const ContactDetailsPage = ({ user }) => {
                 Autosave is off for this contact. Remember to click Save to keep your changes.
               </div>
             )}
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                 <span>Override autosave for this contact:</span>
                 <button
@@ -551,37 +1504,33 @@ const ContactDetailsPage = ({ user }) => {
               </div>
               <button
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-                onClick={handleSave}
+                onClick={handleManualSave}
                 disabled={saving || !dirty}
               >
                 {saving ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">Accounts</h2>
-              <span className="text-xs text-muted-foreground">
-                {accountSaving ? "Saving..." : accountSaveMessage || "Auto-save on"}
-              </span>
+      {showAccountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Move to New Company</h2>
+                <p className="text-xs text-muted-foreground">Changes auto-save as you update selections.</p>
+              </div>
+              <button
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setShowAccountModal(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {contact.accounts?.length ? (
-                contact.accounts.map((acc) => (
-                  <button
-                    key={acc.account_id}
-                    className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground"
-                    onClick={() => navigate(`/accounts/details/${acc.account_id}`)}
-                  >
-                    {acc.business_name}
-                  </button>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No linked accounts.</p>
-              )}
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
                 <p className="text-xs font-semibold uppercase text-muted-foreground">Remove from accounts</p>
                 <div className="mt-2 space-y-2">
@@ -627,356 +1576,67 @@ const ContactDetailsPage = ({ user }) => {
                 </div>
               </div>
             </div>
-            <div className="mt-3 text-xs text-muted-foreground">
-              Account links auto-save as you update selections.
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-lg font-semibold text-foreground">Follow-up</h2>
-            <p className="text-xs text-muted-foreground">Creates a task and reminder for this contact.</p>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <input
-                type="date"
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={followupForm.due_date}
-                onChange={(e) => setFollowupForm((prev) => ({ ...prev, due_date: e.target.value }))}
-              />
-              <div className="flex gap-2">
-                <select
-                  className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                  value={followupForm.assigned_to}
-                  onChange={(e) => setFollowupForm((prev) => ({ ...prev, assigned_to: e.target.value }))}
-                >
-                  <option value="">Assign to (defaults to contact owner)</option>
-                  {users.map((u) => (
-                    <option key={u.user_id} value={u.user_id}>
-                      {u.first_name} {u.last_name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="rounded-md border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted/40"
-                  onClick={() => setFollowupForm((prev) => ({ ...prev, assigned_to: user?.user_id }))}
-                  title="Assign to me (Alt+M)"
-                >
-                  Me
-                </button>
-              </div>
-              <select
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={followupForm.account_id}
-                onChange={(e) => setFollowupForm((prev) => ({ ...prev, account_id: e.target.value }))}
-              >
-                <option value="">Related account (optional)</option>
-                {contact.accounts?.map((acc) => (
-                  <option key={acc.account_id} value={acc.account_id}>
-                    {acc.business_name}
-                  </option>
-                ))}
-              </select>
-              <input
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground md:col-span-2"
-                placeholder="Follow-up notes (optional)"
-                value={followupForm.note}
-                onChange={(e) => setFollowupForm((prev) => ({ ...prev, note: e.target.value }))}
-              />
-            </div>
-            <div className="mt-3 flex justify-end">
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {accountSaving ? "Saving..." : accountSaveMessage || "Auto-save on"}
+              </span>
               <button
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                onClick={handleFollowupCreate}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                onClick={() => setShowAccountModal(false)}
               >
-                Create Follow-up Task
+                Done
               </button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-lg font-semibold text-foreground">Log Interaction</h2>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <select
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={interactionForm.interaction_type}
-                onChange={(e) => setInteractionForm((prev) => ({ ...prev, interaction_type: e.target.value }))}
-              >
-                <option value="call">Phone Call</option>
-                <option value="email">Email</option>
-              </select>
-              <select
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={interactionForm.account_id}
-                onChange={(e) => setInteractionForm((prev) => ({ ...prev, account_id: e.target.value }))}
-              >
-                <option value="">Related account (optional)</option>
-                {contact.accounts?.map((acc) => (
-                  <option key={acc.account_id} value={acc.account_id}>
-                    {acc.business_name}
-                  </option>
-                ))}
-              </select>
-              <input
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                placeholder="Subject"
-                value={interactionForm.subject}
-                onChange={(e) => setInteractionForm((prev) => ({ ...prev, subject: e.target.value }))}
-              />
-              <input
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                placeholder="Notes"
-                value={interactionForm.notes}
-                onChange={(e) => setInteractionForm((prev) => ({ ...prev, notes: e.target.value }))}
-              />
-              <select
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={interactionForm.phone_option}
-                onChange={(e) => setInteractionForm((prev) => ({ ...prev, phone_option: e.target.value }))}
-              >
-                <option value="">Phone (optional)</option>
-                {accountPhoneOptions.map((phone) => (
-                  <option key={phone} value={`account:${phone}`}>
-                    Account phone: {phone}
-                  </option>
-                ))}
-                {contact.phone && (
-                  <option value={`contact:${contact.phone}`}>Contact phone: {contact.phone}</option>
-                )}
-                <option value="custom">Custom number</option>
-              </select>
-              {interactionForm.phone_option === "custom" && (
-                <input
-                  className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                  placeholder="Custom phone"
-                  value={interactionForm.phone_custom}
-                  onChange={(e) => setInteractionForm((prev) => ({ ...prev, phone_custom: e.target.value }))}
-                />
-              )}
-              <select
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={interactionForm.email_option}
-                onChange={(e) => setInteractionForm((prev) => ({ ...prev, email_option: e.target.value }))}
-              >
-                <option value="">Email (optional)</option>
-                {accountEmailOptions.map((email) => (
-                  <option key={email} value={`account:${email}`}>
-                    Account email: {email}
-                  </option>
-                ))}
-                {contact.email && (
-                  <option value={`contact:${contact.email}`}>Contact email: {contact.email}</option>
-                )}
-                <option value="custom">Custom email</option>
-              </select>
-              {interactionForm.email_option === "custom" && (
-                <input
-                  className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                  placeholder="Custom email"
-                  value={interactionForm.email_custom}
-                  onChange={(e) => setInteractionForm((prev) => ({ ...prev, email_custom: e.target.value }))}
-                />
-              )}
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                onClick={handleInteractionSubmit}
-              >
-                Log Interaction
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-lg font-semibold text-foreground">Interactions</h2>
-            {interactions.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">No interactions yet.</p>
-            ) : (
-              <div className="mt-3 space-y-3">
-                {interactions.map((interaction) => (
-                  <div key={interaction.interaction_id} className="rounded-md border border-border bg-muted/40 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-foreground">
-                        {interaction.interaction_type === "email" ? "Email" : "Call"} • {interaction.subject || "(No subject)"}
-                      </p>
-                      <span className="text-xs text-muted-foreground">
-                        {interaction.created_at
-                          ? formatDateTimeInTimeZone(interaction.created_at, user, {
-                              month: "short",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })
-                          : ""}
-                      </span>
-                    </div>
-                    {interaction.notes && <p className="mt-2 text-sm text-muted-foreground">{interaction.notes}</p>}
-                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      {interaction.phone_number && <span>📞 {interaction.phone_number}</span>}
-                      {interaction.email_address && <span>✉️ {interaction.email_address}</span>}
-                      {interaction.account_id && (
-                        <button
-                          className="text-primary hover:underline"
-                          onClick={() => navigate(`/accounts/details/${interaction.account_id}`)}
-                        >
-                          {accountMap.get(interaction.account_id)?.business_name || `Account #${interaction.account_id}`}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-lg font-semibold text-foreground">Tasks</h2>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <input
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                placeholder="Task description"
-                value={taskForm.task_description}
-                onChange={(e) => setTaskForm((prev) => ({ ...prev, task_description: e.target.value }))}
-              />
-              <select
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={taskForm.assigned_to}
-                onChange={(e) => setTaskForm((prev) => ({ ...prev, assigned_to: e.target.value }))}
-              >
-                <option value="">Assign to</option>
-                {users.map((u) => (
-                  <option key={u.user_id} value={u.user_id}>
-                    {u.first_name} {u.last_name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="date"
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={taskForm.due_date}
-                onChange={(e) => setTaskForm((prev) => ({ ...prev, due_date: e.target.value }))}
-              />
-              <select
-                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                value={taskForm.account_id}
-                onChange={(e) => setTaskForm((prev) => ({ ...prev, account_id: e.target.value }))}
-              >
-                <option value="">Linked account (optional)</option>
-                {contact.accounts?.map((acc) => (
-                  <option key={acc.account_id} value={acc.account_id}>
-                    {acc.business_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                onClick={handleTaskCreate}
-              >
-                Create Task
-              </button>
-            </div>
-            <div className="mt-4 overflow-x-auto">
-              {tasks.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No tasks yet.</p>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Task</th>
-                      <th className="px-3 py-2 text-left">Assigned By</th>
-                      <th className="px-3 py-2 text-left">Assigned To</th>
-                      <th className="px-3 py-2 text-left">Due</th>
-                      <th className="px-3 py-2 text-left">Status</th>
-                      <th className="px-3 py-2 text-left">Account</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {tasks.map((task) => (
-                      <tr
-                        key={task.task_id}
-                        id={`contact-task-${task.task_id}`}
-                        className={`hover:bg-muted/40 ${
-                          highlightTaskId === task.task_id ? "bg-primary/10 ring-2 ring-primary/40" : ""
-                        }`}
-                      >
-                        <td className="px-3 py-2">
-                          <button
-                            className="text-primary hover:underline"
-                            onClick={() => navigate(`/tasks/${task.task_id}`)}
-                          >
-                            {task.task_description}
-                          </button>
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground">
-                          {userMap.get(task.user_id) || "—"}
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground">
-                          {userMap.get(task.assigned_to) || "—"}
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground">
-                          {task.due_date ? formatDateInTimeZone(task.due_date, user) : "—"}
-                        </td>
-                        <td className="px-3 py-2">
-                          {task.is_completed ? (
-                            <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">Done</span>
-                          ) : (
-                            <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">Open</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2">
-                          {task.account_id ? (
-                            <button
-                              className="text-primary hover:underline"
-                              onClick={() => navigate(`/accounts/details/${task.account_id}`)}
-                            >
-                              {accountMap.get(task.account_id)?.business_name || `Account #${task.account_id}`}
-                            </button>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
             </div>
           </div>
         </div>
+      )}
 
-        <div className="space-y-6">
-          <div className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-lg font-semibold text-foreground">Contact Snapshot</h2>
-            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <p>
-                <span className="font-semibold text-foreground">Owner:</span>{" "}
-                {contact.contact_owner_name || userMap.get(contact.contact_owner_user_id) || "—"}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">Phone:</span> {contact.phone || "—"}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">Email:</span> {contact.email || "—"}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">Status:</span> {contact.status || "active"}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">Do Not Call:</span>{" "}
-                {contact.do_not_call ? "Yes" : "No"}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">Email Opt Out:</span>{" "}
-                {contact.email_opt_out ? "Yes" : "No"}
-              </p>
+      {followupCompleteTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Complete Follow-up</h2>
+                <p className="text-xs text-muted-foreground">
+                  Completing this follow-up moves it into Interactions.
+                </p>
+              </div>
+              <button
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setFollowupCompleteTask(null)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-4 space-y-3">
+              <p className="text-sm text-foreground">{followupCompleteTask.task_description}</p>
+              <textarea
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                rows={4}
+                placeholder="Completion notes (optional)"
+                value={followupCompleteNote}
+                onChange={(e) => setFollowupCompleteNote(e.target.value)}
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
+                onClick={() => setFollowupCompleteTask(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+                onClick={handleCompleteFollowup}
+                disabled={followupCompleting}
+              >
+                {followupCompleting ? "Completing..." : "Complete Follow-up"}
+              </button>
             </div>
           </div>
-
-          <AuditSection title="Contact Audit" filters={{ contact_id: Number(contactId) }} />
         </div>
-      </div>
+      )}
     </div>
   );
 };
