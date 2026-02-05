@@ -10,7 +10,7 @@ const TaskListMobile = ({
     onTaskUndo,
     onEditTask,
     onDeleteTask,
-    onAccountClick,
+    onAssociationClick,
     onTaskClick,
     user,
     highlightTaskId,
@@ -85,18 +85,22 @@ const TaskListMobile = ({
                             <div
                                 key={task.task_id}
                                 id={`task-row-${task.task_id}`}
-                                className={`border border-border rounded-lg p-4 transition ${
+                                className={`border border-border rounded-lg p-4 transition cursor-pointer ${
                                     highlightTaskId === String(task.task_id)
                                         ? "bg-accent/40"
                                         : "bg-card hover:bg-muted/60"
                                 }`}
+                                onClick={() => onTaskClick(task.task_id)}
                             >
                                 {/* Task Name and Status Row */}
                                 <div className="flex justify-between items-start gap-2 mb-2">
                                     <div className="flex-1">
                                         <button
                                             className="text-left text-sm font-semibold text-primary hover:underline break-words"
-                                            onClick={() => onTaskClick(task.task_id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onTaskClick(task.task_id);
+                                            }}
                                         >
                                             {task.task_description}
                                         </button>
@@ -122,19 +126,27 @@ const TaskListMobile = ({
                                     }) : "—"}
                                 </div>
 
-                                {/* Account and Assigned By Row */}
+                                {/* Association Row */}
                                 <div className="flex justify-between items-center text-xs text-muted-foreground mb-3 gap-2">
                                     <div className="flex-1">
-                                        <span className="font-medium">Account:</span>{" "}
-                                        {task.business_name !== "No Account" ? (
-                                            <button
-                                                onClick={() => onAccountClick(task.account_id)}
-                                                className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                                            >
-                                                {task.business_name}
-                                            </button>
+                                        <span className="font-medium">Associated With:</span>{" "}
+                                        {task.associations && task.associations.length > 0 ? (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {task.associations.map((association) => (
+                                                    <button
+                                                        key={`${association.type}-${association.id}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onAssociationClick?.(association);
+                                                        }}
+                                                        className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted/70 transition-colors"
+                                                    >
+                                                        {association.label}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         ) : (
-                                            <span className="text-muted-foreground">No Account</span>
+                                            <span className="text-muted-foreground">—</span>
                                         )}
                                     </div>
                                 </div>
@@ -146,7 +158,10 @@ const TaskListMobile = ({
                                 {/* Action Buttons */}
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={() => onEditTask(task)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditTask(task);
+                                        }}
                                         disabled={(user?.user_id ?? user?.id) !== task.user_id}
                                         className={`flex items-center justify-center text-xs px-3 py-1 rounded flex-1 ${
                                             (user?.user_id ?? user?.id) === task.user_id
@@ -158,7 +173,10 @@ const TaskListMobile = ({
                                         <FiEdit2 />
                                     </button>
                                     <button
-                                        onClick={() => handleTaskCompletion(task)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleTaskCompletion(task);
+                                        }}
                                         className={`text-xs px-3 py-1 rounded flex-1 ${
                                             completingTask[task.task_id]
                                                 ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -197,17 +215,21 @@ const TaskListMobile = ({
                                 <div
                                     key={task.task_id}
                                     id={`task-row-${task.task_id}`}
-                                    className={`border border-border rounded-lg p-4 opacity-75 ${
+                                    className={`border border-border rounded-lg p-4 opacity-75 cursor-pointer ${
                                         highlightTaskId === String(task.task_id)
                                             ? "bg-accent/30"
                                             : "bg-background"
                                     }`}
+                                    onClick={() => onTaskClick(task.task_id)}
                                 >
                                     {/* Task Name */}
                                     <h3 className="text-sm font-semibold text-muted-foreground line-through break-words mb-2">
                                         <button
                                             className="text-left text-sm font-semibold text-primary hover:underline"
-                                            onClick={() => onTaskClick(task.task_id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onTaskClick(task.task_id);
+                                            }}
                                         >
                                             {task.task_description}
                                         </button>
@@ -229,31 +251,43 @@ const TaskListMobile = ({
                                         })}
                                     </div>
 
-                                    {/* Account Info */}
+                                    {/* Associations */}
                                     <div className="text-xs text-muted-foreground mb-3">
-                                        <span className="font-medium">Account:</span>{" "}
-                                        {task.business_name !== "No Account" ? (
-                                            <button
-                                                onClick={() => onAccountClick(task.account_id)}
-                                                className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                                            >
-                                                {task.business_name}
-                                            </button>
+                                        <span className="font-medium">Associated With:</span>{" "}
+                                        {task.associations && task.associations.length > 0 ? (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {task.associations.map((association) => (
+                                                    <button
+                                                        key={`${association.type}-${association.id}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onAssociationClick?.(association);
+                                                        }}
+                                                        className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted/70 transition-colors"
+                                                    >
+                                                        {association.label}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         ) : (
-                                            <span>No Account</span>
+                                            <span>—</span>
                                         )}
                                     </div>
 
                                     {/* Actions */}
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() => onTaskUndo(task)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onTaskUndo(task);
+                                            }}
                                             className="text-xs px-3 py-1 rounded bg-secondary text-secondary-foreground hover:bg-secondary/80 flex-1"
                                         >
                                             Undo
                                         </button>
                                         <button
-                                            onClick={() => {
+                                            onClick={(e) => {
+                                                e.stopPropagation();
                                                 if (confirmDelete === task.task_id) {
                                                     onDeleteTask(task.task_id);
                                                     setConfirmDelete(null);
@@ -285,7 +319,7 @@ TaskListMobile.propTypes = {
     onTaskUndo: PropTypes.func.isRequired,
     onEditTask: PropTypes.func.isRequired,
     onDeleteTask: PropTypes.func.isRequired,
-    onAccountClick: PropTypes.func.isRequired,
+    onAssociationClick: PropTypes.func,
     onTaskClick: PropTypes.func.isRequired,
     user: PropTypes.object.isRequired,
     highlightTaskId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),

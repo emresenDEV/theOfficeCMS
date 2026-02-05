@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchAccountDetails, fetchAccountPurchaseHistory } from "../services/accountService";
 import { fetchInvoiceByAccount } from "../services/invoiceService";
-import { fetchNotesByAccount } from "../services/notesService";
+import { fetchNotesByAccount, createNote } from "../services/notesService";
 import { fetchTasksByAccount, createTask } from "../services/tasksService";
 import { fetchUsers } from "../services/userService";
 import { fetchRoleById } from "../services/userRoleService";
+import { fetchContacts, createContactInteraction, setPrimaryContact } from "../services/contactService";
 import { formatDateInTimeZone } from "../utils/timezone";
 import PropTypes from "prop-types";
 
@@ -13,6 +14,7 @@ import InvoicesSection from "../components/InvoicesSection";
 import NotesSection from "../components/NotesSection";
 import TasksSection from "../components/TasksSection";
 import AuditSection from "../components/AuditSection";
+import ContactDetailsPage from "./ContactDetailsPage";
 
 const AccountDetailsPage = ({ user }) => {
     const { accountId } = useParams();
@@ -27,6 +29,18 @@ const AccountDetailsPage = ({ user }) => {
     const [purchaseHistory, setPurchaseHistory] = useState([]);
     const [purchaseSort, setPurchaseSort] = useState({ key: "quantity", order: "desc" });
     const [activeTab, setActiveTab] = useState("audit");
+    const [contacts, setContacts] = useState([]);
+    const [contactsLoading, setContactsLoading] = useState(false);
+    const [contactModal, setContactModal] = useState(null);
+    const [interactionModal, setInteractionModal] = useState(null);
+    const [interactionForm, setInteractionForm] = useState({
+        interaction_type: "call",
+        subject: "",
+        notes: "",
+    });
+    const [interactionSaving, setInteractionSaving] = useState(false);
+    const [contactsToast, setContactsToast] = useState("");
+    const currentUserId = user?.user_id ?? user?.id ?? null;
 
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -35,6 +49,18 @@ const AccountDetailsPage = ({ user }) => {
             day: "2-digit",
             year: "numeric",
         });
+    };
+
+    const formatPhone = (value) => {
+        if (!value) return "—";
+        const digits = String(value).replace(/\D/g, "");
+        if (digits.length === 11 && digits.startsWith("1")) {
+            return `${digits.slice(0, 1)}-${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+        }
+        if (digits.length === 10) {
+            return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+        }
+        return value;
     };
 
     const refreshInvoices = useCallback(async (status = null) => {
@@ -55,11 +81,72 @@ const AccountDetailsPage = ({ user }) => {
         console.log("🔄 Updated Notes from Backend:", updatedNotes); //debugging
         setNotes(updatedNotes);
     }, [accountId]);
+
+    const refreshContacts = useCallback(async () => {
+        setContactsLoading(true);
+        const data = await fetchContacts({ account_id: accountId });
+        setContacts(data || []);
+        setContactsLoading(false);
+    }, [accountId]);
     
     const refreshTasks = async () => {
         const updatedTasks = await fetchTasksByAccount(accountId);
         console.log(" 🔄 Refreshed tasks:", updatedTasks); //debugging
         setTasks(updatedTasks);
+    };
+
+    const handleSetPrimaryContact = async (contactId) => {
+        if (!account?.account_id || !currentUserId) return;
+        const result = await setPrimaryContact(contactId, account.account_id, currentUserId, user?.email);
+        if (result) {
+            const updatedAccount = await fetchAccountDetails(accountId);
+            setAccount(updatedAccount);
+            await refreshContacts();
+            setContactsToast("Default contact updated.");
+            setTimeout(() => setContactsToast(""), 3000);
+        }
+    };
+
+    const handleOpenInteraction = (contact) => {
+        setInteractionModal(contact);
+        setInteractionForm({
+            interaction_type: "call",
+            subject: "",
+            notes: "",
+        });
+    };
+
+    const handleSaveInteraction = async () => {
+        if (!interactionModal || !currentUserId) return;
+        if (!interactionForm.subject && !interactionForm.notes) return;
+        setInteractionSaving(true);
+        const payload = {
+            interaction_type: interactionForm.interaction_type,
+            subject: interactionForm.subject,
+            notes: interactionForm.notes,
+            account_id: Number(accountId),
+            actor_user_id: currentUserId,
+            actor_email: user?.email,
+        };
+        const created = await createContactInteraction(interactionModal.contact_id, payload);
+        if (created) {
+            const contactName = `${interactionModal.first_name || ""} ${interactionModal.last_name || ""}`.trim() || "Contact";
+            const noteTextParts = [
+                `Interaction with ${contactName}`,
+                interactionForm.subject ? `Subject: ${interactionForm.subject}` : null,
+                interactionForm.notes ? `Notes: ${interactionForm.notes}` : null,
+            ].filter(Boolean);
+            await createNote({
+                account_id: Number(accountId),
+                user_id: currentUserId,
+                note_text: noteTextParts.join(" • "),
+            });
+            await refreshNotes();
+            setContactsToast("Interaction logged.");
+            setTimeout(() => setContactsToast(""), 3000);
+        }
+        setInteractionSaving(false);
+        setInteractionModal(null);
     };
     // Fetch Users
     useEffect(() => {
@@ -101,6 +188,7 @@ const AccountDetailsPage = ({ user }) => {
                 setAccount(await fetchAccountDetails(accountId));
                 await refreshInvoices();
                 await refreshNotes();
+                await refreshContacts();
                 
                 setTasks(await fetchTasksByAccount(accountId)); 
                         
@@ -115,7 +203,7 @@ const AccountDetailsPage = ({ user }) => {
         if (accountId) {
             loadData();
         }
-    }, [accountId, refreshNotes, refreshInvoices]);
+    }, [accountId, refreshNotes, refreshInvoices, refreshContacts]);
 
     useEffect(() => {
         if (!accountId) return;
@@ -159,6 +247,11 @@ const AccountDetailsPage = ({ user }) => {
 
     return (
         <div className="p-6 max-w-6xl mx-auto bg-card border border-border shadow-lg rounded-lg">
+            {contactsToast && (
+                <div className="mb-4 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                    {contactsToast}
+                </div>
+            )}
             {/* Header Section */}
             <div className="flex justify-between items-start">
                 <div className="w-1/2">
@@ -169,12 +262,12 @@ const AccountDetailsPage = ({ user }) => {
                     <p className="text-foreground text-left">
                         <strong>Contact:</strong>{" "}
                         {account.primary_contact_id ? (
-                            <button
+                            <Link
                                 className="font-semibold underline text-primary hover:text-primary/80"
-                                onClick={() => navigate(`/contacts/${account.primary_contact_id}`)}
+                                to={`/contacts/${account.primary_contact_id}`}
                             >
                                 {account.primary_contact_name || account.contact_name || "View Contact"}
-                            </button>
+                            </Link>
                         ) : (
                             <span className="font-semibold text-foreground">
                                 {account.contact_name || "N/A"}
@@ -182,7 +275,19 @@ const AccountDetailsPage = ({ user }) => {
                         )}
                     </p>
                     <p className="text-foreground text-left"><strong>Phone:</strong> {account.phone_number}</p>
-                    <p className="text-foreground text-left"><strong>Email:</strong> {account.email}</p>
+                    <p className="text-foreground text-left">
+                        <strong>Email:</strong>{" "}
+                        {account.email ? (
+                            <a
+                                className="text-primary hover:underline"
+                                href={`mailto:${account.email}?subject=${encodeURIComponent(account.business_name || "Account")}`}
+                            >
+                                {account.email}
+                            </a>
+                        ) : (
+                            <span className="text-muted-foreground">—</span>
+                        )}
+                    </p>
                     <p className="text-foreground text-left"><strong>Address:</strong> {account.address}</p>
                     <p className="text-foreground text-left">{account.city}, {account.state} {account.zip_code}</p>
                     <p className="text-foreground text-left"><strong>Industry:</strong> {account.industry || "N/A"}</p>
@@ -203,7 +308,19 @@ const AccountDetailsPage = ({ user }) => {
                     <p>{account.branch?.address}</p>
                     <p>{account.branch?.city}, {account.branch?.state} {account.branch?.zip_code}</p>
                     <p><strong>Phone Number: </strong>{account.branch?.phone_number} <strong>| Ext: </strong>{account.sales_rep?.extension || "N/A"}</p>
-                    <p><strong>Email: </strong>{account.sales_rep?.email || "N/A"}</p>
+                    <p>
+                        <strong>Email: </strong>
+                        {account.sales_rep?.email ? (
+                            <a
+                                className="text-primary hover:underline"
+                                href={`mailto:${account.sales_rep.email}?subject=${encodeURIComponent(account.business_name || "Account")}`}
+                            >
+                                {account.sales_rep.email}
+                            </a>
+                        ) : (
+                            "N/A"
+                        )}
+                    </p>
                 </div>
             </div>
 
@@ -245,6 +362,14 @@ const AccountDetailsPage = ({ user }) => {
                     </button>
                     <button
                         className={`rounded-full px-3 py-1 ${
+                            activeTab === "contacts" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}
+                        onClick={() => setActiveTab("contacts")}
+                    >
+                        Contacts
+                    </button>
+                    <button
+                        className={`rounded-full px-3 py-1 ${
                             activeTab === "purchase" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                         }`}
                         onClick={() => setActiveTab("purchase")}
@@ -282,6 +407,107 @@ const AccountDetailsPage = ({ user }) => {
                             setTasks={setTasks}
                             refreshTasks={refreshTasks}
                         />
+                    )}
+
+                    {activeTab === "contacts" && (
+                        <div className="border border-border p-4 rounded-lg bg-card">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-lg font-semibold text-foreground">Contacts</h2>
+                                <span className="text-xs text-muted-foreground">
+                                    {contacts.length} total
+                                </span>
+                            </div>
+                            {contactsLoading ? (
+                                <p className="mt-3 text-sm text-muted-foreground">Loading contacts...</p>
+                            ) : contacts.length === 0 ? (
+                                <p className="mt-3 text-sm text-muted-foreground">No contacts linked to this account.</p>
+                            ) : (
+                                <div className="mt-4 overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left">Name</th>
+                                                <th className="px-3 py-2 text-left">Role</th>
+                                                <th className="px-3 py-2 text-left">Email</th>
+                                                <th className="px-3 py-2 text-left">Phone</th>
+                                                <th className="px-3 py-2 text-left">Owner</th>
+                                                <th className="px-3 py-2 text-left">Default</th>
+                                                <th className="px-3 py-2 text-left">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            {contacts.map((contact) => {
+                                                const name = `${contact.first_name || ""} ${contact.last_name || ""}`.trim();
+                                                const isPrimary = contact.contact_id === account.primary_contact_id;
+                                                return (
+                                                    <tr
+                                                        key={contact.contact_id}
+                                                        className="hover:bg-muted/40 cursor-pointer"
+                                                        onClick={() => setContactModal(contact)}
+                                                    >
+                                                        <td className="px-3 py-2 text-foreground font-semibold">
+                                                            {name || `Contact #${contact.contact_id}`}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-muted-foreground">
+                                                            {contact.title || "—"}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-muted-foreground">
+                                                            {contact.email ? (
+                                                                <a
+                                                                    className="text-primary hover:underline"
+                                                                    href={`mailto:${contact.email}?subject=${encodeURIComponent(account.business_name || "Account")}`}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    {contact.email}
+                                                                </a>
+                                                            ) : (
+                                                                "—"
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-muted-foreground">
+                                                            {formatPhone(contact.phone)}
+                                                        </td>
+                                                        <td className="px-3 py-2 text-muted-foreground">
+                                                            {contact.contact_owner_name || "—"}
+                                                        </td>
+                                                        <td className="px-3 py-2">
+                                                            {isPrimary ? (
+                                                                <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
+                                                                    Default
+                                                                </span>
+                                                            ) : (
+                                                                <button
+                                                                    className="rounded-full border border-border px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleSetPrimaryContact(contact.contact_id);
+                                                                    }}
+                                                                >
+                                                                    Set Default
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    className="rounded-full border border-border px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleOpenInteraction(contact);
+                                                                    }}
+                                                                >
+                                                                    Log Interaction
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {activeTab === "purchase" && (
@@ -361,6 +587,85 @@ const AccountDetailsPage = ({ user }) => {
                     )}
                 </div>
             </div>
+
+            {contactModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    onClick={() => setContactModal(null)}
+                >
+                    <div
+                        className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <ContactDetailsPage
+                            user={user}
+                            embedded
+                            contactIdOverride={contactModal.contact_id}
+                            onClose={() => setContactModal(null)}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {interactionModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    onClick={() => setInteractionModal(null)}
+                >
+                    <div
+                        className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-foreground">Log Interaction</h2>
+                            <button
+                                className="text-muted-foreground hover:text-foreground"
+                                onClick={() => setInteractionModal(null)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                            <select
+                                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                                value={interactionForm.interaction_type}
+                                onChange={(e) => setInteractionForm((prev) => ({ ...prev, interaction_type: e.target.value }))}
+                            >
+                                <option value="call">Phone Call</option>
+                                <option value="email">Email</option>
+                            </select>
+                            <input
+                                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                                placeholder="Subject"
+                                value={interactionForm.subject}
+                                onChange={(e) => setInteractionForm((prev) => ({ ...prev, subject: e.target.value }))}
+                            />
+                            <textarea
+                                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                                placeholder="Notes"
+                                rows={3}
+                                value={interactionForm.notes}
+                                onChange={(e) => setInteractionForm((prev) => ({ ...prev, notes: e.target.value }))}
+                            />
+                        </div>
+                        <div className="mt-4 flex justify-end gap-2">
+                            <button
+                                className="rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
+                                onClick={() => setInteractionModal(null)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                                onClick={handleSaveInteraction}
+                                disabled={interactionSaving}
+                            >
+                                {interactionSaving ? "Saving..." : "Save Interaction"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

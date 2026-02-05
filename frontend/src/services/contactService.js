@@ -91,3 +91,17 @@ export const backfillContacts = async (payload = {}) => {
     return null;
   }
 };
+
+export const setPrimaryContact = async (contactId, accountId, actorUserId, actorEmail) => {
+  try {
+    const response = await api.post(`/contacts/${contactId}/primary`, {
+      account_id: accountId,
+      actor_user_id: actorUserId,
+      actor_email: actorEmail,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error setting primary contact:", error.response?.data || error.message);
+    return null;
+  }
+};

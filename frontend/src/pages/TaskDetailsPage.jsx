@@ -12,8 +12,12 @@ import AuditSection from "../components/AuditSection";
 const TaskDetailsPage = ({ user }) => {
     const { taskId } = useParams();
     const navigate = useNavigate();
+    const currentUserId = user?.user_id ?? user?.id ?? null;
     const [task, setTask] = useState(null);
     const [editForm, setEditForm] = useState(null);
+    const [editOpen, setEditOpen] = useState(false);
+    const [editAssigneeQuery, setEditAssigneeQuery] = useState("");
+    const [editAssigneeOpen, setEditAssigneeOpen] = useState(false);
     const [users, setUsers] = useState([]);
     const [taskNotes, setTaskNotes] = useState([]);
     const [newNote, setNewNote] = useState("");
@@ -32,7 +36,9 @@ const TaskDetailsPage = ({ user }) => {
     const [accountSearch, setAccountSearch] = useState("");
     const [invoiceSearch, setInvoiceSearch] = useState("");
     const [contactSearch, setContactSearch] = useState("");
+    const [contactOverride, setContactOverride] = useState(false);
     const [toast, setToast] = useState("");
+    const [notesTab, setNotesTab] = useState("notes");
 
     useEffect(() => {
         let active = true;
@@ -60,6 +66,16 @@ const TaskDetailsPage = ({ user }) => {
             active = false;
         };
     }, [taskId]);
+
+    useEffect(() => {
+        if (!editOpen || !editForm) return;
+        if (!editAssigneeQuery && editForm.assigned_to) {
+            const assignee = users.find((u) => u.user_id === Number(editForm.assigned_to));
+            if (assignee) {
+                setEditAssigneeQuery(`${assignee.first_name || ""} ${assignee.last_name || ""}`.trim());
+            }
+        }
+    }, [editOpen, editForm, users, editAssigneeQuery]);
 
     useEffect(() => {
         if (!linkEdit) return;
@@ -91,13 +107,14 @@ const TaskDetailsPage = ({ user }) => {
         setAccountSearch(task.account_name || "");
         setInvoiceSearch(task.invoice_id ? `#${task.invoice_id}` : "");
         setContactSearch(task.contact_id ? `Contact #${task.contact_id}` : "");
+        setContactOverride(false);
     }, [linkEdit, task]);
 
     const handleToggleComplete = async () => {
         if (!task) return;
         const payload = {
             is_completed: !task.is_completed,
-            actor_user_id: user?.user_id ?? user?.id,
+            actor_user_id: currentUserId,
             actor_email: user?.email,
         };
         const updated = await updateTask(task.task_id, payload);
@@ -108,12 +125,30 @@ const TaskDetailsPage = ({ user }) => {
 
     const handleSaveLinks = async () => {
         if (!task) return;
+        if (linkForm.account_id && linkForm.invoice_id) {
+            const allowedInvoice = scopedInvoices.some(
+                (inv) => Number(inv.invoice_id) === Number(linkForm.invoice_id)
+            );
+            if (!allowedInvoice) {
+                setToast("Select an invoice tied to the selected account.");
+                return;
+            }
+        }
+        if (linkForm.account_id && linkForm.contact_id && !contactOverride) {
+            const allowedContact = scopedContacts.some(
+                (contact) => Number(contact.contact_id) === Number(linkForm.contact_id)
+            );
+            if (!allowedContact) {
+                setToast("Select a contact tied to the selected account or use override.");
+                return;
+            }
+        }
         setLinkSaving(true);
         const payload = {
             account_id: linkForm.account_id ? Number(linkForm.account_id) : null,
             invoice_id: linkForm.invoice_id ? Number(linkForm.invoice_id) : null,
             contact_id: linkForm.contact_id ? Number(linkForm.contact_id) : null,
-            actor_user_id: user?.user_id ?? user?.id,
+            actor_user_id: currentUserId,
             actor_email: user?.email,
         };
         const updated = await updateTask(task.task_id, payload);
@@ -130,9 +165,9 @@ const TaskDetailsPage = ({ user }) => {
         if (!newNote.trim() || !task) return;
         setNoteSaving(true);
         const payload = {
-            user_id: user?.user_id ?? user?.id,
+            user_id: currentUserId,
             note_text: newNote.trim(),
-            actor_user_id: user?.user_id ?? user?.id,
+            actor_user_id: currentUserId,
             actor_email: user?.email,
         };
         const created = await createTaskNote(task.task_id, payload);
@@ -151,13 +186,15 @@ const TaskDetailsPage = ({ user }) => {
                 ? new Date(editForm.due_date).toISOString().replace("T", " ").split(".")[0]
                 : null,
             assigned_to: editForm.assigned_to ? Number(editForm.assigned_to) : null,
-            actor_user_id: user?.user_id ?? user?.id,
+            actor_user_id: currentUserId,
             actor_email: user?.email,
         };
         const updated = await updateTask(task.task_id, payload);
         if (updated) {
             setTask((prev) => ({ ...prev, ...updated }));
             setToast("Task updated successfully.");
+            setEditOpen(false);
+            setEditAssigneeOpen(false);
         }
     };
 
@@ -191,8 +228,12 @@ const TaskDetailsPage = ({ user }) => {
         ).slice(0, 8)
         : [];
 
+    const scopedInvoices = linkForm.account_id
+        ? invoices.filter((inv) => Number(inv.account_id) === Number(linkForm.account_id))
+        : invoices;
+
     const filteredInvoices = invoiceSearch.trim()
-        ? invoices.filter((inv) => {
+        ? scopedInvoices.filter((inv) => {
             const term = invoiceSearch.replace("#", "").trim().toLowerCase();
             return (
                 String(inv.invoice_id).includes(term) ||
@@ -201,14 +242,29 @@ const TaskDetailsPage = ({ user }) => {
         }).slice(0, 8)
         : [];
 
+    const scopedContacts = linkForm.account_id && !contactOverride
+        ? contacts.filter((contact) =>
+            (contact.accounts || []).some((acc) => Number(acc.account_id) === Number(linkForm.account_id))
+        )
+        : contacts;
+
     const filteredContacts = contactSearch.trim()
-        ? contacts.filter((contact) => {
+        ? scopedContacts.filter((contact) => {
             const name = `${contact.first_name || ""} ${contact.last_name || ""}`.trim().toLowerCase();
             return (
                 name.includes(contactSearch.toLowerCase()) ||
                 (contact.email || "").toLowerCase().includes(contactSearch.toLowerCase()) ||
                 String(contact.contact_id).includes(contactSearch.trim())
             );
+        }).slice(0, 8)
+        : [];
+
+    const filteredEditAssignees = editAssigneeQuery.trim()
+        ? users.filter((userItem) => {
+            const name = `${userItem.first_name || ""} ${userItem.last_name || ""}`.trim().toLowerCase();
+            const username = (userItem.username || "").toLowerCase();
+            const term = editAssigneeQuery.trim().toLowerCase();
+            return name.includes(term) || username.includes(term);
         }).slice(0, 8)
         : [];
 
@@ -286,7 +342,7 @@ const TaskDetailsPage = ({ user }) => {
                         <button
                             className="text-xs font-semibold text-primary hover:underline"
                             onClick={() => setLinkEdit((prev) => !prev)}
-                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
+                            disabled={task.user_id !== currentUserId}
                         >
                             {linkEdit ? "Close" : "Edit Links"}
                         </button>
@@ -332,7 +388,10 @@ const TaskDetailsPage = ({ user }) => {
                                     onChange={(e) => {
                                         setAccountSearch(e.target.value);
                                         if (!e.target.value) {
-                                            setLinkForm((prev) => ({ ...prev, account_id: "" }));
+                                            setLinkForm((prev) => ({ ...prev, account_id: "", invoice_id: "", contact_id: "" }));
+                                            setInvoiceSearch("");
+                                            setContactSearch("");
+                                            setContactOverride(false);
                                         }
                                     }}
                                     placeholder="Search account..."
@@ -344,8 +403,16 @@ const TaskDetailsPage = ({ user }) => {
                                                 key={acc.account_id}
                                                 className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
                                                 onClick={() => {
-                                                    setLinkForm((prev) => ({ ...prev, account_id: acc.account_id }));
+                                                    setLinkForm((prev) => ({
+                                                        ...prev,
+                                                        account_id: acc.account_id,
+                                                        invoice_id: "",
+                                                        contact_id: "",
+                                                    }));
                                                     setAccountSearch(acc.business_name);
+                                                    setInvoiceSearch("");
+                                                    setContactSearch("");
+                                                    setContactOverride(false);
                                                 }}
                                             >
                                                 <span>{acc.business_name}</span>
@@ -368,7 +435,13 @@ const TaskDetailsPage = ({ user }) => {
                                         setInvoiceSearch(value);
                                         const numeric = value.replace("#", "").trim();
                                         if (numeric && !Number.isNaN(Number(numeric))) {
-                                            setLinkForm((prev) => ({ ...prev, invoice_id: Number(numeric) }));
+                                            const match = scopedInvoices.find(
+                                                (inv) => Number(inv.invoice_id) === Number(numeric)
+                                            );
+                                            setLinkForm((prev) => ({
+                                                ...prev,
+                                                invoice_id: match ? Number(numeric) : "",
+                                            }));
                                         } else if (!value) {
                                             setLinkForm((prev) => ({ ...prev, invoice_id: "" }));
                                         }
@@ -389,6 +462,13 @@ const TaskDetailsPage = ({ user }) => {
                                                 <span>#{inv.invoice_id}</span>
                                                 <span className="text-xs text-muted-foreground">
                                                     {inv.business_name || "Invoice"}
+                                                    {inv.date_created
+                                                        ? ` • ${formatDateInTimeZone(inv.date_created, user, {
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            year: "numeric",
+                                                        })}`
+                                                        : ""}
                                                 </span>
                                             </button>
                                         ))}
@@ -397,9 +477,35 @@ const TaskDetailsPage = ({ user }) => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                    Contact
-                                </label>
+                                <div className="flex items-center justify-between">
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Contact
+                                    </label>
+                                    {linkForm.account_id && (
+                                        <button
+                                            type="button"
+                                            className="text-xs font-semibold text-primary hover:underline"
+                                            onClick={() => {
+                                                setContactOverride((prev) => {
+                                                    const next = !prev;
+                                                    if (!next) {
+                                                        const stillValid = scopedContacts.some(
+                                                            (contact) =>
+                                                                Number(contact.contact_id) === Number(linkForm.contact_id)
+                                                        );
+                                                        if (!stillValid) {
+                                                            setLinkForm((prevForm) => ({ ...prevForm, contact_id: "" }));
+                                                            setContactSearch("");
+                                                        }
+                                                    }
+                                                    return next;
+                                                });
+                                            }}
+                                        >
+                                            {contactOverride ? "Use account contacts" : "Override"}
+                                        </button>
+                                    )}
+                                </div>
                                 <input
                                     className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                                     value={contactSearch}
@@ -443,12 +549,12 @@ const TaskDetailsPage = ({ user }) => {
                                 <button
                                     className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                                     onClick={handleSaveLinks}
-                                    disabled={linkSaving || task.user_id !== (user?.user_id ?? user?.id)}
+                                    disabled={linkSaving || task.user_id !== currentUserId}
                                 >
                                     {linkSaving ? "Saving..." : "Save Links"}
                                 </button>
                             </div>
-                            {task.user_id !== (user?.user_id ?? user?.id) && (
+                            {task.user_id !== currentUserId && (
                                 <p className="text-xs text-muted-foreground">
                                     Only the task creator can edit links.
                                 </p>
@@ -460,46 +566,86 @@ const TaskDetailsPage = ({ user }) => {
 
             {editForm && (
                 <div className="mt-6 rounded-md border border-border bg-card p-4">
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Edit Task</h2>
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                        <input
-                            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground md:col-span-2"
-                            value={editForm.task_description}
-                            onChange={(e) => setEditForm((prev) => ({ ...prev, task_description: e.target.value }))}
-                            placeholder="Task description"
-                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
-                        />
-                        <input
-                            type="date"
-                            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
-                            value={editForm.due_date}
-                            onChange={(e) => setEditForm((prev) => ({ ...prev, due_date: e.target.value }))}
-                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
-                        />
-                        <select
-                            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
-                            value={editForm.assigned_to}
-                            onChange={(e) => setEditForm((prev) => ({ ...prev, assigned_to: e.target.value }))}
-                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
-                        >
-                            <option value="">Assign to</option>
-                            {users.map((u) => (
-                                <option key={u.user_id} value={u.user_id}>
-                                    {u.first_name} {u.last_name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="mt-4 flex justify-end">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Task Details</h2>
                         <button
-                            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-                            onClick={handleSave}
-                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
+                            className="text-xs font-semibold text-primary hover:underline"
+                            onClick={() => setEditOpen((prev) => !prev)}
+                            disabled={task.user_id !== currentUserId}
                         >
-                            Save Changes
+                            {editOpen ? "Close" : "Edit Task"}
                         </button>
                     </div>
-                    {task.user_id !== (user?.user_id ?? user?.id) && (
+                    {editOpen && (
+                        <>
+                            <div className="mt-4 space-y-3">
+                                <input
+                                    className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                    value={editForm.task_description}
+                                    onChange={(e) => setEditForm((prev) => ({ ...prev, task_description: e.target.value }))}
+                                    placeholder="Task description"
+                                    disabled={task.user_id !== currentUserId}
+                                />
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    <input
+                                        type="date"
+                                        className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                        value={editForm.due_date}
+                                        onChange={(e) => setEditForm((prev) => ({ ...prev, due_date: e.target.value }))}
+                                        disabled={task.user_id !== currentUserId}
+                                    />
+                                    <div className="relative">
+                                        <input
+                                            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                            placeholder="Assign to..."
+                                            value={editAssigneeQuery}
+                                            onFocus={() => setEditAssigneeOpen(true)}
+                                            onBlur={() => setTimeout(() => setEditAssigneeOpen(false), 150)}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setEditAssigneeQuery(value);
+                                                setEditForm((prev) => ({ ...prev, assigned_to: value ? "" : prev.assigned_to }));
+                                            }}
+                                            disabled={task.user_id !== currentUserId}
+                                        />
+                                        {editAssigneeOpen && filteredEditAssignees.length > 0 && editAssigneeQuery && (
+                                            <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+                                                {filteredEditAssignees.map((assignee) => (
+                                                    <button
+                                                        key={assignee.user_id}
+                                                        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                                                        onMouseDown={(e) => e.preventDefault()}
+                                                        onClick={() => {
+                                                            setEditForm((prev) => ({ ...prev, assigned_to: assignee.user_id }));
+                                                            setEditAssigneeQuery(
+                                                                `${assignee.first_name || ""} ${assignee.last_name || ""}`.trim()
+                                                            );
+                                                            setEditAssigneeOpen(false);
+                                                        }}
+                                                    >
+                                                        <span>
+                                                            {assignee.first_name} {assignee.last_name}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">ID {assignee.user_id}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex justify-end">
+                                <button
+                                    className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                                    onClick={handleSave}
+                                    disabled={task.user_id !== currentUserId}
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </>
+                    )}
+                    {task.user_id !== currentUserId && (
                         <p className="mt-2 text-xs text-muted-foreground">
                             Only the task creator can edit details.
                         </p>
@@ -508,53 +654,80 @@ const TaskDetailsPage = ({ user }) => {
             )}
 
             <div className="mt-6 rounded-md border border-border bg-card p-4">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Task Notes</h2>
-                <div className="mt-3 flex flex-wrap gap-2">
-                    <input
-                        className="flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
-                        placeholder="Add a note..."
-                        value={newNote}
-                        onChange={(e) => setNewNote(e.target.value)}
-                    />
+                <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Task Activity</h2>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
                     <button
-                        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-                        onClick={handleCreateNote}
-                        disabled={noteSaving}
+                        className={`rounded-full px-3 py-1 ${
+                            notesTab === "notes" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}
+                        onClick={() => setNotesTab("notes")}
                     >
-                        {noteSaving ? "Saving..." : "Add Note"}
+                        Notes
+                    </button>
+                    <button
+                        className={`rounded-full px-3 py-1 ${
+                            notesTab === "audit" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}
+                        onClick={() => setNotesTab("audit")}
+                    >
+                        Audit Trail
                     </button>
                 </div>
-                <div className="mt-4 space-y-3">
-                    {taskNotes.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No notes yet.</p>
-                    ) : (
-                        taskNotes.map((note) => (
-                            <div key={note.task_note_id} className="rounded-md border border-border bg-muted/40 p-3">
-                                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                    <span>{note.username || "Unknown user"}</span>
-                                    <span>
-                                        {note.created_at
-                                            ? formatDateTimeInTimeZone(note.created_at, user, {
-                                                month: "short",
-                                                day: "numeric",
-                                                hour: "numeric",
-                                                minute: "2-digit",
-                                            })
-                                            : ""}
-                                    </span>
-                                </div>
-                                <p className="mt-2 text-sm text-foreground">{note.note_text}</p>
+                <div className="mt-4">
+                    {notesTab === "notes" && (
+                        <>
+                            <div className="flex flex-wrap gap-2">
+                                <input
+                                    className="flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                    placeholder="Add a note..."
+                                    value={newNote}
+                                    onChange={(e) => setNewNote(e.target.value)}
+                                />
+                                <button
+                                    className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                                    onClick={handleCreateNote}
+                                    disabled={noteSaving}
+                                >
+                                    {noteSaving ? "Saving..." : "Add Note"}
+                                </button>
                             </div>
-                        ))
+                            <div className="mt-4 space-y-3">
+                                {taskNotes.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No notes yet.</p>
+                                ) : (
+                                    taskNotes.map((note) => (
+                                        <div key={note.task_note_id} className="rounded-md border border-border bg-muted/40 p-3">
+                                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                                <span>{note.username || "Unknown user"}</span>
+                                                <span>
+                                                    {note.created_at
+                                                        ? formatDateTimeInTimeZone(note.created_at, user, {
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            hour: "numeric",
+                                                            minute: "2-digit",
+                                                        })
+                                                        : ""}
+                                                </span>
+                                            </div>
+                                            <p className="mt-2 text-sm text-foreground">{note.note_text}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </>
+                    )}
+                    {notesTab === "audit" && (
+                        <AuditSection
+                            title="Task Audit Trail"
+                            filters={{ entity_type: "task", entity_id: Number(taskId) }}
+                            limit={100}
+                        />
                     )}
                 </div>
             </div>
-
-            <AuditSection
-                title="Task Audit Trail"
-                filters={{ entity_type: "task", entity_id: Number(taskId) }}
-                limit={100}
-            />
         </div>
     );
 };

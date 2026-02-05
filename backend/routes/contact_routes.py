@@ -416,6 +416,49 @@ def update_contact_accounts(contact_id):
     return jsonify(_serialize_contact(contact, include_accounts=True)), 200
 
 
+@contact_bp.route("/<int:contact_id>/primary", methods=["POST"])
+def set_primary_contact(contact_id):
+    data = request.json or {}
+    account_id = data.get("account_id")
+    if not account_id:
+        return jsonify({"error": "account_id is required"}), 400
+    account_id = int(account_id)
+
+    contact = Contact.query.get_or_404(contact_id)
+    account = Account.query.get_or_404(account_id)
+    actor_user_id = data.get("actor_user_id")
+    actor_email = data.get("actor_email")
+
+    AccountContacts.query.filter_by(account_id=account.account_id).update(
+        {"is_primary": False},
+        synchronize_session=False,
+    )
+    link = AccountContacts.query.filter_by(account_id=account.account_id, contact_id=contact.contact_id).first()
+    if not link:
+        link = AccountContacts(account_id=account.account_id, contact_id=contact.contact_id, is_primary=True)
+        db.session.add(link)
+    else:
+        link.is_primary = True
+
+    create_audit_log(
+        entity_type="account_contact",
+        entity_id=account.account_id,
+        action="set_primary_contact",
+        user_id=actor_user_id,
+        user_email=actor_email,
+        after_data={
+            "account_id": account.account_id,
+            "contact_id": contact.contact_id,
+        },
+        account_id=account.account_id,
+        contact_id=contact.contact_id,
+    )
+
+    db.session.commit()
+
+    return jsonify({"primary_contact_id": contact.contact_id}), 200
+
+
 @contact_bp.route("/<int:contact_id>/follow", methods=["POST"])
 def follow_contact(contact_id):
     data = request.json or {}

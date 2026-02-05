@@ -39,7 +39,7 @@ const [showPaymentModal, setShowPaymentModal] = useState(false);
 const [paymentForm, setPaymentForm] = useState({
     payment_method: "",
     last_four_payment_method: "",
-    total_paid: 0,
+    total_paid: "",
 });
 const [loggedPayment, setLoggedPayment] = useState(null);
 const [payments, setPayments] = useState([]);
@@ -76,6 +76,24 @@ const [newTaskAssignee, setNewTaskAssignee] = useState("");
 const [highlightTaskId, setHighlightTaskId] = useState(null);
 const [activeTab, setActiveTab] = useState("audit");
 
+const openPaymentModal = () => {
+    setPaymentForm({
+        payment_method: "",
+        last_four_payment_method: "",
+        total_paid: "",
+    });
+    setShowPaymentModal(true);
+};
+
+const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentForm({
+        payment_method: "",
+        last_four_payment_method: "",
+        total_paid: "",
+    });
+};
+
 useEffect(() => {
     async function loadData() {
     try {
@@ -89,8 +107,8 @@ useEffect(() => {
 
         setPaymentForm((prev) => ({
             ...prev,
-            total_paid: parseFloat(data.final_total) || 0,
-            }));
+            total_paid: "",
+        }));
     
         setInvoiceForm({
             discount_percent: data.discount_percent || 0,
@@ -303,13 +321,18 @@ const handleServiceFieldChange = (index, field, value) => {
 
 const handleLogPayment = async () => {
     try {
+        const totalPaid = parseFloat(paymentForm.total_paid);
+        if (!paymentForm.total_paid || Number.isNaN(totalPaid)) {
+            alert("Please enter the total paid amount.");
+            return;
+        }
         const payload = {
             account_id: invoice.account_id,
             sales_rep_id: invoice.sales_rep_id,
             logged_by: user.id,
             payment_method: paymentForm.payment_method,
             last_four_payment_method: paymentForm.last_four_payment_method || null,
-            total_paid: parseFloat(paymentForm.total_paid),
+            total_paid: totalPaid,
             actor_user_id: user.id,
             actor_email: user.email,
         };
@@ -321,11 +344,11 @@ const handleLogPayment = async () => {
             setPayments(updatedInvoice.payments || []);
     
             // Reset form and close
-            setShowPaymentModal(false);
+            closePaymentModal();
             setPaymentForm({
             payment_method: "",
             last_four_payment_method: "",
-            total_paid: parseFloat(updatedInvoice.final_total || 0),
+            total_paid: "",
             });
         }
         } catch (error) {
@@ -496,26 +519,44 @@ if (!invoice)
                         <p className="text-sm text-muted-foreground">
                             Contact:{" "}
                             {invoice.primary_contact_id ? (
-                                <button
+                                <Link
                                     className="font-semibold underline text-primary hover:text-primary/80"
-                                    onClick={() => navigate(`/contacts/${invoice.primary_contact_id}`)}
+                                    to={`/contacts/${invoice.primary_contact_id}`}
                                 >
                                     {invoice.primary_contact_name || invoice.contact_name}
-                                </button>
+                                </Link>
                             ) : (
                                 <span className="font-semibold text-foreground">{invoice.contact_name}</span>
                             )}
                         </p>
                     )}
                     <p>{invoice.address}, {invoice.city}, {invoice.state} {invoice.zip_code}</p>
-                    <p className="text-blue-600 font-medium">{invoice.email}</p>
+                    {invoice.email ? (
+                        <a
+                            className="text-blue-600 font-medium hover:underline"
+                            href={`mailto:${invoice.email}?subject=${encodeURIComponent(`Invoice #${invoice.invoice_id}`)}`}
+                        >
+                            {invoice.email}
+                        </a>
+                    ) : (
+                        <p className="text-muted-foreground">—</p>
+                    )}
                     <p>{invoice.phone_number}</p>              
                 </div>
                 <div className="text-right">
                     <p><strong>Sales Representative:</strong></p>
                     <p className="text-lg font-semibold">{invoice.branch_name}</p>
                     <p>{invoice.sales_rep_name}</p>
-                    <p>{invoice.sales_rep_email}</p>
+                    {invoice.sales_rep_email ? (
+                        <a
+                            className="text-blue-600 hover:underline"
+                            href={`mailto:${invoice.sales_rep_email}?subject=${encodeURIComponent(`Invoice #${invoice.invoice_id}`)}`}
+                        >
+                            {invoice.sales_rep_email}
+                        </a>
+                    ) : (
+                        <p className="text-muted-foreground">—</p>
+                    )}
                     <p>{invoice.sales_rep_phone}</p>
                     {user?.id === invoice.sales_rep_id && (
                     <p><strong>Commission:</strong> {formatCurrency(invoice.commission_amount)} ({(invoice.commission_amount / invoice.final_total * 100).toFixed(2)}%)</p>
@@ -949,7 +990,7 @@ if (!invoice)
                     <div className="flex flex-col items-end gap-3">
                         <button
                             className="bg-primary text-primary-foreground px-4 py-2 rounded shadow hover:bg-primary/90"
-                            onClick={() => setShowPaymentModal(true)}
+                            onClick={openPaymentModal}
                         >
                             Log Payment
                         </button>
@@ -1172,13 +1213,19 @@ if (!invoice)
             </section>
 
             {showPaymentModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-                    <div className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+                    onClick={closePaymentModal}
+                >
+                    <div
+                        className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-foreground">Log Payment</h2>
                             <button
                                 className="text-xl text-muted-foreground hover:text-foreground"
-                                onClick={() => setShowPaymentModal(false)}
+                                onClick={closePaymentModal}
                                 aria-label="Close"
                             >
                                 ✕
@@ -1231,7 +1278,7 @@ if (!invoice)
                                     onChange={(e) =>
                                         setPaymentForm((prev) => ({
                                             ...prev,
-                                            total_paid: parseFloat(e.target.value) || 0,
+                                            total_paid: e.target.value,
                                         }))
                                     }
                                 />
@@ -1247,7 +1294,7 @@ if (!invoice)
                             </button>
                             <button
                                 className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
-                                onClick={() => setShowPaymentModal(false)}
+                                onClick={closePaymentModal}
                             >
                                 Cancel
                             </button>

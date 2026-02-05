@@ -17,8 +17,9 @@ import { fetchBranches } from "../services/branchService";
 import AuditSection from "../components/AuditSection";
 import { formatDateTimeInTimeZone, formatDateInTimeZone } from "../utils/timezone";
 
-const ContactDetailsPage = ({ user }) => {
-  const { contactId } = useParams();
+const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose }) => {
+  const { contactId: routeContactId } = useParams();
+  const contactId = contactIdOverride ?? routeContactId;
   const location = useLocation();
   const navigate = useNavigate();
   const [contact, setContact] = useState(null);
@@ -40,6 +41,7 @@ const ContactDetailsPage = ({ user }) => {
   const [accountRemoves, setAccountRemoves] = useState([]);
   const [accountSaving, setAccountSaving] = useState(false);
   const [accountSaveMessage, setAccountSaveMessage] = useState("");
+  const currentUserId = user?.user_id ?? user?.id ?? null;
   const [interactionForm, setInteractionForm] = useState({
     interaction_type: "call",
     subject: "",
@@ -52,7 +54,7 @@ const ContactDetailsPage = ({ user }) => {
   });
   const [taskForm, setTaskForm] = useState({
     task_description: "",
-    assigned_to: user?.user_id || "",
+    assigned_to: currentUserId || "",
     due_date: "",
     account_id: "",
   });
@@ -70,6 +72,8 @@ const ContactDetailsPage = ({ user }) => {
   const [auditTab, setAuditTab] = useState("general");
   const [taskAssigneeQuery, setTaskAssigneeQuery] = useState("");
   const [followupAssigneeQuery, setFollowupAssigneeQuery] = useState("");
+  const [taskAssigneeOpen, setTaskAssigneeOpen] = useState(false);
+  const [followupAssigneeOpen, setFollowupAssigneeOpen] = useState(false);
   const [ownerSearch, setOwnerSearch] = useState("");
   const [followupCompleteTask, setFollowupCompleteTask] = useState(null);
   const [followupCompleteNote, setFollowupCompleteNote] = useState("");
@@ -108,12 +112,18 @@ const ContactDetailsPage = ({ user }) => {
     return () => clearTimeout(timeoutId);
   }, [location.state]);
 
+  const showToast = (message, type = "success") => {
+    setToast({ type, message });
+    const timeoutId = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timeoutId);
+  };
+
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       setLoading(true);
       const [contactData, accountsData, usersData, branchesData, invoiceData] = await Promise.all([
-        fetchContactById(contactId, user?.user_id),
+        fetchContactById(contactId, currentUserId),
         fetchAccounts(),
         fetchUsers(),
         fetchBranches(),
@@ -144,10 +154,10 @@ const ContactDetailsPage = ({ user }) => {
       setTasks(contactData?.tasks || []);
       setIsFollowing(!!contactData?.is_following);
 
-      const ownerId = contactData?.contact_owner_user_id || user?.user_id || "";
+      const ownerId = contactData?.contact_owner_user_id || currentUserId || "";
       const ownerUser = usersData?.find((u) => u.user_id === ownerId);
       const ownerName = ownerUser ? `${ownerUser.first_name || ""} ${ownerUser.last_name || ""}`.trim() : "";
-      const currentUser = usersData?.find((u) => u.user_id === (user?.user_id ?? user?.id));
+      const currentUser = usersData?.find((u) => u.user_id === currentUserId);
       const currentUserName = currentUser
         ? `${currentUser.first_name || ""} ${currentUser.last_name || ""}`.trim()
         : "";
@@ -164,7 +174,7 @@ const ContactDetailsPage = ({ user }) => {
     return () => {
       mounted = false;
     };
-  }, [contactId, user?.user_id, user?.id]);
+  }, [contactId, currentUserId]);
 
   useEffect(() => {
     if (!autosaveEnabled || !dirty || !form) return;
@@ -182,7 +192,7 @@ const ContactDetailsPage = ({ user }) => {
       const payload = {
         add_account_ids: accountAdds.map(Number),
         remove_account_ids: accountRemoves.map(Number),
-        actor_user_id: user?.user_id,
+        actor_user_id: currentUserId,
         actor_email: user?.email,
       };
       const updated = await updateContactAccounts(contact.contact_id, payload);
@@ -196,7 +206,7 @@ const ContactDetailsPage = ({ user }) => {
       setAccountSaving(false);
     }, 600);
     return () => clearTimeout(timeoutId);
-  }, [accountAdds, accountRemoves, contact, user?.user_id, user?.email]);
+  }, [accountAdds, accountRemoves, contact, currentUserId, user?.email]);
 
   useEffect(() => {
     let active = true;
@@ -246,16 +256,16 @@ const ContactDetailsPage = ({ user }) => {
     const handler = (event) => {
       if (!event.altKey) return;
       if (event.key.toLowerCase() !== "m") return;
-      if (!user?.user_id) return;
-      setFollowupForm((prev) => ({ ...prev, assigned_to: user.user_id }));
-      const me = users.find((u) => u.user_id === user.user_id);
+      if (!currentUserId) return;
+      setFollowupForm((prev) => ({ ...prev, assigned_to: currentUserId }));
+      const me = users.find((u) => u.user_id === currentUserId);
       if (me) {
         setFollowupAssigneeQuery(`${me.first_name || ""} ${me.last_name || ""}`.trim());
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [user?.user_id, users]);
+  }, [currentUserId, users]);
 
   useEffect(() => {
     if (!showEditModal || !form) return;
@@ -357,6 +367,18 @@ const ContactDetailsPage = ({ user }) => {
       .slice(0, 8);
   };
 
+  const formatPhone = (value) => {
+    if (!value) return "";
+    const digits = String(value).replace(/\D/g, "");
+    if (digits.length === 11 && digits.startsWith("1")) {
+      return `${digits.slice(0, 1)}-${digits.slice(1, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+    if (digits.length === 10) {
+      return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return value;
+  };
+
   const taskAssigneeResults = useMemo(() => {
     return filterUsers(taskAssigneeQuery);
   }, [taskAssigneeQuery, users]);
@@ -431,7 +453,7 @@ const ContactDetailsPage = ({ user }) => {
     const payload = {
       ...form,
       contact_owner_user_id: form.contact_owner_user_id ? Number(form.contact_owner_user_id) : null,
-      actor_user_id: user?.user_id,
+      actor_user_id: currentUserId,
       actor_email: user?.email,
     };
     const updated = await updateContact(contact.contact_id, payload);
@@ -456,12 +478,12 @@ const ContactDetailsPage = ({ user }) => {
   };
 
   const handleFollowToggle = async () => {
-    if (!user?.user_id) return;
+    if (!currentUserId || !contact) return;
     if (isFollowing) {
-      const res = await unfollowContact(contact.contact_id, user.user_id);
+      const res = await unfollowContact(contact.contact_id, currentUserId);
       if (res) setIsFollowing(false);
     } else {
-      const res = await followContact(contact.contact_id, user.user_id);
+      const res = await followContact(contact.contact_id, currentUserId);
       if (res) setIsFollowing(true);
     }
   };
@@ -494,7 +516,7 @@ const ContactDetailsPage = ({ user }) => {
       account_id: interactionForm.account_id ? Number(interactionForm.account_id) : null,
       phone_number: phoneNumber,
       email_address: emailAddress,
-      actor_user_id: user?.user_id,
+      actor_user_id: currentUserId,
       actor_email: user?.email,
     };
 
@@ -511,19 +533,21 @@ const ContactDetailsPage = ({ user }) => {
         email_option: "",
         email_custom: "",
       });
+      showToast("Interaction logged.");
     }
   };
 
   const handleTaskCreate = async () => {
+    if (!currentUserId) return;
     if (!taskForm.task_description || !taskForm.due_date) return;
     const payload = {
-      user_id: user?.user_id,
-      assigned_to: taskForm.assigned_to ? Number(taskForm.assigned_to) : user?.user_id,
+      user_id: currentUserId,
+      assigned_to: taskForm.assigned_to ? Number(taskForm.assigned_to) : currentUserId,
       task_description: taskForm.task_description,
       due_date: taskForm.due_date,
       account_id: taskForm.account_id ? Number(taskForm.account_id) : null,
       contact_id: contact.contact_id,
-      actor_user_id: user?.user_id,
+      actor_user_id: currentUserId,
       actor_email: user?.email,
     };
     const created = await createTask(payload);
@@ -531,42 +555,45 @@ const ContactDetailsPage = ({ user }) => {
       setTasks((prev) => [created, ...prev]);
       setTaskForm({
         task_description: "",
-        assigned_to: user?.user_id || "",
+        assigned_to: currentUserId || "",
         due_date: "",
         account_id: "",
       });
-      const current = users.find((u) => u.user_id === (user?.user_id || user?.id));
+      const current = users.find((u) => u.user_id === currentUserId);
       if (current) {
         setTaskAssigneeQuery(`${current.first_name || ""} ${current.last_name || ""}`.trim());
       } else {
         setTaskAssigneeQuery("");
       }
+      setTaskAssigneeOpen(false);
+      showToast("Task created.");
     }
   };
 
   const handleFollowupCreate = async () => {
+    if (!currentUserId) return;
     if (!followupForm.due_date) return;
     const descriptionBase = `Follow up with ${displayName}`;
     const description = followupForm.note
       ? `${descriptionBase} - ${followupForm.note}`
       : descriptionBase;
     const payload = {
-      user_id: user?.user_id,
+      user_id: currentUserId,
       assigned_to: followupForm.assigned_to
         ? Number(followupForm.assigned_to)
-        : contact.contact_owner_user_id || user?.user_id,
+        : contact.contact_owner_user_id || currentUserId,
       task_description: description,
       due_date: followupForm.due_date,
       account_id: followupForm.account_id ? Number(followupForm.account_id) : null,
       contact_id: contact.contact_id,
       is_followup: true,
-      actor_user_id: user?.user_id,
+      actor_user_id: currentUserId,
       actor_email: user?.email,
     };
     const created = await createTask(payload);
     if (created) {
       setTasks((prev) => [created, ...prev]);
-      const ownerId = contact.contact_owner_user_id || user?.user_id || "";
+      const ownerId = contact.contact_owner_user_id || currentUserId || "";
       const owner = users.find((u) => u.user_id === ownerId);
       setFollowupForm({
         due_date: "",
@@ -575,6 +602,8 @@ const ContactDetailsPage = ({ user }) => {
         assigned_to: ownerId,
       });
       setFollowupAssigneeQuery(owner ? `${owner.first_name || ""} ${owner.last_name || ""}`.trim() : "");
+      setFollowupAssigneeOpen(false);
+      showToast("Follow-up created.");
     }
   };
 
@@ -586,7 +615,7 @@ const ContactDetailsPage = ({ user }) => {
   const handleToggleTaskStatus = async (task) => {
     const updated = await updateTask(task.task_id, {
       is_completed: !task.is_completed,
-      actor_user_id: user?.user_id,
+      actor_user_id: currentUserId,
       actor_email: user?.email,
     });
     if (updated) {
@@ -605,7 +634,7 @@ const ContactDetailsPage = ({ user }) => {
     setFollowupCompleting(true);
     const updated = await updateTask(followupCompleteTask.task_id, {
       is_completed: true,
-      actor_user_id: user?.user_id,
+      actor_user_id: currentUserId,
       actor_email: user?.email,
     });
     if (updated) {
@@ -619,7 +648,7 @@ const ContactDetailsPage = ({ user }) => {
         subject: "Follow-up completed",
         notes: followupCompleteNote || followupCompleteTask.task_description,
         account_id: followupCompleteTask.account_id ? Number(followupCompleteTask.account_id) : null,
-        actor_user_id: user?.user_id,
+        actor_user_id: currentUserId,
         actor_email: user?.email,
       };
       const created = await createContactInteraction(contact.contact_id, interactionPayload);
@@ -633,28 +662,40 @@ const ContactDetailsPage = ({ user }) => {
   };
 
   if (loading) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading contact...</div>;
+    return <div className={embedded ? "p-4 text-sm text-muted-foreground" : "p-6 text-sm text-muted-foreground"}>Loading contact...</div>;
   }
 
   if (!contact || !form) {
-    return <div className="p-6 text-sm text-muted-foreground">Contact not found.</div>;
+    return <div className={embedded ? "p-4 text-sm text-muted-foreground" : "p-6 text-sm text-muted-foreground"}>Contact not found.</div>;
   }
 
   return (
-    <div className="flex-1 p-6">
+    <div className={embedded ? "p-4" : "flex-1 p-6"}>
       {toast && (
         <div className="fixed right-6 top-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
           {toast.message}
         </div>
       )}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          className="text-sm text-primary hover:underline"
-          onClick={() => navigate("/contacts")}
-        >
-          ← Back to Contacts
-        </button>
+        {!embedded ? (
+          <button
+            className="text-sm text-primary hover:underline"
+            onClick={() => navigate("/contacts")}
+          >
+            ← Back to Contacts
+          </button>
+        ) : (
+          <span className="text-sm text-muted-foreground">Contact Details</span>
+        )}
         <div className="flex items-center gap-2">
+          {embedded && onClose && (
+            <button
+              className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          )}
           <button
             className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
             onClick={() => setShowEditModal(true)}
@@ -877,23 +918,27 @@ const ContactDetailsPage = ({ user }) => {
                         className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
                         placeholder="Assign to..."
                         value={followupAssigneeQuery}
+                        onFocus={() => setFollowupAssigneeOpen(true)}
+                        onBlur={() => setTimeout(() => setFollowupAssigneeOpen(false), 150)}
                         onChange={(e) => {
                           const value = e.target.value;
                           setFollowupAssigneeQuery(value);
                           setFollowupForm((prev) => ({ ...prev, assigned_to: value ? "" : prev.assigned_to }));
                         }}
                       />
-                      {followupAssigneeResults.length > 0 && followupAssigneeQuery && (
+                      {followupAssigneeOpen && followupAssigneeResults.length > 0 && followupAssigneeQuery && (
                         <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
                           {followupAssigneeResults.map((assignee) => (
                             <button
                               key={assignee.user_id}
                               className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
                                 setFollowupForm((prev) => ({ ...prev, assigned_to: assignee.user_id }));
                                 setFollowupAssigneeQuery(
                                   `${assignee.first_name || ""} ${assignee.last_name || ""}`.trim()
                                 );
+                                setFollowupAssigneeOpen(false);
                               }}
                             >
                               <span>
@@ -909,11 +954,12 @@ const ContactDetailsPage = ({ user }) => {
                       type="button"
                       className="rounded-md border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted/40"
                       onClick={() => {
-                        setFollowupForm((prev) => ({ ...prev, assigned_to: user?.user_id }));
-                        const me = users.find((u) => u.user_id === (user?.user_id || user?.id));
+                        setFollowupForm((prev) => ({ ...prev, assigned_to: currentUserId }));
+                        const me = users.find((u) => u.user_id === currentUserId);
                         if (me) {
                           setFollowupAssigneeQuery(`${me.first_name || ""} ${me.last_name || ""}`.trim());
                         }
+                        setFollowupAssigneeOpen(false);
                       }}
                       title="Assign to me (Alt+M)"
                     >
@@ -993,11 +1039,13 @@ const ContactDetailsPage = ({ user }) => {
                     <option value="">Phone (optional)</option>
                     {accountPhoneOptions.map((phone) => (
                       <option key={phone} value={`account:${phone}`}>
-                        Account phone: {phone}
+                        Account phone: {formatPhone(phone)}
                       </option>
                     ))}
                     {contact.phone && (
-                      <option value={`contact:${contact.phone}`}>Contact phone: {contact.phone}</option>
+                      <option value={`contact:${contact.phone}`}>
+                        Contact phone: {formatPhone(contact.phone)}
+                      </option>
                     )}
                     <option value="custom">Custom number</option>
                   </select>
@@ -1052,38 +1100,59 @@ const ContactDetailsPage = ({ user }) => {
                     value={taskForm.task_description}
                     onChange={(e) => setTaskForm((prev) => ({ ...prev, task_description: e.target.value }))}
                   />
-                  <div className="relative">
-                    <input
-                      className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
-                      placeholder="Assign to..."
-                      value={taskAssigneeQuery}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setTaskAssigneeQuery(value);
-                        setTaskForm((prev) => ({ ...prev, assigned_to: value ? "" : prev.assigned_to }));
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                        placeholder="Assign to..."
+                        value={taskAssigneeQuery}
+                        onFocus={() => setTaskAssigneeOpen(true)}
+                        onBlur={() => setTimeout(() => setTaskAssigneeOpen(false), 150)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setTaskAssigneeQuery(value);
+                          setTaskForm((prev) => ({ ...prev, assigned_to: value ? "" : prev.assigned_to }));
+                        }}
+                      />
+                      {taskAssigneeOpen && taskAssigneeResults.length > 0 && taskAssigneeQuery && (
+                        <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+                          {taskAssigneeResults.map((assignee) => (
+                            <button
+                              key={assignee.user_id}
+                              className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setTaskForm((prev) => ({ ...prev, assigned_to: assignee.user_id }));
+                                setTaskAssigneeQuery(
+                                  `${assignee.first_name || ""} ${assignee.last_name || ""}`.trim()
+                                );
+                                setTaskAssigneeOpen(false);
+                              }}
+                            >
+                              <span>
+                                {assignee.first_name} {assignee.last_name}
+                              </span>
+                              <span className="text-xs text-muted-foreground">ID {assignee.user_id}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="rounded-md border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted/40"
+                      onClick={() => {
+                        setTaskForm((prev) => ({ ...prev, assigned_to: currentUserId }));
+                        const me = users.find((u) => u.user_id === currentUserId);
+                        if (me) {
+                          setTaskAssigneeQuery(`${me.first_name || ""} ${me.last_name || ""}`.trim());
+                        }
+                        setTaskAssigneeOpen(false);
                       }}
-                    />
-                    {taskAssigneeResults.length > 0 && taskAssigneeQuery && (
-                      <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
-                        {taskAssigneeResults.map((assignee) => (
-                          <button
-                            key={assignee.user_id}
-                            className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
-                            onClick={() => {
-                              setTaskForm((prev) => ({ ...prev, assigned_to: assignee.user_id }));
-                              setTaskAssigneeQuery(
-                                `${assignee.first_name || ""} ${assignee.last_name || ""}`.trim()
-                              );
-                            }}
-                          >
-                            <span>
-                              {assignee.first_name} {assignee.last_name}
-                            </span>
-                            <span className="text-xs text-muted-foreground">ID {assignee.user_id}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                      title="Assign to me"
+                    >
+                      Me
+                    </button>
                   </div>
                   <input
                     type="date"
@@ -1255,7 +1324,7 @@ const ContactDetailsPage = ({ user }) => {
                             <p className="mt-2 text-sm text-muted-foreground">{interaction.notes}</p>
                           )}
                           <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                            {interaction.phone_number && <span>📞 {interaction.phone_number}</span>}
+                            {interaction.phone_number && <span>📞 {formatPhone(interaction.phone_number)}</span>}
                             {interaction.email_address && <span>✉️ {interaction.email_address}</span>}
                             {interaction.account_id && (
                               <button
@@ -1647,6 +1716,9 @@ ContactDetailsPage.propTypes = {
     email: PropTypes.string,
     contacts_autosave: PropTypes.bool,
   }).isRequired,
+  embedded: PropTypes.bool,
+  contactIdOverride: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  onClose: PropTypes.func,
 };
 
 export default ContactDetailsPage;
