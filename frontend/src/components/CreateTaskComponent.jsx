@@ -101,7 +101,7 @@ useEffect(() => {
     }, [selectedDepartment]);
 
 
-const handleCreateTask = () => {
+const handleCreateTask = async () => {
     if (!newTask.task_description.trim() || !newTask.due_date) {
     alert("⚠️ Task description and due date are required.");
     return;
@@ -118,7 +118,23 @@ const handleCreateTask = () => {
     account_id: newTask.account_id || null,
     };
 
-    onCreateTask(taskData);
+    const created = await onCreateTask(taskData);
+    if (created?.task_id || created?.success || created) {
+        setNewTask({
+            task_description: "",
+            due_date: "",
+            account_id: "",
+            account_name: "",
+        });
+        setAccountSearch("");
+        setFilteredAccounts([]);
+        setAssignedToMe(true);
+        setUseMyBranch(true);
+        setUseMyDepartment(true);
+        setSelectedBranch(user.branch_id || "");
+        setSelectedDepartment(user.department_id || "");
+        setSelectedEmployee(currentUserId || "");
+    }
 };
 
 return (

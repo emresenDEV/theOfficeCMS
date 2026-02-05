@@ -4,6 +4,9 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { formatDateInTimeZone, formatDateTimeInTimeZone } from "../utils/timezone";
 import { fetchTaskById, updateTask, fetchTaskNotes, createTaskNote } from "../services/tasksService";
 import { fetchUsers } from "../services/userService";
+import { fetchAccounts } from "../services/accountService";
+import { fetchAllInvoices } from "../services/invoiceService";
+import { fetchContacts } from "../services/contactService";
 import AuditSection from "../components/AuditSection";
 
 const TaskDetailsPage = ({ user }) => {
@@ -16,6 +19,19 @@ const TaskDetailsPage = ({ user }) => {
     const [newNote, setNewNote] = useState("");
     const [noteSaving, setNoteSaving] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [linkEdit, setLinkEdit] = useState(false);
+    const [linkSaving, setLinkSaving] = useState(false);
+    const [accounts, setAccounts] = useState([]);
+    const [invoices, setInvoices] = useState([]);
+    const [contacts, setContacts] = useState([]);
+    const [linkForm, setLinkForm] = useState({
+        account_id: "",
+        invoice_id: "",
+        contact_id: "",
+    });
+    const [accountSearch, setAccountSearch] = useState("");
+    const [invoiceSearch, setInvoiceSearch] = useState("");
+    const [contactSearch, setContactSearch] = useState("");
 
     useEffect(() => {
         let active = true;
@@ -44,6 +60,38 @@ const TaskDetailsPage = ({ user }) => {
         };
     }, [taskId]);
 
+    useEffect(() => {
+        if (!linkEdit) return;
+        let active = true;
+        const load = async () => {
+            const [accountsData, invoicesData, contactsData] = await Promise.all([
+                fetchAccounts(),
+                fetchAllInvoices(),
+                fetchContacts(),
+            ]);
+            if (!active) return;
+            setAccounts(accountsData || []);
+            setInvoices(invoicesData || []);
+            setContacts(contactsData || []);
+        };
+        load();
+        return () => {
+            active = false;
+        };
+    }, [linkEdit]);
+
+    useEffect(() => {
+        if (!linkEdit || !task) return;
+        setLinkForm({
+            account_id: task.account_id || "",
+            invoice_id: task.invoice_id || "",
+            contact_id: task.contact_id || "",
+        });
+        setAccountSearch(task.account_name || "");
+        setInvoiceSearch(task.invoice_id ? `#${task.invoice_id}` : "");
+        setContactSearch(task.contact_id ? `Contact #${task.contact_id}` : "");
+    }, [linkEdit, task]);
+
     const handleToggleComplete = async () => {
         if (!task) return;
         const payload = {
@@ -55,6 +103,25 @@ const TaskDetailsPage = ({ user }) => {
         if (updated) {
             setTask((prev) => ({ ...prev, ...updated }));
         }
+    };
+
+    const handleSaveLinks = async () => {
+        if (!task) return;
+        setLinkSaving(true);
+        const payload = {
+            account_id: linkForm.account_id ? Number(linkForm.account_id) : null,
+            invoice_id: linkForm.invoice_id ? Number(linkForm.invoice_id) : null,
+            contact_id: linkForm.contact_id ? Number(linkForm.contact_id) : null,
+            actor_user_id: user?.user_id ?? user?.id,
+            actor_email: user?.email,
+        };
+        const updated = await updateTask(task.task_id, payload);
+        if (updated) {
+            const refreshed = await fetchTaskById(taskId);
+            setTask(refreshed);
+            setLinkEdit(false);
+        }
+        setLinkSaving(false);
     };
 
     const handleCreateNote = async () => {
@@ -108,6 +175,33 @@ const TaskDetailsPage = ({ user }) => {
             </div>
         );
     }
+
+    const filteredAccounts = accountSearch.trim()
+        ? accounts.filter((acc) =>
+            acc.business_name?.toLowerCase().includes(accountSearch.toLowerCase())
+        ).slice(0, 8)
+        : [];
+
+    const filteredInvoices = invoiceSearch.trim()
+        ? invoices.filter((inv) => {
+            const term = invoiceSearch.replace("#", "").trim().toLowerCase();
+            return (
+                String(inv.invoice_id).includes(term) ||
+                (inv.business_name || "").toLowerCase().includes(term)
+            );
+        }).slice(0, 8)
+        : [];
+
+    const filteredContacts = contactSearch.trim()
+        ? contacts.filter((contact) => {
+            const name = `${contact.first_name || ""} ${contact.last_name || ""}`.trim().toLowerCase();
+            return (
+                name.includes(contactSearch.toLowerCase()) ||
+                (contact.email || "").toLowerCase().includes(contactSearch.toLowerCase()) ||
+                String(contact.contact_id).includes(contactSearch.trim())
+            );
+        }).slice(0, 8)
+        : [];
 
     return (
         <div className="p-6 max-w-4xl mx-auto bg-card border border-border shadow-lg rounded-lg">
@@ -173,7 +267,16 @@ const TaskDetailsPage = ({ user }) => {
                 </div>
 
                 <div className="rounded-md border border-border bg-card p-4">
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Links</h2>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Links</h2>
+                        <button
+                            className="text-xs font-semibold text-primary hover:underline"
+                            onClick={() => setLinkEdit((prev) => !prev)}
+                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
+                        >
+                            {linkEdit ? "Close" : "Edit Links"}
+                        </button>
+                    </div>
                     <div className="mt-3 space-y-2 text-sm">
                         <p>
                             Account: {task.account_id ? (
@@ -203,6 +306,141 @@ const TaskDetailsPage = ({ user }) => {
                             )}
                         </p>
                     </div>
+                    {linkEdit && (
+                        <div className="mt-4 space-y-3 text-sm">
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Account
+                                </label>
+                                <input
+                                    className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                    value={accountSearch}
+                                    onChange={(e) => {
+                                        setAccountSearch(e.target.value);
+                                        if (!e.target.value) {
+                                            setLinkForm((prev) => ({ ...prev, account_id: "" }));
+                                        }
+                                    }}
+                                    placeholder="Search account..."
+                                />
+                                {filteredAccounts.length > 0 && (
+                                    <div className="mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-card shadow-sm">
+                                        {filteredAccounts.map((acc) => (
+                                            <button
+                                                key={acc.account_id}
+                                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                                                onClick={() => {
+                                                    setLinkForm((prev) => ({ ...prev, account_id: acc.account_id }));
+                                                    setAccountSearch(acc.business_name);
+                                                }}
+                                            >
+                                                <span>{acc.business_name}</span>
+                                                <span className="text-xs text-muted-foreground">#{acc.account_id}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Invoice
+                                </label>
+                                <input
+                                    className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                    value={invoiceSearch}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setInvoiceSearch(value);
+                                        const numeric = value.replace("#", "").trim();
+                                        if (numeric && !Number.isNaN(Number(numeric))) {
+                                            setLinkForm((prev) => ({ ...prev, invoice_id: Number(numeric) }));
+                                        } else if (!value) {
+                                            setLinkForm((prev) => ({ ...prev, invoice_id: "" }));
+                                        }
+                                    }}
+                                    placeholder="Search invoice #..."
+                                />
+                                {filteredInvoices.length > 0 && (
+                                    <div className="mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-card shadow-sm">
+                                        {filteredInvoices.map((inv) => (
+                                            <button
+                                                key={inv.invoice_id}
+                                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                                                onClick={() => {
+                                                    setLinkForm((prev) => ({ ...prev, invoice_id: inv.invoice_id }));
+                                                    setInvoiceSearch(`#${inv.invoice_id}`);
+                                                }}
+                                            >
+                                                <span>#{inv.invoice_id}</span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {inv.business_name || "Invoice"}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Contact
+                                </label>
+                                <input
+                                    className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                    value={contactSearch}
+                                    onChange={(e) => {
+                                        setContactSearch(e.target.value);
+                                        if (!e.target.value) {
+                                            setLinkForm((prev) => ({ ...prev, contact_id: "" }));
+                                        }
+                                    }}
+                                    placeholder="Search contact..."
+                                />
+                                {filteredContacts.length > 0 && (
+                                    <div className="mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-card shadow-sm">
+                                        {filteredContacts.map((contact) => (
+                                            <button
+                                                key={contact.contact_id}
+                                                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted"
+                                                onClick={() => {
+                                                    setLinkForm((prev) => ({ ...prev, contact_id: contact.contact_id }));
+                                                    const name = `${contact.first_name || ""} ${contact.last_name || ""}`.trim();
+                                                    setContactSearch(name || `Contact #${contact.contact_id}`);
+                                                }}
+                                            >
+                                                <span>{`${contact.first_name || ""} ${contact.last_name || ""}`.trim() || `Contact #${contact.contact_id}`}</span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    #{contact.contact_id}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                                    onClick={() => setLinkEdit(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                                    onClick={handleSaveLinks}
+                                    disabled={linkSaving || task.user_id !== (user?.user_id ?? user?.id)}
+                                >
+                                    {linkSaving ? "Saving..." : "Save Links"}
+                                </button>
+                            </div>
+                            {task.user_id !== (user?.user_id ?? user?.id) && (
+                                <p className="text-xs text-muted-foreground">
+                                    Only the task creator can edit links.
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 

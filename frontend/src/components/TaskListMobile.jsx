@@ -1,5 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
+import { FiEdit2 } from "react-icons/fi";
 import { formatDateInTimeZone } from "../utils/timezone";
 
 const TaskListMobile = ({
@@ -10,6 +11,7 @@ const TaskListMobile = ({
     onEditTask,
     onDeleteTask,
     onAccountClick,
+    onTaskClick,
     user,
     highlightTaskId,
 }) => {
@@ -92,9 +94,12 @@ const TaskListMobile = ({
                                 {/* Task Name and Status Row */}
                                 <div className="flex justify-between items-start gap-2 mb-2">
                                     <div className="flex-1">
-                                        <h3 className="text-sm font-semibold text-foreground break-words">
+                                        <button
+                                            className="text-left text-sm font-semibold text-primary hover:underline break-words"
+                                            onClick={() => onTaskClick(task.task_id)}
+                                        >
                                             {task.task_description}
-                                        </h3>
+                                        </button>
                                     </div>
                                     <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded whitespace-nowrap">
                                         Active
@@ -135,14 +140,15 @@ const TaskListMobile = ({
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => onEditTask(task)}
-                                        disabled={task.assigned_by_username !== user.username}
-                                        className={`text-xs px-3 py-1 rounded flex-1 ${
-                                            task.assigned_by_username === user.username
+                                        disabled={(user?.user_id ?? user?.id) !== task.user_id}
+                                        className={`flex items-center justify-center text-xs px-3 py-1 rounded flex-1 ${
+                                            (user?.user_id ?? user?.id) === task.user_id
                                                 ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                                                 : "bg-muted text-muted-foreground cursor-not-allowed"
                                         }`}
+                                        aria-label="Edit task"
                                     >
-                                        Edit
+                                        <FiEdit2 />
                                     </button>
                                     <button
                                         onClick={() => handleTaskCompletion(task)}
@@ -192,7 +198,12 @@ const TaskListMobile = ({
                                 >
                                     {/* Task Name */}
                                     <h3 className="text-sm font-semibold text-muted-foreground line-through break-words mb-2">
-                                        {task.task_description}
+                                        <button
+                                            className="text-left text-sm font-semibold text-primary hover:underline"
+                                            onClick={() => onTaskClick(task.task_id)}
+                                        >
+                                            {task.task_description}
+                                        </button>
                                     </h3>
 
                                     {/* Due Date */}
@@ -261,6 +272,7 @@ TaskListMobile.propTypes = {
     onEditTask: PropTypes.func.isRequired,
     onDeleteTask: PropTypes.func.isRequired,
     onAccountClick: PropTypes.func.isRequired,
+    onTaskClick: PropTypes.func.isRequired,
     user: PropTypes.object.isRequired,
     highlightTaskId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
