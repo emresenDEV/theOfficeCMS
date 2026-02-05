@@ -157,6 +157,7 @@ return (
         type="date"
         value={newTask.due_date}
         onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+        onFocus={(e) => e.target.showPicker?.()}
         className="border border-border bg-card text-foreground p-2 rounded w-full"
         />
 

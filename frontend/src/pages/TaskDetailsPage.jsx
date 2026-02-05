@@ -55,7 +55,9 @@ const TaskDetailsPage = ({ user }) => {
                 setTaskNotes(notesData || []);
                 setEditForm(data ? {
                     task_description: data.task_description || "",
-                    due_date: data.due_date ? new Date(data.due_date).toISOString().split("T")[0] : "",
+                    due_date: data.due_date
+                        ? new Date(data.due_date).toISOString().split("T")[0]
+                        : new Date().toISOString().split("T")[0],
                     assigned_to: data.assigned_to || "",
                 } : null);
                 setLoading(false);
@@ -592,6 +594,7 @@ const TaskDetailsPage = ({ user }) => {
                                         className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                                         value={editForm.due_date}
                                         onChange={(e) => setEditForm((prev) => ({ ...prev, due_date: e.target.value }))}
+                                        onFocus={(e) => e.target.showPicker?.()}
                                         disabled={task.user_id !== currentUserId}
                                     />
                                     <div className="relative">

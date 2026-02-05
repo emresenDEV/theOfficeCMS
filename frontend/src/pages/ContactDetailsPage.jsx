@@ -20,6 +20,7 @@ import { formatDateTimeInTimeZone, formatDateInTimeZone } from "../utils/timezon
 const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose }) => {
   const { contactId: routeContactId } = useParams();
   const contactId = contactIdOverride ?? routeContactId;
+  const resolvedContactId = contactId ? Number(contactId) : null;
   const location = useLocation();
   const navigate = useNavigate();
   const [contact, setContact] = useState(null);
@@ -121,9 +122,15 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
   useEffect(() => {
     let mounted = true;
     const load = async () => {
+      if (!resolvedContactId) {
+        setContact(null);
+        setForm(null);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       const [contactData, accountsData, usersData, branchesData, invoiceData] = await Promise.all([
-        fetchContactById(contactId, currentUserId),
+        fetchContactById(resolvedContactId, currentUserId),
         fetchAccounts(),
         fetchUsers(),
         fetchBranches(),
@@ -174,7 +181,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
     return () => {
       mounted = false;
     };
-  }, [contactId, currentUserId]);
+  }, [resolvedContactId, currentUserId]);
 
   useEffect(() => {
     if (!autosaveEnabled || !dirty || !form) return;
@@ -1226,7 +1233,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
             </div>
             <div className="mt-4">
               {auditTab === "general" && (
-                <AuditSection title="Contact Audit" filters={{ contact_id: Number(contactId) }} />
+                <AuditSection title="Contact Audit" filters={{ contact_id: resolvedContactId || 0 }} />
               )}
 
               {auditTab === "followup" && (

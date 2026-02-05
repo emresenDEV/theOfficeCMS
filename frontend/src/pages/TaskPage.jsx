@@ -232,7 +232,9 @@ const handleEditTaskClick = (task) => {
         setTimeout(() => setEditError(null), 5000);
         return;
     }
-    const dueDate = task.due_date ? new Date(task.due_date).toISOString().split("T")[0] : "";
+    const dueDate = task.due_date
+        ? new Date(task.due_date).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0];
     setEditForm({
         task_description: task.task_description || "",
         due_date: dueDate,
@@ -795,6 +797,7 @@ return (
                             className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                             value={editForm.due_date}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, due_date: e.target.value }))}
+                            onFocus={(e) => e.target.showPicker?.()}
                         />
                         <div className="relative">
                             <input
