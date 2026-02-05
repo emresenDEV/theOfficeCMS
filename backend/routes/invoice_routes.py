@@ -752,7 +752,9 @@ def log_payment(invoice_id):
         today = datetime.now(central).date()
         due = invoice.due_date if invoice.due_date else None
 
-        if total_paid >= final_total:
+        paid_in_full = total_paid >= final_total or final_total <= 0
+
+        if paid_in_full:
             invoice.status = "Paid"
         elif total_paid == 0:
             invoice.status = "Pending"
@@ -762,10 +764,12 @@ def log_payment(invoice_id):
             invoice.status = "Partial"
 
         pipeline = InvoicePipeline.query.get(invoice_id)
-        if pipeline:
-            if pipeline.current_stage in ("contact_customer", "order_placed", "payment_not_received"):
-                pipeline.current_stage = "payment_received"
-                pipeline.payment_received_at = pipeline.payment_received_at or datetime.now(central)
+        if paid_in_full:
+            payment_timestamp = payment.date_paid or datetime.now(central)
+            if pipeline:
+                if pipeline.current_stage in ("contact_customer", "order_placed", "payment_not_received"):
+                    pipeline.current_stage = "payment_received"
+                pipeline.payment_received_at = payment_timestamp
                 pipeline.updated_at = datetime.now(central)
                 db.session.add(InvoicePipelineHistory(
                     invoice_id=invoice_id,
@@ -788,30 +792,34 @@ def log_payment(invoice_id):
                         "payment_received",
                         actor_user_id=actor_user_id,
                     )
-        else:
-            pipeline = InvoicePipeline(
-                invoice_id=invoice_id,
-                current_stage="payment_received",
-                start_date=invoice.date_created.date() if invoice and invoice.date_created else today,
-                order_placed_at=invoice.date_created if invoice else datetime.now(central),
-                payment_received_at=datetime.now(central),
-            )
-            db.session.add(pipeline)
-            db.session.flush()
-            db.session.add(InvoicePipelineHistory(
-                invoice_id=invoice_id,
-                stage="payment_received",
-                action="status_change",
-                note="Payment received",
-                actor_user_id=actor_user_id,
-            ))
-            if account:
-                _notify_pipeline_followers(
-                    invoice,
-                    account,
-                    "payment_received",
-                    actor_user_id=actor_user_id,
+            else:
+                pipeline = InvoicePipeline(
+                    invoice_id=invoice_id,
+                    current_stage="payment_received",
+                    start_date=invoice.date_created.date() if invoice and invoice.date_created else today,
+                    order_placed_at=invoice.date_created if invoice else datetime.now(central),
+                    payment_received_at=payment_timestamp,
                 )
+                db.session.add(pipeline)
+                db.session.flush()
+                db.session.add(InvoicePipelineHistory(
+                    invoice_id=invoice_id,
+                    stage="payment_received",
+                    action="status_change",
+                    note="Payment received",
+                    actor_user_id=actor_user_id,
+                ))
+                if account:
+                    _notify_pipeline_followers(
+                        invoice,
+                        account,
+                        "payment_received",
+                        actor_user_id=actor_user_id,
+                    )
+        elif pipeline and pipeline.current_stage in ("contact_customer", "order_placed"):
+            pipeline.current_stage = "payment_not_received"
+            pipeline.payment_not_received_at = pipeline.payment_not_received_at or datetime.now(central)
+            pipeline.updated_at = datetime.now(central)
 
         create_audit_log(
             entity_type="payment",

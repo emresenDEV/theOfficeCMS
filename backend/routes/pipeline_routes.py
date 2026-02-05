@@ -108,16 +108,16 @@ def _effective_stage(invoice, pipeline):
     if not paid_in_full:
         return "payment_not_received"
 
-    order_date = pipeline.order_placed_at or invoice.date_created
-    if not order_date:
+    payment_date = pipeline.payment_received_at or latest_payment or invoice.date_updated or invoice.date_created
+    if not payment_date:
         return "payment_received"
 
-    days_since = (datetime.utcnow().date() - order_date.date()).days
-    if days_since >= 4:
-        return "order_delivered"
+    days_since = (datetime.utcnow().date() - payment_date.date()).days
     if days_since >= 3:
-        return "order_shipped"
+        return "order_delivered"
     if days_since >= 2:
+        return "order_shipped"
+    if days_since >= 1:
         return "order_packaged"
     return "payment_received"
 
@@ -178,13 +178,18 @@ def _ensure_pipeline(invoice):
     return pipeline
 
 
-def _suggested_dates(start_date):
+def _suggested_dates(start_date, payment_date=None):
     if not start_date:
         return {}
-    return {
+    suggested = {
         stage: (start_date + timedelta(days=offset)).isoformat()
         for stage, offset in STAGE_OFFSETS.items()
     }
+    if payment_date:
+        suggested["order_packaged"] = (payment_date + timedelta(days=1)).isoformat()
+        suggested["order_shipped"] = (payment_date + timedelta(days=2)).isoformat()
+        suggested["order_delivered"] = (payment_date + timedelta(days=3)).isoformat()
+    return suggested
 
 
 @pipeline_bp.route("/summary", methods=["GET"])
@@ -342,6 +347,7 @@ def pipeline_detail(invoice_id):
         base_date = pipeline.start_date
     elif invoice.date_created:
         base_date = invoice.date_created.date()
+    payment_date = pipeline.payment_received_at.date() if pipeline.payment_received_at else None
     payload = {
         "invoice": {
             "invoice_id": invoice.invoice_id,
@@ -362,7 +368,7 @@ def pipeline_detail(invoice_id):
         "effective_stage": effective_stage,
         "is_following": is_following,
         "history": history,
-        "suggested_dates": _suggested_dates(base_date),
+        "suggested_dates": _suggested_dates(base_date, payment_date),
     }
     return jsonify(payload), 200
 

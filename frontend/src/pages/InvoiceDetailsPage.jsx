@@ -396,6 +396,12 @@ const handleLogPayment = async () => {
             const updatedInvoice = await fetchInvoiceById(invoiceId);
             setInvoice(updatedInvoice);
             setPayments(updatedInvoice.payments || []);
+            const refreshedPipeline = await fetchPipelineDetail(invoiceId, actorId);
+            if (refreshedPipeline) {
+                setPipelineDetail(refreshedPipeline);
+                setPipelineStage(refreshedPipeline.effective_stage || refreshedPipeline.pipeline?.current_stage || "order_placed");
+                setPipelineFollowing(!!refreshedPipeline.is_following);
+            }
     
             // Reset form and close
             closePaymentModal();
@@ -1222,18 +1228,18 @@ if (!invoice)
                                 const suggested = pipelineDetail?.suggested_dates?.[stage.key];
                                 const actual = pipelineDetail?.pipeline?.[PIPELINE_STAGE_FIELDS[stage.key]];
                                 let computed = null;
-                                const baseSource = pipelineDetail?.pipeline?.order_placed_at || pipelineDetail?.pipeline?.start_date;
-                                const orderDate = baseSource ? new Date(baseSource) : null;
-                                if (!actual && orderDate) {
+                                const baseSource = pipelineDetail?.pipeline?.payment_received_at;
+                                const paymentDate = baseSource ? new Date(baseSource) : null;
+                                if (!actual && paymentDate) {
                                     if (stage.key === "order_packaged") {
-                                        orderDate.setDate(orderDate.getDate() + 2);
-                                        computed = orderDate;
+                                        paymentDate.setDate(paymentDate.getDate() + 1);
+                                        computed = paymentDate;
                                     } else if (stage.key === "order_shipped") {
-                                        orderDate.setDate(orderDate.getDate() + 3);
-                                        computed = orderDate;
+                                        paymentDate.setDate(paymentDate.getDate() + 2);
+                                        computed = paymentDate;
                                     } else if (stage.key === "order_delivered") {
-                                        orderDate.setDate(orderDate.getDate() + 4);
-                                        computed = orderDate;
+                                        paymentDate.setDate(paymentDate.getDate() + 3);
+                                        computed = paymentDate;
                                     }
                                 }
                                 return (
