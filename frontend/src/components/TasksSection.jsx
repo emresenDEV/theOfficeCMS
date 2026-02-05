@@ -1,16 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { formatDateInTimeZone } from "../utils/timezone";
 import { createTask, updateTask } from "../services/tasksService";
 
-const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks }) => {
+const TasksSection = ({ tasks, users, userId, userEmail, accountId, setTasks, refreshTasks }) => {
     const [searchTasks, setSearchTasks] = useState("");
     const [taskFilter, setTaskFilter] = useState("all");
     const [newTaskDescription, setNewTaskDescription] = useState("");
     const [assignedTo, setAssignedTo] = useState(null);
     const [assignedToSearch, setAssignedToSearch] = useState(""); // For user search input
     const [filteredUsers, setFilteredUsers] = useState([]); // Filtered list based on input
-    const [dueDate, setDueDate] = useState("");
+    const [dueDate, setDueDate] = useState(new Date().toISOString().split("T")[0]);
+    const [creating, setCreating] = useState(false);
+    const [taskToast, setTaskToast] = useState("");
+
+    useEffect(() => {
+        if (!taskToast) return;
+        const timeoutId = setTimeout(() => setTaskToast(""), 3000);
+        return () => clearTimeout(timeoutId);
+    }, [taskToast]);
 
     // Helper: Get Username from `created_by`
     const getCreatedByUsername = (creator) => {
@@ -54,29 +62,44 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
 
     // Create a New Task
     const handleCreateTask = async () => {
-        if (!newTaskDescription.trim()) return alert("❌ Task description cannot be empty.");
+        if (creating) return;
+        if (!newTaskDescription.trim()) {
+            setTaskToast("Task description is required.");
+            return;
+        }
+        if (!dueDate) {
+            setTaskToast("Due date is required.");
+            return;
+        }
 
         const taskData = {
             account_id: accountId,
             user_id: userId,
             assigned_to: assignedTo || userId,
             task_description: newTaskDescription.trim(),
-            due_date: dueDate || null,
+            due_date: dueDate,
             actor_user_id: userId,
+            actor_email: userEmail,
         };
 
         try {
+            setCreating(true);
             const response = await createTask(taskData);
-            if (response && response.success) {
+            if (response && response.task_id) {
                 setNewTaskDescription(""); // Clear form inputs
                 setAssignedTo(null);
                 setAssignedToSearch("");
-                setDueDate("");
+                setDueDate(new Date().toISOString().split("T")[0]);
+                setTaskToast("Task created.");
                 await refreshTasks(); // Refresh tasks list
+            } else {
+                setTaskToast("Task was not created. Please try again.");
             }
         } catch (error) {
             console.error("❌ Error creating task:", error);
-            alert("Failed to create task. Please try again.");
+            setTaskToast("Failed to create task. Please try again.");
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -110,11 +133,19 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
 
     // Toggle Task Completion Status
     const toggleTaskStatus = async (taskId, currentStatus) => {
+        const previous = tasks;
+        setTasks((prev) =>
+            prev.map((task) =>
+                task.task_id === taskId ? { ...task, is_completed: !currentStatus } : task
+            )
+        );
         try {
-            await updateTask(taskId, { is_completed: !currentStatus, actor_user_id: userId });
+            await updateTask(taskId, { is_completed: !currentStatus, actor_user_id: userId, actor_email: userEmail });
             await refreshTasks();
         } catch (error) {
             console.error("❌ Error updating task status:", error);
+            setTasks(previous);
+            setTaskToast("Could not update task status.");
         }
     };
 
@@ -127,6 +158,11 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
     return (
         <div className="mt-6 border border-border p-4 rounded-lg bg-card">
             <h2 className="text-xl font-semibold text-foreground">Tasks</h2>
+            {taskToast && (
+                <div className="mt-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                    {taskToast}
+                </div>
+            )}
 
             {/* Task Filter/Search */}
             <div className="flex justify-between items-center mb-3">
@@ -195,12 +231,14 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                     className="border border-border bg-card text-foreground p-2 rounded w-full"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
+                    onFocus={(e) => e.target.showPicker?.()}
                 />
                 <button
                     onClick={handleCreateTask}
-                    className="bg-primary text-primary-foreground px-3 py-2 rounded shadow-sm hover:bg-primary/90 transition-colors"
+                    className="bg-primary text-primary-foreground px-3 py-2 rounded shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-60"
+                    disabled={creating}
                 >
-                    Create
+                    {creating ? "Creating..." : "Create"}
                 </button>
             </div>
 
@@ -273,6 +311,7 @@ TasksSection.propTypes = {
         })
     ).isRequired,
     userId: PropTypes.number.isRequired,
+    userEmail: PropTypes.string,
     accountId: PropTypes.number.isRequired,
     setTasks: PropTypes.func.isRequired,
     refreshTasks: PropTypes.func.isRequired,

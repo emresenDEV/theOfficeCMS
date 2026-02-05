@@ -403,6 +403,7 @@ const AccountDetailsPage = ({ user }) => {
                             tasks={tasks}
                             users={users}  
                             userId={user?.user_id ?? user?.id ?? 0}  
+                            userEmail={user?.email}
                             accountId={account?.account_id || 0}  
                             setTasks={setTasks}
                             refreshTasks={refreshTasks}

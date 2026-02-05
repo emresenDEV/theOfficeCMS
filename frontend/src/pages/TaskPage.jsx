@@ -61,8 +61,18 @@ useEffect(() => {
             const fetchedTasks = await fetchTasks(currentUserId);
             const fetchedAccounts = await fetchAccounts();
             const fetchedUsers = await fetchUsers();
-            const fetchedContacts = await fetchContacts();
-            const fetchedInvoices = await fetchAllInvoices();
+            let fetchedContacts = [];
+            let fetchedInvoices = [];
+            try {
+                fetchedContacts = await fetchContacts();
+            } catch (err) {
+                console.error("❌ Error fetching contacts:", err);
+            }
+            try {
+                fetchedInvoices = await fetchAllInvoices();
+            } catch (err) {
+                console.error("❌ Error fetching invoices:", err);
+            }
 
             // Use fetchedUsers directly instead of referencing `users`
             const updatedTasks = fetchedTasks.map((task) => ({
@@ -185,10 +195,14 @@ const handleTaskCompletion = (task) => {
         const timeoutId = setTimeout(async () => {
             try {
             const updatedTask = { ...task, is_completed: true, actor_user_id: currentUserId, actor_email: user.email };
-                await updateTask(task.task_id, updatedTask);
+                const saved = await updateTask(task.task_id, updatedTask);
+                if (!saved) {
+                    setTaskToast("Could not complete task. Please try again.");
+                    return;
+                }
 
                 setTasks((prevTasks) => prevTasks.filter((t) => t.task_id !== task.task_id));
-                setCompletedTasks((prevCompletedTasks) => [...prevCompletedTasks, updatedTask]);
+                setCompletedTasks((prevCompletedTasks) => [...prevCompletedTasks, { ...task, is_completed: true }]);
 
                 console.log(`✅ Task ${task.task_id} marked as Completed`);
             } catch (error) {
@@ -211,10 +225,14 @@ const handleTaskCompletion = (task) => {
     (async () => {
         try {
         const updatedTask = { ...task, is_completed: false, actor_user_id: currentUserId, actor_email: user.email };
-            await updateTask(task.task_id, updatedTask);
+            const saved = await updateTask(task.task_id, updatedTask);
+            if (!saved) {
+                setTaskToast("Could not undo task. Please try again.");
+                return;
+            }
 
             setCompletedTasks((prevCompletedTasks) => prevCompletedTasks.filter((t) => t.task_id !== task.task_id));
-            setTasks((prevTasks) => [...prevTasks, updatedTask]);
+            setTasks((prevTasks) => [...prevTasks, { ...task, is_completed: false }]);
 
             console.log(`✅ Task ${task.task_id} marked as Active`);
         } catch (error) {
