@@ -30,49 +30,51 @@ const PastDueInvoicesPage = ({ user }) => {
     
 
     return (
-        <div className="p-6">
+        <div className="px-4 py-4 sm:px-6 sm:py-6">
             <h1 className="text-2xl font-bold mb-4 text-foreground">Past Due Invoices</h1>
 
                 {invoices.length > 0 ? (
-                    <table className="w-full border border-border text-foreground">
-                        <thead>
-                            <tr className="bg-muted">
-                                <th className="p-2 border border-border">Invoice #</th>
-                                <th className="p-2 border border-border">Account</th>
-                                <th className="p-2 border border-border">Amount</th>
-                                <th className="p-2 border border-border">Due Date</th>
-                                <th className="p-2 border border-border">Payment Method</th>
-                                <th className="p-2 border border-border">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {invoices.map(inv => (
-                                <tr key={inv.invoice_id} className="border border-border text-center">
-                                    <td className="p-2">{inv.invoice_id}</td>
-                                    <td className="p-2">{inv.account_id}</td>
-                                    <td className="p-2">${(inv.amount ?? 0).toFixed(2)}</td> {/* ✅ Prevent `toFixed` error */}
-                                    <td className="p-2">
-                                        {inv.due_date
-                                            ? formatDateInTimeZone(inv.due_date, user, {
-                                                month: "2-digit",
-                                                day: "2-digit",
-                                                year: "numeric",
-                                            })
-                                            : "N/A"}
-                                    </td> 
-                                    <td className="p-2">{inv.payment_method || "N/A"}</td>
-                                    <td className="p-2">
-                                        <button 
-                                            className="text-primary underline"
-                                            onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
-                                        >
-                                            View Details
-                                        </button>
-                                    </td>
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                        <table className="min-w-[820px] w-full text-foreground">
+                            <thead>
+                                <tr className="bg-muted">
+                                    <th className="p-2 border border-border text-left">Invoice #</th>
+                                    <th className="p-2 border border-border text-left">Account</th>
+                                    <th className="p-2 border border-border text-left">Amount</th>
+                                    <th className="p-2 border border-border text-left">Due Date</th>
+                                    <th className="p-2 border border-border text-left">Payment Method</th>
+                                    <th className="p-2 border border-border text-left">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {invoices.map(inv => (
+                                    <tr key={inv.invoice_id} className="border border-border text-left">
+                                        <td className="p-2">{inv.invoice_id}</td>
+                                        <td className="p-2">{inv.account_id}</td>
+                                        <td className="p-2">${(inv.amount ?? 0).toFixed(2)}</td>
+                                        <td className="p-2">
+                                            {inv.due_date
+                                                ? formatDateInTimeZone(inv.due_date, user, {
+                                                    month: "2-digit",
+                                                    day: "2-digit",
+                                                    year: "numeric",
+                                                })
+                                                : "N/A"}
+                                        </td> 
+                                        <td className="p-2">{inv.payment_method || "N/A"}</td>
+                                        <td className="p-2">
+                                            <button 
+                                                className="text-primary underline"
+                                                onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
+                                            >
+                                                View Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : (
                     <p className="text-muted-foreground">No past due invoices found.</p>
                 )}

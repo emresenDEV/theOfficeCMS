@@ -252,7 +252,7 @@ const AccountDetailsPage = ({ user }) => {
     }, null);
 
     return (
-        <div className="p-6 max-w-6xl mx-auto bg-card border border-border shadow-lg rounded-lg">
+        <div className="mx-auto max-w-6xl rounded-lg border border-border bg-card px-4 py-4 shadow-lg sm:px-6 sm:py-6">
             {contactsToast && (
                 <div className="fixed right-6 bottom-6 z-50 rounded-md border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
                     {contactsToast}
@@ -430,7 +430,7 @@ const AccountDetailsPage = ({ user }) => {
                                 <p className="mt-3 text-sm text-muted-foreground">No contacts linked to this account.</p>
                             ) : (
                                 <div className="mt-4 overflow-x-auto">
-                                    <table className="w-full text-sm">
+                                    <table className="min-w-[840px] w-full text-sm">
                                         <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                                             <tr>
                                                 <th className="px-3 py-2 text-left">Name</th>
@@ -566,7 +566,7 @@ const AccountDetailsPage = ({ user }) => {
                                 {purchaseHistory.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">No purchase history available.</p>
                                 ) : (
-                                    <table className="w-full text-sm">
+                                    <table className="min-w-[640px] w-full text-sm">
                                         <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                                             <tr>
                                                 <th className="px-3 py-2 text-left">Item</th>
@@ -620,7 +620,7 @@ const AccountDetailsPage = ({ user }) => {
                     onClick={() => setInteractionModal(null)}
                 >
                     <div
-                        className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg"
+                        className="w-full max-w-lg rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between">

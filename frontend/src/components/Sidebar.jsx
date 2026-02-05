@@ -102,7 +102,7 @@ const Sidebar = ({ user, handleLogout, isOpen, toggleSidebar }) => {
         <aside
             className={cn(
                 "fixed md:relative top-0 left-0 z-40 flex h-screen min-h-screen flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-300",
-                collapsed ? "w-16" : "w-64",
+                collapsed ? "w-16" : "w-[82vw] max-w-[18rem] sm:w-64",
                 isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
             )}
         >

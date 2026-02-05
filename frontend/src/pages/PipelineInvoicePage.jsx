@@ -152,22 +152,22 @@ const PipelineInvoicePage = ({ user }) => {
   };
 
   if (loading) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading pipeline...</div>;
+    return <div className="p-4 sm:p-6 text-sm text-muted-foreground">Loading pipeline...</div>;
   }
 
   if (!detail) {
-    return <div className="p-6 text-sm text-muted-foreground">Pipeline not found.</div>;
+    return <div className="p-4 sm:p-6 text-sm text-muted-foreground">Pipeline not found.</div>;
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-4 sm:px-6 sm:py-6">
       {toast && (
-        <div className="fixed right-6 bottom-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+        <div className="fixed right-4 bottom-4 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg sm:right-6 sm:bottom-6">
           {toast}
         </div>
       )}
 
-      <div className="rounded-lg border border-border bg-card p-6 shadow-lg">
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <button
@@ -291,10 +291,10 @@ const PipelineInvoicePage = ({ user }) => {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-6 shadow-lg">
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-lg">
         <h2 className="text-lg font-semibold text-foreground">Timeline</h2>
         <div className="mt-3 overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
+          <table className="min-w-[640px] w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left">Stage</th>
@@ -323,7 +323,7 @@ const PipelineInvoicePage = ({ user }) => {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-6 shadow-lg">
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-lg">
         <h2 className="text-lg font-semibold text-foreground">History</h2>
         <div className="mt-4 space-y-3">
           {formattedHistory.length === 0 ? (

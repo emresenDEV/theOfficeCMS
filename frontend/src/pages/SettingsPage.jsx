@@ -132,7 +132,7 @@ const SettingsPage = ({ user }) => {
   };
 
   return (
-    <div className="flex-1 p-6">
+    <div className="flex-1 px-4 py-4 sm:px-6 sm:py-6">
       <h1 className="text-2xl font-bold text-left text-foreground">Settings</h1>
 
         {/* Theme Selection */}

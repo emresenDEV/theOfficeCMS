@@ -176,7 +176,7 @@ const CreateNewAccountPage = ({ user }) => {
     
 
     return (
-        <div className="p-6 max-w-4xl mx-auto bg-card border border-border shadow-lg rounded-lg">
+        <div className="mx-auto max-w-4xl rounded-lg border border-border bg-card px-4 py-4 shadow-lg sm:px-6 sm:py-6">
             <h1 className="text-2xl font-bold text-foreground">Create New Account</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
             <input

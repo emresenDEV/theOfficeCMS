@@ -121,7 +121,7 @@ return (
         <input 
             type="number"
             placeholder="Invoice ID (Optional)"
-            className="border border-border bg-card text-foreground p-2 rounded w-1/4 appearance-none"
+            className="border border-border bg-card text-foreground p-2 rounded w-full sm:w-1/4 appearance-none"
             value={inputInvoiceId}
             onChange={(e) => setInputInvoiceId(e.target.value)}
             pattern="[0-9]*"
@@ -137,8 +137,8 @@ return (
     </div>
 
     {/* Notes Table */}
-    <div className="overflow-y-auto h-48 border border-border rounded-lg">
-        <table className="w-full text-foreground">
+    <div className="overflow-auto h-48 border border-border rounded-lg">
+        <table className="min-w-[900px] w-full text-foreground">
         <thead className="sticky top-0 bg-card shadow-sm">
             <tr>
             <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">User</th>

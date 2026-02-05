@@ -143,12 +143,12 @@ const handleSubmit = async (e) => {
     };
 
 
-if (!account) return <p className="p-6 text-muted-foreground">Loading...</p>;
+if (!account) return <p className="px-4 py-4 text-muted-foreground sm:px-6 sm:py-6">Loading...</p>;
 
 const totals = calculateTotals();
 
 return (
-    <div className="p-6 max-w-6xl mx-auto bg-card border border-border shadow-lg rounded-lg">
+    <div className="mx-auto max-w-6xl rounded-lg border border-border bg-card px-4 py-4 shadow-lg sm:px-6 sm:py-6">
     <div className="flex justify-between mb-6">
         <button
         onClick={() => navigate(`/accounts/details/${accountId}`)}

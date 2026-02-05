@@ -520,7 +520,7 @@ const AdminPage = ({ user }) => {
   };
 
   return (
-    <div className="p-6">
+    <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Admin Console</h1>
@@ -735,7 +735,7 @@ const AdminPage = ({ user }) => {
           <div className="rounded-md border border-border bg-card p-4 shadow-card">
             <h3 className="text-lg font-semibold text-foreground">Users</h3>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -968,7 +968,7 @@ const AdminPage = ({ user }) => {
           <div className="rounded-md border border-border bg-card p-4 shadow-card">
             <h3 className="text-lg font-semibold text-foreground">Accounts</h3>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1224,7 +1224,7 @@ const AdminPage = ({ user }) => {
           <div className="rounded-md border border-border bg-card p-4 shadow-card">
             <h3 className="text-lg font-semibold text-foreground">Invoices</h3>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1392,7 +1392,7 @@ const AdminPage = ({ user }) => {
           <div className="rounded-md border border-border bg-card p-4 shadow-card">
             <h3 className="text-lg font-semibold text-foreground">Tasks</h3>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1671,7 +1671,7 @@ const AdminPage = ({ user }) => {
           <div className="rounded-md border border-border bg-card p-4 shadow-card">
             <h3 className="text-lg font-semibold text-foreground">Calendar Events</h3>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -1861,7 +1861,7 @@ const AdminPage = ({ user }) => {
           <div className="rounded-md border border-border bg-card p-4 shadow-card">
             <h3 className="text-lg font-semibold text-foreground">Payments</h3>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="min-w-[720px] w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">

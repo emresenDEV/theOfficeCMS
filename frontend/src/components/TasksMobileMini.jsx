@@ -270,7 +270,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
             {/* Create Task Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-                    <div className="bg-card p-6 rounded-lg w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto border border-border">
+                    <div className="bg-card p-4 sm:p-6 rounded-lg w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto border border-border">
                         <CreateTaskMobileForm
                             user={user}
                             closeForm={() => setShowCreateModal(false)}

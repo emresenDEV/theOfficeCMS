@@ -343,10 +343,11 @@ def update_task(task_id):
     if "is_followup" in data:
         task.is_followup = data["is_followup"]
 
+    notification_link = f"/tasks/{task.task_id}"
+    contact_link = f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else notification_link
+
     if assigned_before != task.assigned_to:
         account = Account.query.get(task.account_id) if task.account_id else None
-        notification_link = f"/tasks/{task.task_id}"
-        contact_link = f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else notification_link
 
         create_notification(
             user_id=task.assigned_to,

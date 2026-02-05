@@ -263,8 +263,8 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                     </div>
 
                     {/* Tasks Table */}
-                    <div className="max-h-[350px] overflow-y-auto">
-                        <table className="w-full">
+                    <div className="max-h-[350px] overflow-auto">
+                        <table className="min-w-[800px] w-full">
                             <thead className="sticky top-0 bg-muted/40">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">

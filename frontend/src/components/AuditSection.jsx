@@ -82,7 +82,7 @@ const AuditSection = ({ title, filters, limit = 50 }) => {
         <p className="mt-4 text-sm text-muted-foreground">No audit entries yet.</p>
       ) : (
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="min-w-[900px] w-full text-sm">
             <thead className="sticky top-0 bg-muted/40">
               <tr>
                 <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">

@@ -136,14 +136,14 @@ const ContactsPage = ({ user }) => {
   };
 
   return (
-    <div className="flex-1 p-6">
+    <div className="flex-1 px-4 py-4 sm:px-6 sm:py-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Contacts</h1>
           <p className="text-sm text-muted-foreground">Search and manage company contacts.</p>
         </div>
         <button
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground sm:w-auto"
           onClick={() => setShowCreate((prev) => !prev)}
         >
           {showCreate ? "Close" : "+ New Contact"}
@@ -286,7 +286,7 @@ const ContactsPage = ({ user }) => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-[760px] w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-3 py-2 text-left">Contact</th>

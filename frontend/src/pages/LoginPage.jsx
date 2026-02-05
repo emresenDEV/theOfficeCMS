@@ -31,7 +31,7 @@ const LoginPage = ({ setUser }) => {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
-            <div className="bg-card border border-border p-6 rounded shadow-md w-96">
+            <div className="bg-card border border-border p-4 sm:p-6 rounded shadow-md w-96 max-w-[90vw]">
                 <h2 className="text-2xl font-semibold text-center mb-4 text-foreground">Login</h2>
                 {error && <p className="text-red-500 text-center">{error}</p>}
                 

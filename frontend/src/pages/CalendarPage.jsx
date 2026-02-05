@@ -229,7 +229,7 @@ const CalendarPage = ({ user }) => {
 
     
     return (
-        <div className="bg-background min-h-screen p-6">
+        <div className="bg-background min-h-screen px-4 py-4 sm:px-6 sm:py-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">Calendar</h1>

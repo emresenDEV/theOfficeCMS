@@ -309,7 +309,7 @@ const Dashboard = ({ user }) => {
             {/* MODAL FOR CREATE EVENT */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-                    <div className="bg-card p-6 rounded-lg w-full max-w-3xl shadow-lg">
+                    <div className="bg-card p-4 sm:p-6 rounded-lg w-full max-w-3xl shadow-lg">
                         <CreateCalendarEvent
                             userId={userData.user_id}
                             setEvents={setEvents}

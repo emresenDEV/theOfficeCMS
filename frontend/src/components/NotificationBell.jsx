@@ -75,7 +75,7 @@ const NotificationBell = ({ user }) => {
             </button>
 
             {open && (
-                <div className="absolute right-0 z-40 mt-2 w-80 rounded-md border border-border bg-popover shadow-lg">
+                <div className="absolute right-0 z-40 mt-2 w-[90vw] max-w-sm rounded-md border border-border bg-popover shadow-lg sm:w-80">
                     <div className="flex items-center justify-between border-b border-border px-4 py-2">
                         <span className="text-sm font-semibold text-foreground">Notifications</span>
                         {notifications.length > 0 && (

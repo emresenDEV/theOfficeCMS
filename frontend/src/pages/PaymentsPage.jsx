@@ -212,7 +212,7 @@ const PaymentsPage = ({ user }) => {
                             required
                         />
                     </div>
-                    <button className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+                    <button className="mt-4 w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground sm:w-auto">
                         Log Payment
                     </button>
                 </form>
@@ -220,7 +220,7 @@ const PaymentsPage = ({ user }) => {
                 <div className="rounded-md border border-border bg-card p-4 shadow-card">
                     <h2 className="text-lg font-semibold text-foreground">Recent Payments</h2>
                     <div className="mt-4 overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="min-w-[640px] w-full text-sm">
                             <thead className="bg-muted/40">
                                 <tr>
                                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">

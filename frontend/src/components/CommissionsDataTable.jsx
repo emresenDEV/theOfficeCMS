@@ -16,8 +16,8 @@ const CommissionsDataTable = ({ viewMode, data }) => {
     return (
         <div className="mt-6">
             <h2 className="text-lg font-bold mb-2 text-foreground">📊 Commission Breakdown</h2>
-            <div className="border border-border rounded-md overflow-hidden bg-card shadow">
-                <table className="w-full text-left text-foreground">
+            <div className="border border-border rounded-md overflow-x-auto bg-card shadow">
+                <table className="min-w-[360px] w-full text-left text-foreground">
                     <thead className="bg-muted text-sm uppercase">
                         <tr>
                             <th className="px-4 py-2">Period</th>

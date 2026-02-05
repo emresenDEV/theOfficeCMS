@@ -14,38 +14,40 @@ const AssignedAccountsPage = ({ user }) => {
     }, [user?.id]);
 
     return (
-        <div className="p-6">
+        <div className="px-4 py-4 sm:px-6 sm:py-6">
             <h1 className="text-2xl font-bold mb-4 text-foreground">Assigned Accounts</h1>
                 {accounts.length > 0 ? (
-                    <table className="w-full border border-border text-foreground">
-                        <thead>
-                            <tr className="bg-muted">
-                                <th className="p-2 border border-border">Account #</th>
-                                <th className="p-2 border border-border">Business Name</th>
-                                <th className="p-2 border border-border">Contact Name</th>
-                                <th className="p-2 border border-border">Phone</th>
-                                <th className="p-2 border border-border">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {accounts.map(acc => (
-                                <tr key={acc.account_id} className="border border-border text-center">
-                                    <td className="p-2">{acc.account_id}</td>
-                                    <td className="p-2">{acc.business_name}</td>
-                                    <td className="p-2">{acc.contact_name}</td>
-                                    <td className="p-2">{acc.phone_number}</td>
-                                    <td className="p-2">
-                                        <button 
-                                            className="text-primary underline"
-                                            onClick={() => navigate(`/account/${acc.account_id}`)}
-                                        >
-                                            View Details
-                                        </button>
-                                    </td>
+                    <div className="overflow-x-auto rounded-lg border border-border">
+                        <table className="min-w-[720px] w-full text-foreground">
+                            <thead>
+                                <tr className="bg-muted">
+                                    <th className="p-2 border border-border text-left">Account #</th>
+                                    <th className="p-2 border border-border text-left">Business Name</th>
+                                    <th className="p-2 border border-border text-left">Contact Name</th>
+                                    <th className="p-2 border border-border text-left">Phone</th>
+                                    <th className="p-2 border border-border text-left">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {accounts.map(acc => (
+                                    <tr key={acc.account_id} className="border border-border text-left">
+                                        <td className="p-2">{acc.account_id}</td>
+                                        <td className="p-2">{acc.business_name}</td>
+                                        <td className="p-2">{acc.contact_name}</td>
+                                        <td className="p-2">{acc.phone_number}</td>
+                                        <td className="p-2">
+                                            <button 
+                                                className="text-primary underline"
+                                                onClick={() => navigate(`/account/${acc.account_id}`)}
+                                            >
+                                                View Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : (
                     <p className="text-muted-foreground">No assigned accounts found.</p>
                 )}

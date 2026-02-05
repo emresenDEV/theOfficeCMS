@@ -115,7 +115,7 @@ const CommissionsPage = ({ user }) => {
     console.log("📄 Related Accounts Data:", commissions);  //debugging
 
 return (
-    <div className="bg-card p-6">
+    <div className="bg-card p-4 sm:p-6">
         <div className="flex min-h-screen">
             <div className="flex-1">
                 <h1 className="text-2xl font-bold text-foreground pb-4">Commissions</h1>

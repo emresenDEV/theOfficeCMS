@@ -185,8 +185,8 @@ return (
     </div>
 
     {showConfirmDelete && (
-        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-        <div className="bg-card p-6 rounded shadow-md w-80">
+        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center px-4">
+        <div className="bg-card p-4 sm:p-6 rounded shadow-md w-[90vw] max-w-sm">
             <p className="mb-4 font-semibold">
             Are you sure you want to delete this payment?
             </p>

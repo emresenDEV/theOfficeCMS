@@ -743,17 +743,17 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
   };
 
   if (loading) {
-    return <div className={embedded ? "p-4 text-sm text-muted-foreground" : "p-6 text-sm text-muted-foreground"}>Loading contact...</div>;
+    return <div className={embedded ? "p-4 text-sm text-muted-foreground" : "px-4 py-4 text-sm text-muted-foreground sm:px-6 sm:py-6"}>Loading contact...</div>;
   }
 
   if (!contact || !form) {
-    return <div className={embedded ? "p-4 text-sm text-muted-foreground" : "p-6 text-sm text-muted-foreground"}>Contact not found.</div>;
+    return <div className={embedded ? "p-4 text-sm text-muted-foreground" : "px-4 py-4 text-sm text-muted-foreground sm:px-6 sm:py-6"}>Contact not found.</div>;
   }
 
   return (
-    <div className={embedded ? "p-4" : "flex-1 p-6"}>
+    <div className={embedded ? "p-4" : "flex-1 px-4 py-4 sm:px-6 sm:py-6"}>
       {toast && (
-        <div className="fixed right-6 bottom-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+        <div className="fixed right-4 bottom-4 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg sm:right-6 sm:bottom-6">
           {toast.message}
         </div>
       )}
@@ -1317,7 +1317,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                     <p className="text-sm text-muted-foreground">No open followups.</p>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                      <table className="min-w-[700px] w-full text-sm">
                         <thead className="text-xs uppercase text-muted-foreground">
                           <tr>
                             <th className="px-3 py-2 text-left">Task</th>
@@ -1445,7 +1445,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                     <p className="text-sm text-muted-foreground">No tasks logged yet.</p>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
+                      <table className="min-w-[720px] w-full text-sm">
                         <thead className="text-xs uppercase text-muted-foreground">
                           <tr>
                             <th className="px-3 py-2 text-left">Task</th>
@@ -1516,7 +1516,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
 
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-6 shadow-lg">
+          <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Edit Contact</h2>
@@ -1681,7 +1681,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
 
       {editInteraction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg">
+          <div className="w-full max-w-lg rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Edit Interaction</h2>
@@ -1776,7 +1776,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
 
       {showAccountModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-6 shadow-lg">
+          <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Move to New Company</h2>
@@ -1853,7 +1853,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
 
       {followupCompleteTask && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg">
+          <div className="w-full max-w-lg rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Complete Follow-up</h2>

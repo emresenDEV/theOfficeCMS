@@ -126,7 +126,7 @@ const QuickAddModal = ({ open, onClose, user }) => {
       }}
     >
       <div
-        className="w-full max-w-xl rounded-lg border border-border bg-card p-6 shadow-lg"
+        className="w-full max-w-xl rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

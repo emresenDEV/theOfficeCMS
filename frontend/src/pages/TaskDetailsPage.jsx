@@ -221,7 +221,7 @@ const TaskDetailsPage = ({ user }) => {
 
     if (!task) {
         return (
-            <div className="p-6">
+            <div className="px-4 py-4 sm:px-6 sm:py-6">
                 <p className="text-muted-foreground">Task not found.</p>
                 <button
                     className="mt-4 rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground"
@@ -280,7 +280,7 @@ const TaskDetailsPage = ({ user }) => {
         : [];
 
     return (
-        <div className="p-6 max-w-4xl mx-auto bg-card border border-border shadow-lg rounded-lg">
+        <div className="mx-auto max-w-4xl rounded-lg border border-border bg-card px-4 py-4 shadow-lg sm:px-6 sm:py-6">
             {toast && (
                 <div className="mb-4 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
                     {toast}

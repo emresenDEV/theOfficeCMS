@@ -264,6 +264,17 @@ const formatDate = (rawDate) => {
     return formatted === "—" ? "N/A" : formatted;
 };
 
+const formatDateTime = (rawDate) => {
+    const formatted = formatDateInTimeZone(rawDate, user, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+    return formatted === "—" ? "N/A" : formatted;
+};
+
 const refreshInvoiceTasks = async () => {
     const tasks = await fetchTasksByInvoice(invoiceId);
     setInvoiceTasks(tasks || []);
@@ -557,15 +568,20 @@ const handleAddServiceSave = async () => {
 if (!invoice)
     return <p className="text-center text-muted-foreground">Loading invoice details...</p>;
 
+const paymentTotal = payments.reduce((sum, payment) => sum + (Number(payment.total_paid) || 0), 0);
+const invoiceTotal = Number(invoice.final_total || 0);
+const remainingBalance = Math.max(invoiceTotal - paymentTotal, 0);
+const isPaidInFull = invoiceTotal <= 0 || paymentTotal >= invoiceTotal;
+
     return (
-        <div className="p-6 max-w-6xl mx-auto bg-card border border-border shadow-lg rounded-lg">
+        <div className="mx-auto max-w-6xl rounded-lg border border-border bg-card px-4 py-4 shadow-lg sm:px-6 sm:py-6">
             {pipelineToast && (
-                <div className="fixed right-6 bottom-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+                <div className="fixed right-4 bottom-4 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg sm:right-6 sm:bottom-6">
                     {pipelineToast}
                 </div>
             )}
             {paymentToast && (
-                <div className="fixed right-6 bottom-16 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+                <div className="fixed right-4 bottom-14 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg sm:right-6 sm:bottom-16">
                     {paymentToast}
                 </div>
             )}
@@ -616,17 +632,17 @@ if (!invoice)
                 </div>
             </div>
 
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <h1 className="text-3xl font-bold text-left">{invoice.business_name}</h1>
             <h1 className="text-3xl font-bold text-right">Invoice #{invoice.invoice_id}</h1>
             </div>
             {/* Date Created and Updated */}
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <p>Created: {formatDate(invoice.date_created)}</p>
             <p>Updated: {formatDate(invoice.date_updated)}</p>
             </div>
 
-            <div className="flex justify-between mb-6">
+            <div className="flex flex-wrap justify-between gap-4 mb-6">
                 <div className="text-left">
                     <p className="text-lg font-semibold">{invoice.business_name}</p>
                     {invoice.contact_name && (
@@ -812,8 +828,8 @@ if (!invoice)
                     </button>
                 )}
             </div>
-            <div className="overflow-y-auto max-h-64 border rounded-lg">
-                <table className="w-full">
+            <div className="overflow-auto max-h-64 border rounded-lg">
+                <table className="min-w-[900px] w-full">
                 <thead className="sticky top-0 bg-card shadow-sm">
                     <tr>
                     <th className="font-bold p-2 border-b border-r text-left">Service</th>
@@ -1074,7 +1090,7 @@ if (!invoice)
                         <div className="mt-4 rounded-lg border border-border bg-background p-3">
                             <p className="text-sm font-semibold text-foreground mb-2">Service Breakdown</p>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-xs">
+                                <table className="min-w-[640px] w-full text-xs">
                                     <thead className="bg-muted/40 text-[11px] uppercase text-muted-foreground">
                                         <tr>
                                             <th className="px-2 py-1 text-left">Service</th>
@@ -1115,6 +1131,86 @@ if (!invoice)
                                 </table>
                             </div>
                         </div>
+
+                        {payments.length > 0 && (
+                            <div className="mt-4 rounded-lg border border-border bg-background p-3">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-foreground">Payment Summary</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Total paid: {formatCurrency(paymentTotal)} • Remaining: {formatCurrency(remainingBalance)}
+                                        </p>
+                                    </div>
+                                    <span
+                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                            isPaidInFull ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                                        }`}
+                                    >
+                                        {isPaidInFull ? "Paid in Full" : "Partial Payment"}
+                                    </span>
+                                </div>
+                                <div className="mt-3 overflow-x-auto">
+                                    <table className="min-w-[760px] w-full text-xs">
+                                        <thead className="bg-muted/40 text-[11px] uppercase text-muted-foreground">
+                                            <tr>
+                                                <th className="px-2 py-1 text-left">Date Paid</th>
+                                                <th className="px-2 py-1 text-left">Logged By</th>
+                                                <th className="px-2 py-1 text-right">Amount</th>
+                                                <th className="px-2 py-1 text-left">Status</th>
+                                                <th className="px-2 py-1 text-left">Method</th>
+                                                <th className="px-2 py-1 text-left">Last 4</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            {payments.map((payment) => {
+                                                const loggedByName = [
+                                                    payment.logged_by_first_name,
+                                                    payment.logged_by_last_name,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(" ")
+                                                    .trim();
+                                                const loggedBy =
+                                                    loggedByName ||
+                                                    payment.logged_by_username ||
+                                                    payment.logged_by ||
+                                                    "—";
+                                                const methodLabel =
+                                                    payment.method_name ||
+                                                    payment.payment_method ||
+                                                    "—";
+                                                return (
+                                                    <tr key={payment.payment_id}>
+                                                        <td className="px-2 py-1 text-muted-foreground">
+                                                            {formatDateTime(payment.date_paid)}
+                                                        </td>
+                                                        <td className="px-2 py-1 text-muted-foreground">{loggedBy}</td>
+                                                        <td className="px-2 py-1 text-right text-muted-foreground">
+                                                            {formatCurrency(payment.total_paid || 0)}
+                                                        </td>
+                                                        <td className="px-2 py-1">
+                                                            <span
+                                                                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                                                    isPaidInFull
+                                                                        ? "bg-emerald-100 text-emerald-700"
+                                                                        : "bg-amber-100 text-amber-700"
+                                                                }`}
+                                                            >
+                                                                {isPaidInFull ? "Paid in Full" : "Partial"}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-2 py-1 text-muted-foreground">{methodLabel}</td>
+                                                        <td className="px-2 py-1 text-muted-foreground">
+                                                            {payment.last_four_payment_method || "—"}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
 
                     </div>
 
@@ -1352,8 +1448,8 @@ if (!invoice)
                                 </button>
                             </div>
 
-                            <div className="mt-4 overflow-y-auto max-h-64 border border-border rounded-lg">
-                                <table className="w-full text-foreground text-sm">
+                            <div className="mt-4 overflow-auto max-h-64 border border-border rounded-lg">
+                                <table className="min-w-[700px] w-full text-foreground text-sm">
                                     <thead className="sticky top-0 bg-card shadow-sm">
                                         <tr>
                                             <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Task</th>
@@ -1482,7 +1578,7 @@ if (!invoice)
                     onClick={closePaymentModal}
                 >
                     <div
-                        className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg"
+                        className="w-full max-w-lg rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between">

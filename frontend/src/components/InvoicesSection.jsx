@@ -135,8 +135,8 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
             </div>
 
             {/* ✅ Invoices Table */}
-            <div className="overflow-y-auto h-48 border border-border rounded-lg">
-                <table className="w-full text-foreground">
+            <div className="overflow-auto h-48 border border-border rounded-lg">
+                <table className="min-w-[720px] w-full text-foreground">
                     <thead className="sticky top-0 bg-card shadow-sm">
                         <tr>
                             <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">ID</th>

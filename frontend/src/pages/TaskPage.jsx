@@ -561,7 +561,7 @@ return (
         {!isMobile && (
         <>
         {/* Active Tasks */}
-        <div className="bg-card border border-border p-6 rounded-lg shadow-md mt-6">
+        <div className="bg-card border border-border p-4 sm:p-6 rounded-lg shadow-md mt-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="text-lg font-semibold text-foreground">Active Tasks</h2>
             <button
@@ -571,7 +571,8 @@ return (
                 {createdSortOrder === "desc" ? "Newest First" : "Oldest First"}
             </button>
         </div>
-        <table className="w-full border-collapse">
+        <div className="overflow-x-auto">
+        <table className="min-w-[900px] w-full border-collapse">
             <thead className="bg-muted text-foreground">
             <tr>
                 <th className="p-3 text-left">Task</th>
@@ -680,6 +681,7 @@ return (
             ))}
             </tbody>
         </table>
+        </div>
         {editError && (
             <div className="mt-3 rounded-md border border-border bg-muted px-3 py-2 text-sm text-red-600">
                 {editError}
@@ -688,7 +690,7 @@ return (
         </div>
 
         {/* Completed Tasks */}
-        <div className="bg-card border border-border p-6 rounded-lg shadow-md mt-6">
+        <div className="bg-card border border-border p-4 sm:p-6 rounded-lg shadow-md mt-6">
         <button
             className="flex items-center text-lg font-semibold w-full text-left text-foreground"
             onClick={() => setShowCompleted(!showCompleted)}
@@ -697,8 +699,9 @@ return (
             Completed Tasks
         </button>
         {showCompleted && (
-            <table className="w-full border-collapse mt-4">
-            <thead className="bg-muted text-foreground">
+            <div className="overflow-x-auto">
+            <table className="min-w-[900px] w-full border-collapse mt-4">
+                <thead className="bg-muted text-foreground">
                 <tr>
                 <th className="p-3 text-left">Task</th>
                 <th className="p-3 text-left">Created</th>
@@ -794,8 +797,9 @@ return (
 
                 </tr>
                 ))}
-            </tbody>
+                </tbody>
             </table>
+            </div>
         )}
         </div>
         </>
@@ -803,7 +807,7 @@ return (
     </div>
     {editModalTask && editForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg">
+            <div className="w-full max-w-lg rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6">
                 <div className="flex items-start justify-between gap-3">
                     <div>
                         <h2 className="text-lg font-semibold text-foreground">Edit Task</h2>

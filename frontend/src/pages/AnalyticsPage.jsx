@@ -12,7 +12,7 @@ const AnalyticsPage = ({ user }) => {
     }, [user]);
 
     if (!profile) {
-        return <p className="p-6 text-muted-foreground">Loading analytics...</p>;
+        return <p className="px-4 py-4 text-muted-foreground sm:px-6 sm:py-6">Loading analytics...</p>;
     }
 
     return (

@@ -163,8 +163,8 @@ export const AccountsTable = ({ user }) => {
                     </div>
 
                     {/* Table */}
-                    <div className="max-h-[450px] overflow-y-auto">
-                        <table className="w-full">
+                    <div className="max-h-[450px] overflow-auto">
+                        <table className="min-w-[900px] w-full">
                             <thead className="sticky top-0 bg-background">
                                 <tr>
                                     <SortableHeader label="Business Name" sortKeyName="business_name" />

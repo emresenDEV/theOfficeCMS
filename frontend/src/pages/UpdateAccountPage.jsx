@@ -361,7 +361,7 @@ const UpdateAccountPage = () => {
     
 
     return (
-        <div className="max-w-2xl mx-auto p-6 bg-card border border-border shadow-lg rounded-lg">
+        <div className="mx-auto max-w-2xl rounded-lg border border-border bg-card px-4 py-4 shadow-lg sm:px-6 sm:py-6">
             {/* 🔙 Back Button */}
             <div className="flex justify-between items-center mb-4">
                 <button

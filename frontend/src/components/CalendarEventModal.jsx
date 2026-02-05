@@ -121,7 +121,7 @@ const handleDelete = () => {
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto flex items-center justify-center p-4">
-            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card p-6 shadow-xl transition-all">
+            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card p-4 sm:p-6 shadow-xl transition-all">
             <Dialog.Title className="text-lg font-medium text-foreground mb-2">
                 {initialData?.event_id ? "Edit Event" : "Create Event"}
             </Dialog.Title>

@@ -107,7 +107,7 @@ const EditInvoice = ({ user }) => {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-card border border-border rounded shadow-md">
+    <div className="mx-auto max-w-3xl rounded border border-border bg-card px-4 py-4 shadow-md sm:px-6 sm:py-6">
       {/* Header with Back and Edit buttons */}
       <div className="flex items-center justify-between mb-6">
         <button

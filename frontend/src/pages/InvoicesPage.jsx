@@ -101,7 +101,7 @@ const InvoicesPage = ({ user }) => {
     }, [filters, invoices, showAll, currentUserId]);
 
     return (
-        <div className="p-6">
+        <div className="px-4 py-4 sm:px-6 sm:py-6">
             <h1 className="text-2xl font-bold text-foreground">Invoices</h1>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-muted-foreground">
@@ -109,7 +109,7 @@ const InvoicesPage = ({ user }) => {
                 </p>
                 <button
                     type="button"
-                    className="rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/40"
+                    className="w-full rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/40 sm:w-auto"
                     onClick={() => {
                         const next = !showAll;
                         setShowAll(next);
@@ -204,58 +204,60 @@ const InvoicesPage = ({ user }) => {
             </div>
 
                 {filteredInvoices.length > 0 ? (
-                    <table className="w-full border border-border mt-4 text-foreground">
-                        <thead>
-                            <tr className="bg-muted">
-                                <th className="p-2 border border-border">Invoice #</th>
-                                <th className="p-2 border border-border">Account</th>
-                                <th className="p-2 border border-border">Sales Rep</th>
-                                <th className="p-2 border border-border">Amount</th>
-                                <th className="p-2 border border-border">Status</th>
-                                <th className="p-2 border border-border">Due Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredInvoices.map(inv => {
-                                const account = accountMap.get(inv.account_id);
-                                const rep = salesRepMap.get(inv.sales_rep_id);
-                                return (
-                                <tr key={inv.invoice_id} className="border border-border text-center">
-                                    <td className="p-2">
-                                        <button
-                                            className="text-primary underline"
-                                            onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
-                                        >
-                                            {inv.invoice_id}
-                                        </button>
-                                    </td>
-                                    <td className="p-2">
-                                        <button
-                                            className="text-primary underline"
-                                            onClick={() => navigate(`/accounts/details/${inv.account_id}`)}
-                                        >
-                                            {account?.business_name || `Account ${inv.account_id}`}
-                                        </button>
-                                    </td> 
-                                    <td className="p-2">
-                                        {rep ? `${rep.first_name} ${rep.last_name}` : "Unassigned"}
-                                    </td>
-                                    <td className="p-2">
-                                        ${Number(inv.final_total || 0).toLocaleString()}
-                                    </td>
-                                    <td className="p-2">{inv.status}</td>
-                                    <td className="p-2">{inv.due_date || "N/A"}</td>
+                    <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+                        <table className="min-w-[720px] w-full text-foreground">
+                            <thead>
+                                <tr className="bg-muted">
+                                    <th className="p-2 border border-border text-left">Invoice #</th>
+                                    <th className="p-2 border border-border text-left">Account</th>
+                                    <th className="p-2 border border-border text-left">Sales Rep</th>
+                                    <th className="p-2 border border-border text-left">Amount</th>
+                                    <th className="p-2 border border-border text-left">Status</th>
+                                    <th className="p-2 border border-border text-left">Due Date</th>
                                 </tr>
-                            )})}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredInvoices.map(inv => {
+                                    const account = accountMap.get(inv.account_id);
+                                    const rep = salesRepMap.get(inv.sales_rep_id);
+                                    return (
+                                    <tr key={inv.invoice_id} className="border border-border text-left">
+                                        <td className="p-2">
+                                            <button
+                                                className="text-primary underline"
+                                                onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
+                                            >
+                                                {inv.invoice_id}
+                                            </button>
+                                        </td>
+                                        <td className="p-2">
+                                            <button
+                                                className="text-primary underline"
+                                                onClick={() => navigate(`/accounts/details/${inv.account_id}`)}
+                                            >
+                                                {account?.business_name || `Account ${inv.account_id}`}
+                                            </button>
+                                        </td> 
+                                        <td className="p-2">
+                                            {rep ? `${rep.first_name} ${rep.last_name}` : "Unassigned"}
+                                        </td>
+                                        <td className="p-2">
+                                            ${Number(inv.final_total || 0).toLocaleString()}
+                                        </td>
+                                        <td className="p-2">{inv.status}</td>
+                                        <td className="p-2">{inv.due_date || "N/A"}</td>
+                                    </tr>
+                                )})}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : (
                     <p className="mt-4 text-muted-foreground">No invoices found.</p>
                 )}
 
                 <button 
                     onClick={() => navigate("/")} 
-                    className="mt-4 bg-primary text-primary-foreground p-2 rounded hover:bg-primary/90"
+                    className="mt-4 w-full rounded bg-primary p-2 text-primary-foreground hover:bg-primary/90 sm:w-auto"
                 >
                     Back to Dashboard
                 </button>
