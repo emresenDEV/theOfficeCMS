@@ -741,6 +741,7 @@ def log_payment(invoice_id):
                 
         # Automatically update invoice status
         invoice = Invoice.query.get(invoice_id)
+        account = Account.query.get(invoice.account_id) if invoice else None
         before_invoice = _serialize_invoice(invoice) if invoice else None
         payments = Payment.query.filter_by(invoice_id=invoice_id).all()
 
