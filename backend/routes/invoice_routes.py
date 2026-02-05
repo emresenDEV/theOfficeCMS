@@ -849,7 +849,7 @@ def log_payment(invoice_id):
 
         db.session.commit()
 
-        user = Users.query.get(payment.logged_by)
+        user = Users.query.filter_by(username=payment.logged_by).first()
 
         return jsonify({
             "message": "Payment logged",

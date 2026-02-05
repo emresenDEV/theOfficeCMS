@@ -53,6 +53,7 @@ const [paymentForm, setPaymentForm] = useState({
     last_four_payment_method: "",
     total_paid: "",
 });
+const [paymentToast, setPaymentToast] = useState("");
 const [loggedPayment, setLoggedPayment] = useState(null);
 const [payments, setPayments] = useState([]);
 const [services, setServices] = useState([]);
@@ -174,6 +175,12 @@ useEffect(() => {
 
     loadData();
 }, [invoiceId]);
+
+useEffect(() => {
+    if (!paymentToast) return;
+    const timer = setTimeout(() => setPaymentToast(""), 3000);
+    return () => clearTimeout(timer);
+}, [paymentToast]);
 
 useEffect(() => {
     async function loadPipeline() {
@@ -360,17 +367,27 @@ const handleLogPayment = async () => {
     try {
         const totalPaid = parseFloat(paymentForm.total_paid);
         if (!paymentForm.total_paid || Number.isNaN(totalPaid)) {
-            alert("Please enter the total paid amount.");
+            setPaymentToast("Please enter the total paid amount.");
+            return;
+        }
+        if (!paymentForm.payment_method) {
+            setPaymentToast("Please select a payment method.");
+            return;
+        }
+        const actorId = user?.user_id ?? user?.id;
+        const loggedBy = user?.username || user?.email || (actorId ? String(actorId) : null);
+        if (!actorId || !loggedBy) {
+            setPaymentToast("Missing user info to log payment.");
             return;
         }
         const payload = {
             account_id: invoice.account_id,
             sales_rep_id: invoice.sales_rep_id,
-            logged_by: user.id,
+            logged_by: loggedBy,
             payment_method: paymentForm.payment_method,
             last_four_payment_method: paymentForm.last_four_payment_method || null,
             total_paid: totalPaid,
-            actor_user_id: user.id,
+            actor_user_id: actorId,
             actor_email: user.email,
         };
     
@@ -383,14 +400,17 @@ const handleLogPayment = async () => {
             // Reset form and close
             closePaymentModal();
             setPaymentForm({
-            payment_method: "",
-            last_four_payment_method: "",
-            total_paid: "",
+                payment_method: "",
+                last_four_payment_method: "",
+                total_paid: "",
             });
+            setPaymentToast("Payment logged.");
+        } else {
+            setPaymentToast("Payment could not be logged. Please try again.");
         }
         } catch (error) {
         console.error("❌ Payment logging failed:", error);
-        alert("Error logging payment.");
+        setPaymentToast("Error logging payment.");
         }
     };
 
@@ -536,6 +556,11 @@ if (!invoice)
             {pipelineToast && (
                 <div className="fixed right-6 bottom-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
                     {pipelineToast}
+                </div>
+            )}
+            {paymentToast && (
+                <div className="fixed right-6 bottom-16 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+                    {paymentToast}
                 </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
