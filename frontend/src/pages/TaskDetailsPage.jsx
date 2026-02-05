@@ -233,6 +233,8 @@ const TaskDetailsPage = ({ user }) => {
         );
     }
 
+    const canEditTask = Number(task.user_id) === Number(currentUserId) || Number(task.assigned_to) === Number(currentUserId);
+
     const filteredAccounts = accountSearch.trim()
         ? accounts.filter((acc) =>
             acc.business_name?.toLowerCase().includes(accountSearch.toLowerCase())
@@ -351,9 +353,9 @@ const TaskDetailsPage = ({ user }) => {
                     <div className="flex items-center justify-between">
                         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Links</h2>
                         <button
-                            className="text-xs font-semibold text-primary hover:underline"
+                            className="text-xs font-semibold text-primary hover:underline disabled:text-muted-foreground"
                             onClick={() => setLinkEdit((prev) => !prev)}
-                            disabled={task.user_id !== currentUserId}
+                            disabled={!canEditTask}
                         >
                             {linkEdit ? "Close" : "Edit Links"}
                         </button>
@@ -560,14 +562,14 @@ const TaskDetailsPage = ({ user }) => {
                                 <button
                                     className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                                     onClick={handleSaveLinks}
-                                    disabled={linkSaving || task.user_id !== currentUserId}
+                                    disabled={linkSaving || !canEditTask}
                                 >
                                     {linkSaving ? "Saving..." : "Save Links"}
                                 </button>
                             </div>
-                            {task.user_id !== currentUserId && (
+                            {!canEditTask && (
                                 <p className="text-xs text-muted-foreground">
-                                    Only the task creator can edit links.
+                                    Only the task creator or assignee can edit links.
                                 </p>
                             )}
                         </div>
@@ -580,9 +582,9 @@ const TaskDetailsPage = ({ user }) => {
                     <div className="flex items-center justify-between">
                         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Task Details</h2>
                         <button
-                            className="text-xs font-semibold text-primary hover:underline"
+                            className="text-xs font-semibold text-primary hover:underline disabled:text-muted-foreground"
                             onClick={() => setEditOpen((prev) => !prev)}
-                            disabled={task.user_id !== currentUserId}
+                            disabled={!canEditTask}
                         >
                             {editOpen ? "Close" : "Edit Task"}
                         </button>
@@ -595,7 +597,7 @@ const TaskDetailsPage = ({ user }) => {
                                     value={editForm.task_description}
                                     onChange={(e) => setEditForm((prev) => ({ ...prev, task_description: e.target.value }))}
                                     placeholder="Task description"
-                                    disabled={task.user_id !== currentUserId}
+                                    disabled={!canEditTask}
                                 />
                                 <div className="grid gap-3 md:grid-cols-2">
                                     <input
@@ -604,7 +606,7 @@ const TaskDetailsPage = ({ user }) => {
                                         value={editForm.due_date}
                                         onChange={(e) => setEditForm((prev) => ({ ...prev, due_date: e.target.value }))}
                                         onFocus={(e) => e.target.showPicker?.()}
-                                        disabled={task.user_id !== currentUserId}
+                                        disabled={!canEditTask}
                                     />
                                     <div className="relative">
                                         <input
@@ -618,7 +620,7 @@ const TaskDetailsPage = ({ user }) => {
                                                 setEditAssigneeQuery(value);
                                                 setEditForm((prev) => ({ ...prev, assigned_to: value ? "" : prev.assigned_to }));
                                             }}
-                                            disabled={task.user_id !== currentUserId}
+                                            disabled={!canEditTask}
                                         />
                                         {editAssigneeOpen && filteredEditAssignees.length > 0 && editAssigneeQuery && (
                                             <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
@@ -650,16 +652,16 @@ const TaskDetailsPage = ({ user }) => {
                                 <button
                                     className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
                                     onClick={handleSave}
-                                    disabled={task.user_id !== currentUserId}
+                                    disabled={!canEditTask}
                                 >
                                     Save Changes
                                 </button>
                             </div>
                         </>
                     )}
-                    {task.user_id !== currentUserId && (
+                    {!canEditTask && (
                         <p className="mt-2 text-xs text-muted-foreground">
-                            Only the task creator can edit details.
+                            Only the task creator or assignee can edit details.
                         </p>
                     )}
                 </div>
