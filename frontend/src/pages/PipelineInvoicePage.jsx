@@ -113,18 +113,19 @@ const PipelineInvoicePage = ({ user }) => {
   }, [detail]);
 
   const computedTimelineDate = (stageKey) => {
-    if (!pipeline?.payment_received_at) return null;
-    const base = new Date(pipeline.payment_received_at);
+    const baseSource = pipeline?.order_placed_at || pipeline?.start_date || null;
+    if (!baseSource) return null;
+    const base = new Date(baseSource);
     if (stageKey === "order_packaged") {
-      base.setDate(base.getDate() + 1);
-      return base;
-    }
-    if (stageKey === "order_shipped") {
       base.setDate(base.getDate() + 2);
       return base;
     }
-    if (stageKey === "order_delivered") {
+    if (stageKey === "order_shipped") {
       base.setDate(base.getDate() + 3);
+      return base;
+    }
+    if (stageKey === "order_delivered") {
+      base.setDate(base.getDate() + 4);
       return base;
     }
     return null;

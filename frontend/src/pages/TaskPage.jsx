@@ -42,6 +42,26 @@ const [editAccountQuery, setEditAccountQuery] = useState("");
 const [editAccountOpen, setEditAccountOpen] = useState(false);
 const currentUserId = user?.user_id ?? user?.id ?? null;
 
+const refreshTaskLists = async () => {
+    const fetchedTasks = await fetchTasks(currentUserId);
+    const fetchedAccounts = accounts.length ? accounts : await fetchAccounts();
+    const fetchedUsers = await fetchUsers();
+
+    if (!accounts.length) setAccounts(fetchedAccounts);
+    if (!employees.length) setEmployees(fetchedUsers);
+
+    const updatedTasks = fetchedTasks.map((task) => ({
+        ...task,
+        business_name: task.account_id
+            ? fetchedAccounts.find((acc) => acc.account_id === task.account_id)?.business_name || "No Account"
+            : "No Account",
+        assigned_by_username: fetchedUsers.find((u) => u.user_id === task.user_id)?.username || "Unknown",
+    }));
+
+    setTasks(updatedTasks.filter((task) => !task.is_completed));
+    setCompletedTasks(updatedTasks.filter((task) => task.is_completed));
+};
+
 // Handle window resize for mobile detection
 useEffect(() => {
     const handleResize = () => {
@@ -201,8 +221,8 @@ const handleTaskCompletion = (task) => {
                     return;
                 }
 
-                setTasks((prevTasks) => prevTasks.filter((t) => t.task_id !== task.task_id));
-                setCompletedTasks((prevCompletedTasks) => [...prevCompletedTasks, { ...task, is_completed: true }]);
+                await refreshTaskLists();
+                setTaskToast("Task completed.");
 
                 console.log(`✅ Task ${task.task_id} marked as Completed`);
             } catch (error) {
@@ -231,8 +251,8 @@ const handleTaskCompletion = (task) => {
                 return;
             }
 
-            setCompletedTasks((prevCompletedTasks) => prevCompletedTasks.filter((t) => t.task_id !== task.task_id));
-            setTasks((prevTasks) => [...prevTasks, { ...task, is_completed: false }]);
+            await refreshTaskLists();
+            setTaskToast("Task marked active.");
 
             console.log(`✅ Task ${task.task_id} marked as Active`);
         } catch (error) {

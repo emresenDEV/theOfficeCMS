@@ -114,15 +114,24 @@ const TaskDetailsPage = ({ user }) => {
 
     const handleToggleComplete = async () => {
         if (!task) return;
+        const nextCompleted = !task.is_completed;
+        setTask((prev) => ({ ...prev, is_completed: nextCompleted }));
         const payload = {
-            is_completed: !task.is_completed,
+            is_completed: nextCompleted,
             actor_user_id: currentUserId,
             actor_email: user?.email,
         };
         const updated = await updateTask(task.task_id, payload);
-        if (updated) {
-            setTask((prev) => ({ ...prev, ...updated }));
+        if (!updated) {
+            setTask((prev) => ({ ...prev, is_completed: !nextCompleted }));
+            setToast("Could not update task status.");
+            return;
         }
+        const refreshed = await fetchTaskById(taskId);
+        if (refreshed) {
+            setTask(refreshed);
+        }
+        setToast(nextCompleted ? "Task marked complete." : "Task marked active.");
     };
 
     const handleSaveLinks = async () => {

@@ -1197,19 +1197,18 @@ if (!invoice)
                                 const suggested = pipelineDetail?.suggested_dates?.[stage.key];
                                 const actual = pipelineDetail?.pipeline?.[PIPELINE_STAGE_FIELDS[stage.key]];
                                 let computed = null;
-                                const paymentDate = pipelineDetail?.pipeline?.payment_received_at
-                                    ? new Date(pipelineDetail.pipeline.payment_received_at)
-                                    : null;
-                                if (!actual && paymentDate) {
+                                const baseSource = pipelineDetail?.pipeline?.order_placed_at || pipelineDetail?.pipeline?.start_date;
+                                const orderDate = baseSource ? new Date(baseSource) : null;
+                                if (!actual && orderDate) {
                                     if (stage.key === "order_packaged") {
-                                        paymentDate.setDate(paymentDate.getDate() + 1);
-                                        computed = paymentDate;
+                                        orderDate.setDate(orderDate.getDate() + 2);
+                                        computed = orderDate;
                                     } else if (stage.key === "order_shipped") {
-                                        paymentDate.setDate(paymentDate.getDate() + 2);
-                                        computed = paymentDate;
+                                        orderDate.setDate(orderDate.getDate() + 3);
+                                        computed = orderDate;
                                     } else if (stage.key === "order_delivered") {
-                                        paymentDate.setDate(paymentDate.getDate() + 3);
-                                        computed = paymentDate;
+                                        orderDate.setDate(orderDate.getDate() + 4);
+                                        computed = orderDate;
                                     }
                                 }
                                 return (

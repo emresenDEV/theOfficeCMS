@@ -153,6 +153,7 @@ const TasksSection = ({ tasks, users, userId, userEmail, accountId, setTasks, re
                 return;
             }
             await refreshTasks();
+            setTaskToast(!currentStatus ? "Task completed." : "Task reopened.");
         } catch (error) {
             console.error("❌ Error updating task status:", error);
             setTasks(previous);

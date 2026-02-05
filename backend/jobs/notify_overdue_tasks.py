@@ -176,24 +176,16 @@ def _advance_paid_pipelines(now):
         if final_total > 0 and total_paid < final_total:
             continue
 
-        payment_date = pipeline.payment_received_at
-        if not payment_date:
-            latest_payment = db.session.query(db.func.max(Payment.date_paid)).filter(
-                Payment.invoice_id == invoice.invoice_id
-            ).scalar()
-            payment_date = latest_payment
-            if payment_date:
-                pipeline.payment_received_at = payment_date
-
-        if not payment_date:
+        order_date = pipeline.order_placed_at or invoice.date_created
+        if not order_date:
             continue
 
-        days_since = (now.date() - payment_date.date()).days
-        if days_since >= 3:
+        days_since = (now.date() - order_date.date()).days
+        if days_since >= 4:
             target_stage = "order_delivered"
-        elif days_since >= 2:
+        elif days_since >= 3:
             target_stage = "order_shipped"
-        elif days_since >= 1:
+        elif days_since >= 2:
             target_stage = "order_packaged"
         else:
             target_stage = "payment_received"
