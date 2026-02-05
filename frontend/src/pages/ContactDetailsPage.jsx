@@ -520,7 +520,7 @@ const ContactDetailsPage = ({ user }) => {
                 </button>
                 <button
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    autosaveOverride === true ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+                    autosaveOverride === true ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   }`}
                   onClick={() => setOverride(true)}
                 >
@@ -528,7 +528,7 @@ const ContactDetailsPage = ({ user }) => {
                 </button>
                 <button
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    autosaveOverride === false ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
+                    autosaveOverride === false ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"
                   }`}
                   onClick={() => setOverride(false)}
                 >

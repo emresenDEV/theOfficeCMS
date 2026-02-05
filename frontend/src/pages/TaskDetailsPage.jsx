@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { format } from "date-fns";
-import { fetchTaskById, updateTask } from "../services/tasksService";
+import { formatDateInTimeZone, formatDateTimeInTimeZone } from "../utils/timezone";
+import { fetchTaskById, updateTask, fetchTaskNotes, createTaskNote } from "../services/tasksService";
 import { fetchUsers } from "../services/userService";
 import AuditSection from "../components/AuditSection";
 
@@ -12,19 +12,24 @@ const TaskDetailsPage = ({ user }) => {
     const [task, setTask] = useState(null);
     const [editForm, setEditForm] = useState(null);
     const [users, setUsers] = useState([]);
+    const [taskNotes, setTaskNotes] = useState([]);
+    const [newNote, setNewNote] = useState("");
+    const [noteSaving, setNoteSaving] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let active = true;
         const load = async () => {
             setLoading(true);
-            const [data, usersData] = await Promise.all([
+            const [data, usersData, notesData] = await Promise.all([
                 fetchTaskById(taskId),
                 fetchUsers(),
+                fetchTaskNotes(taskId),
             ]);
             if (active) {
                 setTask(data);
                 setUsers(usersData || []);
+                setTaskNotes(notesData || []);
                 setEditForm(data ? {
                     task_description: data.task_description || "",
                     due_date: data.due_date ? new Date(data.due_date).toISOString().split("T")[0] : "",
@@ -50,6 +55,23 @@ const TaskDetailsPage = ({ user }) => {
         if (updated) {
             setTask((prev) => ({ ...prev, ...updated }));
         }
+    };
+
+    const handleCreateNote = async () => {
+        if (!newNote.trim() || !task) return;
+        setNoteSaving(true);
+        const payload = {
+            user_id: user?.user_id ?? user?.id,
+            note_text: newNote.trim(),
+            actor_user_id: user?.user_id ?? user?.id,
+            actor_email: user?.email,
+        };
+        const created = await createTaskNote(task.task_id, payload);
+        if (created) {
+            setTaskNotes((prev) => [created, ...prev]);
+            setNewNote("");
+        }
+        setNoteSaving(false);
     };
 
     const handleSave = async () => {
@@ -139,7 +161,11 @@ const TaskDetailsPage = ({ user }) => {
                     <div className="mt-4 text-sm text-muted-foreground space-y-1">
                         <p>Status: {task.is_completed ? "Completed" : "Active"}</p>
                         <p>
-                            Due: {task.due_date ? format(new Date(task.due_date), "MMM d, yyyy") : "No due date"}
+                            Due: {task.due_date ? formatDateInTimeZone(task.due_date, user, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                            }) : "No due date"}
                         </p>
                         <p>Assigned To: {task.assigned_to_name || "Unassigned"}</p>
                         <p>Created By: {task.created_by || "Unknown"}</p>
@@ -189,17 +215,20 @@ const TaskDetailsPage = ({ user }) => {
                             value={editForm.task_description}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, task_description: e.target.value }))}
                             placeholder="Task description"
+                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
                         />
                         <input
                             type="date"
                             className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                             value={editForm.due_date}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, due_date: e.target.value }))}
+                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
                         />
                         <select
                             className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                             value={editForm.assigned_to}
                             onChange={(e) => setEditForm((prev) => ({ ...prev, assigned_to: e.target.value }))}
+                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
                         >
                             <option value="">Assign to</option>
                             {users.map((u) => (
@@ -213,12 +242,61 @@ const TaskDetailsPage = ({ user }) => {
                         <button
                             className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
                             onClick={handleSave}
+                            disabled={task.user_id !== (user?.user_id ?? user?.id)}
                         >
                             Save Changes
                         </button>
                     </div>
+                    {task.user_id !== (user?.user_id ?? user?.id) && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                            Only the task creator can edit details.
+                        </p>
+                    )}
                 </div>
             )}
+
+            <div className="mt-6 rounded-md border border-border bg-card p-4">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Task Notes</h2>
+                <div className="mt-3 flex flex-wrap gap-2">
+                    <input
+                        className="flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                        placeholder="Add a note..."
+                        value={newNote}
+                        onChange={(e) => setNewNote(e.target.value)}
+                    />
+                    <button
+                        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                        onClick={handleCreateNote}
+                        disabled={noteSaving}
+                    >
+                        {noteSaving ? "Saving..." : "Add Note"}
+                    </button>
+                </div>
+                <div className="mt-4 space-y-3">
+                    {taskNotes.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No notes yet.</p>
+                    ) : (
+                        taskNotes.map((note) => (
+                            <div key={note.task_note_id} className="rounded-md border border-border bg-muted/40 p-3">
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                    <span>{note.username || "Unknown user"}</span>
+                                    <span>
+                                        {note.created_at
+                                            ? formatDateTimeInTimeZone(note.created_at, user, {
+                                                month: "short",
+                                                day: "numeric",
+                                                hour: "numeric",
+                                                minute: "2-digit",
+                                            })
+                                            : ""}
+                                    </span>
+                                </div>
+                                <p className="mt-2 text-sm text-foreground">{note.note_text}</p>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
 
             <AuditSection
                 title="Task Audit Trail"

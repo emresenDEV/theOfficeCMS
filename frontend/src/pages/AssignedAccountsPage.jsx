@@ -36,7 +36,7 @@ const AssignedAccountsPage = ({ user }) => {
                                     <td className="p-2">{acc.phone_number}</td>
                                     <td className="p-2">
                                         <button 
-                                            className="text-blue-500 dark:text-blue-300 underline"
+                                            className="text-primary underline"
                                             onClick={() => navigate(`/account/${acc.account_id}`)}
                                         >
                                             View Details

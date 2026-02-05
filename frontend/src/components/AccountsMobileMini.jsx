@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { fetchAssignedAccounts, fetchAccountMetrics } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 
 const AccountsMobileMini = ({ user }) => {
     const navigate = useNavigate();
@@ -221,13 +221,17 @@ const AccountsMobileMini = ({ user }) => {
                                     <div className="flex justify-between items-start mb-2">
                                         <button
                                             onClick={() => navigate(`/accounts/details/${account.account_id}`)}
-                                            className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline text-left flex-1"
+                                            className="text-sm font-bold text-primary hover:text-primary/80 hover:underline text-left flex-1"
                                         >
                                             {account.business_name}
                                         </button>
                                         <div className="text-xs text-muted-foreground whitespace-nowrap ml-2">
                                             Last Invoice: {account.last_invoice_date
-                                                ? format(new Date(account.last_invoice_date), "MM/dd/yyyy")
+                                                ? formatDateInTimeZone(account.last_invoice_date, user, {
+                                                    month: "2-digit",
+                                                    day: "2-digit",
+                                                    year: "numeric",
+                                                })
                                                 : "N/A"
                                             }
                                         </div>

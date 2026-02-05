@@ -196,7 +196,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                             }}
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
                                 activeTab === "company"
-                                    ? "bg-blue-600 text-white"
+                                    ? "bg-primary text-primary-foreground"
                                     : "bg-muted text-muted-foreground hover:bg-muted"
                             }`}
                         >
@@ -209,7 +209,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                             }}
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
                                 activeTab === "branch"
-                                    ? "bg-blue-600 text-white"
+                                    ? "bg-primary text-primary-foreground"
                                     : "bg-muted text-muted-foreground hover:bg-muted"
                             }`}
                         >
@@ -222,7 +222,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                             }}
                             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2 rounded transition ${
                                 activeTab === "branchUsers"
-                                    ? "bg-blue-600 text-white"
+                                    ? "bg-primary text-primary-foreground"
                                     : "bg-muted text-muted-foreground hover:bg-muted"
                             }`}
                         >
@@ -264,7 +264,7 @@ const DashboardSalesChartMobile = ({ userData, allSalesReps }) => {
                                         }}
                                         className={`text-xs px-2 py-1 rounded transition ${
                                             selectedSalesReps.includes(repName)
-                                                ? "bg-purple-600 text-white"
+                                                ? "bg-primary text-primary-foreground"
                                                 : "bg-muted text-muted-foreground hover:bg-muted"
                                         }`}
                                     >

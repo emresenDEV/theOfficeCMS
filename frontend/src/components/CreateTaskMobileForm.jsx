@@ -183,7 +183,7 @@ const CreateTaskMobileForm = ({ user, closeForm, refreshTasks }) => {
                     </button>
                     <button
                         type="submit"
-                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+                        className="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60"
                         disabled={loading}
                     >
                         {loading ? "Creating..." : "Create Task"}

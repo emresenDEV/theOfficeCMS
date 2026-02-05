@@ -7,6 +7,7 @@ View,
 StyleSheet,
 } from "@react-pdf/renderer";
 import PropTypes from "prop-types";
+import { formatDateInTimeZone, formatDateTimeInTimeZone } from "../utils/timezone";
 
 // Styles
 const styles = StyleSheet.create({
@@ -56,12 +57,16 @@ new Intl.NumberFormat("en-US", {
 
 const formatDate = (rawDate) => {
 if (!rawDate) return "N/A";
-return new Date(rawDate).toLocaleDateString("en-US");
+return formatDateInTimeZone(rawDate, null, {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+});
 };
 
 const formatDateTime = (rawDate) => {
 if (!rawDate) return "N/A";
-return new Date(rawDate).toLocaleString("en-US", {
+return formatDateTimeInTimeZone(rawDate, null, {
     month: "2-digit",
     day: "2-digit",
     year: "numeric",

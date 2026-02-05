@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 import { fetchInvoices, fetchPaymentMethods, logInvoicePayment } from "../services/invoiceService";
 import { fetchAccounts } from "../services/accountService";
 import { fetchSalesReps } from "../services/userService";
@@ -172,7 +172,11 @@ const PaymentsPage = ({ user }) => {
                             {filteredInvoices.map((inv) => {
                                 const accountName =
                                     accountMap.get(inv.account_id)?.business_name || `Account ${inv.account_id}`;
-                                const dueDate = inv.due_date ? format(new Date(inv.due_date), "MMM d, yyyy") : "No due date";
+                                const dueDate = inv.due_date ? formatDateInTimeZone(inv.due_date, user, {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                }) : "No due date";
                                 return (
                                     <option key={inv.invoice_id} value={inv.invoice_id}>
                                         #{inv.invoice_id} • {accountName} • {inv.status} • Due {dueDate}
@@ -248,7 +252,13 @@ const PaymentsPage = ({ user }) => {
                                             ${Number(payment.total_paid || 0).toLocaleString()}
                                         </td>
                                         <td className="px-3 py-2 text-muted-foreground">
-                                            {payment.date_paid ? format(new Date(payment.date_paid), "MMM d, yyyy") : "—"}
+                                            {payment.date_paid
+                                                ? formatDateInTimeZone(payment.date_paid, user, {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })
+                                                : "—"}
                                         </td>
                                     </tr>
                                 ))}

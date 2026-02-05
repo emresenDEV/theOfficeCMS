@@ -3,6 +3,7 @@ import { fetchInvoicesByStatus } from "../services/invoiceService";
 import { fetchAccountById } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { formatDateInTimeZone } from "../utils/timezone";
 
 const UnpaidInvoicesPage = ({ user }) => {
     const [invoices, setInvoices] = useState([]);
@@ -49,16 +50,22 @@ const UnpaidInvoicesPage = ({ user }) => {
                                     <td className="p-2">{inv.id}</td>
                                     <td className="p-2">{accountNames[inv.account_id] || "Loading..."}</td>
                                     <td className="p-2">${inv.amount.toFixed(2)}</td>
-                                    <td className="p-2 text-yellow-500">{new Date(inv.due_date).toLocaleDateString()}</td>
+                                    <td className="p-2 text-muted-foreground">
+                                        {formatDateInTimeZone(inv.due_date, user, {
+                                            month: "2-digit",
+                                            day: "2-digit",
+                                            year: "numeric",
+                                        })}
+                                    </td>
                                     <td className="p-2">
                                         <button 
-                                            className="text-blue-500 dark:text-blue-300 underline mr-2"
+                                            className="text-primary underline mr-2"
                                             onClick={() => navigate(`/invoice/${inv.id}`)}
                                         >
                                             View Invoice
                                         </button>
                                         <button 
-                                            className="text-green-500 underline"
+                                            className="text-primary underline"
                                             onClick={() => navigate(`/account/${inv.account_id}`)}
                                         >
                                             Go to Account

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 
 const TaskListMobile = ({
     tasks = [],
@@ -103,7 +103,11 @@ const TaskListMobile = ({
 
                                 {/* Due Date Row */}
                                 <div className={`text-xs mb-3 font-medium ${getPriorityColor(task.due_date)}`}>
-                                    <>Due: {format(new Date(task.due_date), "MMM d, yyyy")}</>
+                                    <>Due: {formatDateInTimeZone(task.due_date, user, {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                    })}</>
                                 </div>
 
                                 {/* Account and Assigned By Row */}
@@ -113,7 +117,7 @@ const TaskListMobile = ({
                                         {task.business_name !== "No Account" ? (
                                             <button
                                                 onClick={() => onAccountClick(task.account_id)}
-                                                className="text-blue-600 hover:underline"
+                                                className="text-primary hover:underline"
                                             >
                                                 {task.business_name}
                                             </button>
@@ -193,7 +197,11 @@ const TaskListMobile = ({
 
                                     {/* Due Date */}
                                     <div className="text-xs text-muted-foreground mb-2">
-                                        {format(new Date(task.due_date), "MMM d, yyyy")}
+                                        {formatDateInTimeZone(task.due_date, user, {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                        })}
                                     </div>
 
                                     {/* Account Info */}
@@ -202,7 +210,7 @@ const TaskListMobile = ({
                                         {task.business_name !== "No Account" ? (
                                             <button
                                                 onClick={() => onAccountClick(task.account_id)}
-                                                className="text-blue-600 hover:underline"
+                                                className="text-primary hover:underline"
                                             >
                                                 {task.business_name}
                                             </button>
@@ -215,7 +223,7 @@ const TaskListMobile = ({
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => onTaskUndo(task)}
-                                            className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 flex-1"
+                                            className="text-xs px-3 py-1 rounded bg-secondary text-secondary-foreground hover:bg-secondary/80 flex-1"
                                         >
                                             Undo
                                         </button>
@@ -228,7 +236,7 @@ const TaskListMobile = ({
                                                     setConfirmDelete(task.task_id);
                                                 }
                                             }}
-                                            className="text-xs px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 flex-1"
+                                            className="text-xs px-3 py-1 rounded bg-destructive text-destructive-foreground hover:bg-destructive/90 flex-1"
                                         >
                                             {confirmDelete === task.task_id ? "Sure?" : "Delete"}
                                         </button>

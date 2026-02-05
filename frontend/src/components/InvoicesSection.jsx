@@ -1,7 +1,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 
 const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
     const navigate = useNavigate();
@@ -11,7 +11,11 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
     // Format Due Date (MM/DD/YYYY)
     const formatDueDate = (dateString) => {
         if (!dateString) return "N/A";
-        return format(new Date(dateString), "MM/dd/yyyy");
+        return formatDateInTimeZone(dateString, null, {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+        });
     };
 
     // Format Total Amount ($00,000.00)
@@ -86,25 +90,25 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                 <div>
                     <button 
                         onClick={() => setInvoiceFilter("Paid")}
-                        className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-colors"
+                        className="bg-secondary text-emerald-700 dark:text-emerald-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-secondary/80 transition-colors"
                     >
                         Paid
                     </button>
                     <button 
                         onClick={() => setInvoiceFilter("Past Due")}                            
-                        className="bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-rose-200 dark:hover:bg-rose-500/30 transition-colors"
+                        className="bg-secondary text-rose-700 dark:text-rose-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-secondary/80 transition-colors"
                     >
                         Past Due
                     </button>
                     <button 
                         onClick={() => setInvoiceFilter("Partial")} 
-                        className="bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-violet-200 dark:hover:bg-violet-500/30"
+                        className="bg-secondary text-violet-700 dark:text-violet-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-secondary/80"
                     >
                         Partial
                     </button>
                     <button 
                         onClick={() => setInvoiceFilter("Pending")} 
-                        className="bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-colors"
+                        className="bg-secondary text-amber-700 dark:text-amber-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-secondary/80 transition-colors"
                     >
                         Pending
                     </button>

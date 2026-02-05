@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import { format, isToday, isWithinInterval, addDays } from "date-fns";
+import { isToday, isWithinInterval, addDays } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 import { updateTask, createTask, fetchTasks } from "../services/tasksService";
 import { fetchAccounts } from "../services/accountService";
 import { fetchUsers } from "../services/userService";
@@ -292,7 +293,11 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                {format(new Date(task.due_date), "MMM d, yyyy")}
+                                                {formatDateInTimeZone(task.due_date, user, {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })}
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-sm text-muted-foreground">

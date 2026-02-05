@@ -94,6 +94,21 @@
 
    ---
 
+   ## Task Reminders (LaunchAgent on Mac Mini)
+
+   The task reminder/overdue job runs every 15 minutes via launchd.
+
+   ```bash
+   cp /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/com.theofficecms.taskreminders.plist ~/Library/LaunchAgents/
+   launchctl unload ~/Library/LaunchAgents/com.theofficecms.taskreminders.plist 2>/dev/null
+   launchctl load ~/Library/LaunchAgents/com.theofficecms.taskreminders.plist
+   launchctl list | grep theofficecms.taskreminders
+   ```
+
+   Notes:
+   - Runs automatically every 15 minutes and on login.
+   - Does not require restarting the Flask app.
+
    **Version:** 1.0.0 | **Updated:** November 25, 2025
    ENDOFFILE
 EOF

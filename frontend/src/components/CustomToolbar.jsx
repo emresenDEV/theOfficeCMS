@@ -42,7 +42,7 @@ return (
             onClick={() => onView(viewName)}
             className={`px-3 py-1 rounded text-sm sm:text-base ${
             view === viewName
-                ? "bg-blue-600 text-white"
+                ? "bg-primary text-primary-foreground"
                 : "bg-muted text-foreground hover:bg-muted/80"
             }`}
         >

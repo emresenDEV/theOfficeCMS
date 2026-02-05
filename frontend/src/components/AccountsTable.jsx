@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { fetchAssignedAccounts, fetchAccountMetrics } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 import { ArrowUpDown, Building2, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -181,7 +181,7 @@ export const AccountsTable = ({ user }) => {
                                         <td className="px-4 py-3">
                                             <Button
                                                 variant="link"
-                                                className="h-auto p-0 text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200"
+                                                className="h-auto p-0 text-sm font-medium text-primary hover:text-primary/80"
                                                 onClick={() => navigate(`/accounts/details/${acc.account_id}`)}
                                             >
                                                 <Building2 className="h-4 w-4 mr-2" />
@@ -201,7 +201,13 @@ export const AccountsTable = ({ user }) => {
                                             {acc.total_revenue ? `$${acc.total_revenue.toFixed(2)}` : "$0.00"}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-muted-foreground">
-                                            {acc.last_invoice_date ? format(new Date(acc.last_invoice_date), "MMM d, yyyy") : "N/A"}
+                                            {acc.last_invoice_date
+                                                ? formatDateInTimeZone(acc.last_invoice_date, user, {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })
+                                                : "N/A"}
                                         </td>
                                     </tr>
                                 ))}

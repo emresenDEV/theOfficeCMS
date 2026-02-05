@@ -1,14 +1,14 @@
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 import PropTypes from "prop-types";
 
 const AccountCardMobile = ({ account, onViewAccount }) => {
     return (
         <button
             onClick={() => onViewAccount(account.account_id)}
-            className="w-full border rounded-lg p-4 bg-card hover:bg-blue-50 transition text-left"
+            className="w-full border rounded-lg p-4 bg-card hover:bg-muted/60 transition text-left"
         >
             {/* Business Name - Clickable Button Style */}
-            <h2 className="text-base font-semibold text-blue-600 hover:text-blue-800 mb-3">
+            <h2 className="text-base font-semibold text-primary hover:text-primary/80 mb-3">
                 {account.business_name}
             </h2>
 
@@ -49,7 +49,11 @@ const AccountCardMobile = ({ account, onViewAccount }) => {
                     <div>
                         <span className="font-medium text-muted-foreground">Last Invoice:</span>
                         <span className="text-muted-foreground ml-2">
-                            {format(new Date(account.last_invoice_date), "MMM d, yyyy")}
+                            {formatDateInTimeZone(account.last_invoice_date, null, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                            })}
                         </span>
                     </div>
                 )}

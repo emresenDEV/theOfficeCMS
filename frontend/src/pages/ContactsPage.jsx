@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-import { fetchContacts, createContact } from "../services/contactService";
+import { fetchContacts, createContact, backfillContacts } from "../services/contactService";
 import { fetchAccounts } from "../services/accountService";
 import { fetchUsers } from "../services/userService";
 
@@ -16,6 +16,8 @@ const ContactsPage = ({ user }) => {
   const [ownerId, setOwnerId] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillMessage, setBackfillMessage] = useState("");
   const [createForm, setCreateForm] = useState({
     first_name: "",
     last_name: "",
@@ -98,6 +100,23 @@ const ContactsPage = ({ user }) => {
     if (created?.contact_id) {
       navigate(`/contacts/${created.contact_id}`);
     }
+  };
+
+  const handleBackfill = async () => {
+    if (!user?.user_id) return;
+    setBackfilling(true);
+    setBackfillMessage("");
+    const result = await backfillContacts({
+      actor_user_id: user.user_id,
+      actor_email: user.email,
+    });
+    if (result) {
+      const created = result.created ?? 0;
+      setBackfillMessage(created > 0 ? `Backfilled ${created} contact${created === 1 ? "" : "s"}.` : "No contacts were created. Add a contact to get started.");
+      const refreshed = await fetchContacts();
+      setContacts(refreshed);
+    }
+    setBackfilling(false);
   };
 
   return (
@@ -184,7 +203,7 @@ const ContactsPage = ({ user }) => {
           </div>
           <div className="mt-4 flex justify-end">
             <button
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               onClick={handleCreate}
               disabled={creating}
             >
@@ -230,7 +249,19 @@ const ContactsPage = ({ user }) => {
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading contacts...</p>
         ) : contacts.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No contacts found.</p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">No contacts found.</p>
+            <button
+              className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 disabled:opacity-60"
+              onClick={handleBackfill}
+              disabled={backfilling}
+            >
+              {backfilling ? "Backfilling..." : "Backfill from Accounts"}
+            </button>
+            {backfillMessage && (
+              <p className="text-xs text-muted-foreground">{backfillMessage}</p>
+            )}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

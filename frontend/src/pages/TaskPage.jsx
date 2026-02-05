@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { fetchTasks, createTask, updateTask, deleteTask, fetchDepartments, fetchEmployees, fetchUsers } from "../services/tasksService";
+import { fetchTasks, createTask, deleteTask, fetchDepartments, fetchEmployees, fetchUsers } from "../services/tasksService";
 import { fetchBranches } from "../services/branchService";
 import { fetchAccounts } from "../services/accountService";
 import { useLocation, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import CreateTaskComponent from "../components/CreateTaskComponent";
 import TaskListMobile from "../components/TaskListMobile";
@@ -329,7 +329,11 @@ return (
                     {task.task_description}
                 </td>
                 <td className="p-3 text-left">
-                    {format(new Date(task.due_date), "MM/dd/yyyy")}
+                    {formatDateInTimeZone(task.due_date, user, {
+                        month: "2-digit",
+                        day: "2-digit",
+                        year: "numeric",
+                    })}
                 </td>
 
 
@@ -414,7 +418,13 @@ return (
                     >
 
                     <td className="p-3 text-left">{task.task_description}</td>
-                    <td className="p-3 text-left">{format(new Date(task.due_date), "MM/dd/yyyy")}</td>
+                    <td className="p-3 text-left">
+                        {formatDateInTimeZone(task.due_date, user, {
+                            month: "2-digit",
+                            day: "2-digit",
+                            year: "numeric",
+                        })}
+                    </td>
                     <td className="p-3 text-center">{task.assigned_by_username}</td>
                     {/* <td className="p-3 text-center">
                         {users.find((u) => u.user_id === task.user_id)?.username || "Unknown"}

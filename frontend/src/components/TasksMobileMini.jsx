@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { format, isToday, isWithinInterval, addDays, isPast } from "date-fns";
+import { isToday, isWithinInterval, addDays, isPast } from "date-fns";
 import PropTypes from "prop-types";
-import { updateTask, fetchTasks } from "../services/tasksService";
+import { updateTask } from "../services/tasksService";
 import { fetchAccounts } from "../services/accountService";
 import { fetchUsers } from "../services/userService";
 import { useNavigate } from "react-router-dom";
 import CreateTaskMobileForm from "./CreateTaskMobileForm";
+import { formatDateInTimeZone } from "../utils/timezone";
 
 const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
     const navigate = useNavigate();
@@ -148,7 +149,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                     {!isCollapsed && (
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="text-sm px-2.5 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 font-bold"
+                            className="text-sm px-2.5 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
                             title="Create new task"
                         >
                             +
@@ -182,7 +183,11 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
 
                                     {/* Due Date - Red if past due, Green if future */}
                                     <div className={`text-xs mb-1 ${getDueDateColor(task)}`}>
-                                        Due: {format(new Date(task.due_date), "MMM d, yyyy")}
+                                        Due: {formatDateInTimeZone(task.due_date, user, {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                        })}
                                     </div>
 
                                     {/* Account - Button to navigate to account details or blank */}
@@ -193,7 +198,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                                                     e.stopPropagation();
                                                     navigate(`/accounts/details/${task.account_id}`);
                                                 }}
-                                                className="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                                                className="text-primary hover:text-primary/80 hover:underline font-semibold"
                                             >
                                                 Account: {task.business_name}
                                             </button>
@@ -217,7 +222,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                                         onClick={() => handleTaskCompletion(task)}
                                         className={`w-6 h-6 flex items-center justify-center rounded border-2 transition-colors ${
                                             completingTask[task.task_id]
-                                                ? "bg-green-500 border-green-500 text-white"
+                                                ? "bg-success border-success text-success-foreground"
                                                 : "border-border hover:border-foreground/40"
                                         }`}
                                         title={completingTask[task.task_id] ? `Undo (${completingTask[task.task_id]}s)` : "Mark complete"}
@@ -246,7 +251,7 @@ const TasksMobileMini = ({ tasks = [], user = {}, refreshTasks = () => {} }) => 
                                         disabled={!canEditTask(task)}
                                         className={`text-xs px-2 py-1 rounded transition-colors ${
                                             canEditTask(task)
-                                                ? "bg-blue-500 text-white hover:bg-blue-600"
+                                                ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                                                 : "bg-muted text-muted-foreground cursor-not-allowed"
                                         }`}
                                         title={canEditTask(task) ? "Edit task" : "Only creator can edit"}

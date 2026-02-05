@@ -137,14 +137,14 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                             <div className="flex gap-2">
                                 <button
                                     onClick={goToToday}
-                                    className="text-xs px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700 font-semibold"
+                                    className="text-xs px-2 py-1 rounded bg-secondary text-secondary-foreground hover:bg-secondary/80 font-semibold"
                                 >
                                     Today
                                 </button>
                                 {onCreateEvent && (
                                     <button
                                         onClick={() => onCreateEvent(DateTime.now())}
-                                        className="text-sm px-2.5 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 font-bold"
+                                        className="text-sm px-2.5 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 font-bold"
                                         title="Create new event"
                                     >
                                         +
@@ -155,7 +155,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                 <button
                                     onClick={() => setView("month")}
                                     className={`text-xs px-2 py-1 rounded ${
-                                        view === "month" ? "bg-blue-600 text-white" : "bg-muted"
+                                        view === "month" ? "bg-primary text-primary-foreground" : "bg-muted"
                                     }`}
                                 >
                                     Month
@@ -163,7 +163,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                 <button
                                     onClick={() => setView("week")}
                                     className={`text-xs px-2 py-1 rounded ${
-                                        view === "week" ? "bg-blue-600 text-white" : "bg-muted"
+                                        view === "week" ? "bg-primary text-primary-foreground" : "bg-muted"
                                     }`}
                                 >
                                     Week
@@ -171,7 +171,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                 <button
                                     onClick={() => setView("day")}
                                     className={`text-xs px-2 py-1 rounded ${
-                                        view === "day" ? "bg-blue-600 text-white" : "bg-muted"
+                                        view === "day" ? "bg-primary text-primary-foreground" : "bg-muted"
                                     }`}
                                 >
                                     Day
@@ -252,7 +252,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                                     {dayEvents.slice(0, 2).map((_, idx) => (
                                                         <div
                                                             key={idx}
-                                                            className="w-1 h-1 bg-blue-600 rounded-full"
+                                                            className="w-1 h-1 bg-primary rounded-full"
                                                         />
                                                     ))}
                                                     {dayEvents.length > 2 && (
@@ -292,7 +292,7 @@ const CalendarMobileMini = ({ events = [], onEventClick, onDateClick, onCreateEv
                                             onClick={() => setCurrentMonth(day)}
                                             className={`aspect-square flex items-center justify-center text-sm font-bold rounded border cursor-pointer transition ${
                                                 isToday
-                                                    ? "bg-blue-600 text-white border-blue-700"
+                                                    ? "bg-primary text-primary-foreground border-primary/90"
                                                     : "bg-card border-border hover:bg-muted text-foreground"
                                             }`}
                                         >

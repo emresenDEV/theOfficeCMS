@@ -168,7 +168,7 @@ const SettingsPage = ({ user }) => {
           <span className="font-semibold text-foreground">High Contrast Mode</span>
           <button
             className={`px-4 py-2 rounded-lg transition ${
-              highContrast ? "bg-yellow-500 text-black" : "bg-secondary text-secondary-foreground"
+              highContrast ? "bg-warning text-warning-foreground" : "bg-secondary text-secondary-foreground"
             }`}
             onClick={() => setHighContrast(!highContrast)}
           >
@@ -249,7 +249,7 @@ const SettingsPage = ({ user }) => {
           </div>
           <button
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-              contactsAutosave ? "bg-emerald-600 text-white" : "bg-secondary text-secondary-foreground"
+              contactsAutosave ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
             }`}
             onClick={() => saveContactsAutosave(!contactsAutosave)}
             disabled={contactsSaving}
@@ -262,7 +262,7 @@ const SettingsPage = ({ user }) => {
         <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-card p-4">
           <span className="font-semibold text-foreground">Reset Settings</span>
           <button
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90"
             onClick={resetSettings}
           >
             Reset to Default

@@ -223,7 +223,7 @@ const InvoicesPage = ({ user }) => {
                                 <tr key={inv.invoice_id} className="border border-border text-center">
                                     <td className="p-2">
                                         <button
-                                            className="text-blue-600 dark:text-blue-300 underline"
+                                            className="text-primary underline"
                                             onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
                                         >
                                             {inv.invoice_id}
@@ -231,7 +231,7 @@ const InvoicesPage = ({ user }) => {
                                     </td>
                                     <td className="p-2">
                                         <button
-                                            className="text-blue-600 dark:text-blue-300 underline"
+                                            className="text-primary underline"
                                             onClick={() => navigate(`/accounts/details/${inv.account_id}`)}
                                         >
                                             {account?.business_name || `Account ${inv.account_id}`}

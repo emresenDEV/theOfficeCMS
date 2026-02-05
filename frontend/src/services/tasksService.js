@@ -85,6 +85,28 @@ export const fetchTaskById = async (taskId) => {
     }
 };
 
+// Fetch Task Notes
+export const fetchTaskNotes = async (taskId) => {
+    try {
+        const response = await api.get(`/tasks/${taskId}/notes`);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Error fetching task notes for ${taskId}:`, error.response?.data || error.message);
+        return [];
+    }
+};
+
+// Create Task Note
+export const createTaskNote = async (taskId, payload) => {
+    try {
+        const response = await api.post(`/tasks/${taskId}/notes`, payload);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Error creating task note for ${taskId}:`, error.response?.data || error.message);
+        return null;
+    }
+};
+
 
 
 // Update a Task (Mark Complete / Edit)

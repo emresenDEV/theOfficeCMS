@@ -81,3 +81,13 @@ export const createContactInteraction = async (contactId, payload) => {
     return null;
   }
 };
+
+export const backfillContacts = async (payload = {}) => {
+  try {
+    const response = await api.post("/contacts/backfill", payload);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error backfilling contacts:", error.response?.data || error.message);
+    return null;
+  }
+};

@@ -47,7 +47,7 @@ const AccountsPageMobile = ({
                 {/* New Account Button - Full Width on Mobile */}
                 <button
                     onClick={onCreateNew}
-                    className="w-full bg-green-600 text-white px-4 py-2 rounded font-medium text-sm mb-4 hover:bg-green-700 transition"
+                    className="w-full bg-primary text-primary-foreground px-4 py-2 rounded font-medium text-sm mb-4 hover:bg-primary/90 transition"
                 >
                     + New Account
                 </button>
@@ -58,7 +58,7 @@ const AccountsPageMobile = ({
                         onClick={() => setSortBy("name")}
                         className={`text-xs px-3 py-1 rounded whitespace-nowrap transition ${
                             sortBy === "name"
-                                ? "bg-blue-600 text-white"
+                                ? "bg-primary text-primary-foreground"
                                 : "bg-muted text-muted-foreground hover:bg-muted"
                         }`}
                     >
@@ -68,7 +68,7 @@ const AccountsPageMobile = ({
                         onClick={() => setSortBy("date")}
                         className={`text-xs px-3 py-1 rounded whitespace-nowrap transition ${
                             sortBy === "date"
-                                ? "bg-blue-600 text-white"
+                                ? "bg-primary text-primary-foreground"
                                 : "bg-muted text-muted-foreground hover:bg-muted"
                         }`}
                     >
@@ -78,7 +78,7 @@ const AccountsPageMobile = ({
                         onClick={() => setSortBy("rep")}
                         className={`text-xs px-3 py-1 rounded whitespace-nowrap transition ${
                             sortBy === "rep"
-                                ? "bg-blue-600 text-white"
+                                ? "bg-primary text-primary-foreground"
                                 : "bg-muted text-muted-foreground hover:bg-muted"
                         }`}
                     >
@@ -111,7 +111,7 @@ const AccountsPageMobile = ({
                             {!searchQuery && (
                                 <button
                                     onClick={onCreateNew}
-                                    className="mt-4 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                    className="mt-4 text-primary hover:text-primary/80 text-sm font-medium"
                                 >
                                     Create your first account
                                 </button>

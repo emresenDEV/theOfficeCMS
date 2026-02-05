@@ -3,6 +3,7 @@ import { fetchInvoicesByStatus } from "../services/invoiceService";
 import { fetchAccountById } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { formatDateInTimeZone } from "../utils/timezone";
 
 const PaidInvoicesPage = ({ user }) => {
     const [invoices, setInvoices] = useState([]);
@@ -49,11 +50,19 @@ const PaidInvoicesPage = ({ user }) => {
                                     <td className="p-2">{inv.invoice_id}</td>
                                     <td className="p-2">{inv.account_id}</td>
                                     <td className="p-2">${inv.amount.toFixed(2)}</td>
-                                    <td className="p-2">{inv.date_paid !== "N/A" ? new Date(inv.date_paid).toLocaleDateString() : "N/A"}</td>
+                                    <td className="p-2">
+                                        {inv.date_paid !== "N/A"
+                                            ? formatDateInTimeZone(inv.date_paid, user, {
+                                                month: "2-digit",
+                                                day: "2-digit",
+                                                year: "numeric",
+                                            })
+                                            : "N/A"}
+                                    </td>
                                     <td className="p-2">{inv.payment_method || "N/A"}</td>
                                     <td className="p-2">
                                         <button 
-                                            className="text-blue-500 dark:text-blue-300 underline"
+                                            className="text-primary underline"
                                             onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
                                         >
                                             View Details

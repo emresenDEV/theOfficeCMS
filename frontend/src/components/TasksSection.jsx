@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 import { createTask, updateTask } from "../services/tasksService";
 
 const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks }) => {
@@ -45,7 +45,11 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
     // Format Date (MM/DD/YYYY)
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
-        return format(new Date(dateString), "MM/dd/yyyy");
+        return formatDateInTimeZone(dateString, null, {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+        });
     };
 
     // Create a New Task
@@ -136,13 +140,13 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 <div>
                     <button 
                         onClick={() => setTaskFilter("completed")} 
-                        className="bg-emerald-100 text-emerald-700 px-3 py-2 mx-1 rounded shadow-sm hover:bg-emerald-200 transition-colors"
+                        className="bg-secondary text-emerald-700 px-3 py-2 mx-1 rounded shadow-sm hover:bg-secondary/80 transition-colors"
                     >
                         Completed
                     </button>
                     <button 
                         onClick={() => setTaskFilter("incomplete")} 
-                        className="bg-rose-100 text-rose-700 px-3 py-2 mx-1 rounded shadow-sm hover:bg-rose-200 transition-colors"
+                        className="bg-secondary text-rose-700 px-3 py-2 mx-1 rounded shadow-sm hover:bg-secondary/80 transition-colors"
                     >
                         Incomplete
                     </button>

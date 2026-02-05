@@ -271,6 +271,14 @@ class Notes(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'))
     note_text = db.Column(db.Text, nullable=False)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+class TaskNotes(db.Model):
+    __tablename__ = "task_notes"
+    task_note_id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey("tasks.task_id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
+    note_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     
 class Payment(db.Model):
     __tablename__ = 'payments'

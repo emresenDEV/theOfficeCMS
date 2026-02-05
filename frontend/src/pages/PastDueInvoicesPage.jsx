@@ -3,6 +3,7 @@ import { fetchInvoicesByStatus } from "../services/invoiceService";
 import { fetchAccountById } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { formatDateInTimeZone } from "../utils/timezone";
 
 const PastDueInvoicesPage = ({ user }) => {
     const [invoices, setInvoices] = useState([]);
@@ -51,12 +52,18 @@ const PastDueInvoicesPage = ({ user }) => {
                                     <td className="p-2">{inv.account_id}</td>
                                     <td className="p-2">${(inv.amount ?? 0).toFixed(2)}</td> {/* ✅ Prevent `toFixed` error */}
                                     <td className="p-2">
-                                        {inv.due_date ? new Date(inv.due_date).toLocaleDateString() : "N/A"}
+                                        {inv.due_date
+                                            ? formatDateInTimeZone(inv.due_date, user, {
+                                                month: "2-digit",
+                                                day: "2-digit",
+                                                year: "numeric",
+                                            })
+                                            : "N/A"}
                                     </td> 
                                     <td className="p-2">{inv.payment_method || "N/A"}</td>
                                     <td className="p-2">
                                         <button 
-                                            className="text-blue-500 dark:text-blue-300 underline"
+                                            className="text-primary underline"
                                             onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
                                         >
                                             View Details

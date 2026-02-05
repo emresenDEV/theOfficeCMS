@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
+import { formatDateInTimeZone } from "../utils/timezone";
 import { fetchUserProfile } from "../services/userService";
 
 const EmployeesPage = ({ user }) => {
@@ -78,8 +79,22 @@ const EmployeesPage = ({ user }) => {
                     {/* Employment Details */}
                     <div className="mt-6">
                         <h2 className="text-xl font-semibold mb-4">Employment Details</h2>
-                        <p><span className="font-medium">Date Created:</span> {new Date(userData.date_created).toLocaleDateString()}</p>
-                        <p><span className="font-medium">Last Updated:</span> {new Date(userData.date_updated).toLocaleDateString()}</p>
+                        <p>
+                            <span className="font-medium">Date Created:</span>{" "}
+                            {formatDateInTimeZone(userData.date_created, null, {
+                                month: "2-digit",
+                                day: "2-digit",
+                                year: "numeric",
+                            })}
+                        </p>
+                        <p>
+                            <span className="font-medium">Last Updated:</span>{" "}
+                            {formatDateInTimeZone(userData.date_updated, null, {
+                                month: "2-digit",
+                                day: "2-digit",
+                                year: "numeric",
+                            })}
+                        </p>
                     </div>
                 </div>
         </div>

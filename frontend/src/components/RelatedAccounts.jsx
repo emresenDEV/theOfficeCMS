@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { formatDateInTimeZone } from "../utils/timezone";
 
 const RelatedAccounts = ({ commissions }) => {
     const navigate = useNavigate();
@@ -32,11 +33,11 @@ const RelatedAccounts = ({ commissions }) => {
             finalTotal: com.invoice.final_total ? Number(com.invoice.final_total).toFixed(2) : "0.00",
             commissionAmount: commissionAmount.toFixed(2),
             datePaid: com.date_paid
-                ? new Date(com.date_paid).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                    })
+                ? formatDateInTimeZone(com.date_paid, null, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                })
                 : "Not Paid",
             rawDate: com.date_paid,
         });
@@ -60,14 +61,14 @@ const RelatedAccounts = ({ commissions }) => {
                             <h2 className="text-lg font-bold">
                                 <button 
                                     onClick={() => navigate(`/accounts/details/${account.accountId}`)} 
-                                    className="text-blue-600 underline"
+                                    className="text-primary underline"
                                 >
                                     {account.accountName}
                                 </button>
                             </h2>
                             <button
                                 onClick={() => navigate(`/accounts/details/${account.accountId}`)}
-                                className="px-3 py-1 bg-blue-500 text-white rounded shadow"
+                                className="px-3 py-1 bg-primary text-primary-foreground rounded shadow"
                             >
                                 View Account
                             </button>
@@ -88,7 +89,7 @@ const RelatedAccounts = ({ commissions }) => {
                                                 Invoice{" "}
                                                 <button 
                                                     onClick={() => navigate(`/invoice/${invoice.invoiceId}`)} 
-                                                    className="text-blue-600 underline"
+                                                    className="text-primary underline"
                                                 >
                                                     #{invoice.invoiceId}
                                                 </button>
@@ -103,7 +104,7 @@ const RelatedAccounts = ({ commissions }) => {
                                         </div>
                                         <button
                                             onClick={() => navigate(`/invoice/${invoice.invoiceId}`)}
-                                            className="px-3 py-1 bg-muted text-foreground rounded shadow"
+                                            className="px-3 py-1 bg-secondary text-secondary-foreground rounded shadow"
                                         >
                                             View Invoice
                                         </button>

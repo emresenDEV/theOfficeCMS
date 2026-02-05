@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Tasks, Users, Account, ContactFollowers
+from models import Tasks, TaskNotes, Users, Account, ContactFollowers
 from database import db
 from notifications import create_notification
 from audit import create_audit_log
@@ -114,6 +114,77 @@ def get_task_by_id(task_id):
         "assigned_to_name": f"{assignee.first_name} {assignee.last_name}".strip() if assignee else None,
         "date_created": task.date_created.strftime("%Y-%m-%d %H:%M:%S") if task.date_created else None,
     }), 200
+
+
+@task_bp.route("/<int:task_id>/notes", methods=["GET"])
+def get_task_notes(task_id):
+    notes = db.session.query(TaskNotes, Users.username).join(
+        Users, TaskNotes.user_id == Users.user_id
+    ).filter(TaskNotes.task_id == task_id).order_by(TaskNotes.created_at.desc()).all()
+
+    return jsonify([
+        {
+            "task_note_id": note.TaskNotes.task_note_id,
+            "task_id": note.TaskNotes.task_id,
+            "user_id": note.TaskNotes.user_id,
+            "username": note.username,
+            "note_text": note.TaskNotes.note_text,
+            "created_at": note.TaskNotes.created_at.strftime("%Y-%m-%d %H:%M:%S") if note.TaskNotes.created_at else None,
+        }
+        for note in notes
+    ]), 200
+
+
+@task_bp.route("/<int:task_id>/notes", methods=["POST"])
+def create_task_note(task_id):
+    data = request.json or {}
+    user_id = data.get("user_id")
+    note_text = data.get("note_text")
+
+    if not user_id or not note_text:
+        return jsonify({"error": "user_id and note_text are required"}), 400
+
+    task = Tasks.query.get(task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
+    note = TaskNotes(
+        task_id=task_id,
+        user_id=user_id,
+        note_text=note_text,
+        created_at=db.func.current_timestamp(),
+    )
+    db.session.add(note)
+    db.session.flush()
+
+    create_audit_log(
+        entity_type="task_note",
+        entity_id=note.task_note_id,
+        action="create",
+        user_id=data.get("actor_user_id") or user_id,
+        user_email=data.get("actor_email"),
+        after_data={
+            "task_note_id": note.task_note_id,
+            "task_id": task_id,
+            "user_id": user_id,
+            "note_text": note_text,
+        },
+        account_id=task.account_id,
+        invoice_id=task.invoice_id,
+        contact_id=task.contact_id,
+    )
+
+    db.session.commit()
+
+    username = Users.query.get(user_id).username if user_id else None
+    return jsonify({
+        "task_note_id": note.task_note_id,
+        "task_id": note.task_id,
+        "user_id": note.user_id,
+        "username": username,
+        "note_text": note.note_text,
+        "created_at": note.created_at.strftime("%Y-%m-%d %H:%M:%S") if note.created_at else None,
+    }), 201
 
 # Fetch Tasks By Invoice ID
 @task_bp.route("/invoice/<int:invoice_id>", methods=["GET"])

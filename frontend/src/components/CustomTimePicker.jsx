@@ -86,7 +86,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
                                     key={hour}
                                     className={`p-2 text-center rounded-lg cursor-pointer ${
                                         selectedHour === String(hour)
-                                            ? "bg-blue-500 text-white"
+                                            ? "bg-primary text-primary-foreground"
                                             : "hover:bg-muted"
                                     }`}
                                     onClick={() => handleTimeChange(String(hour), selectedMinute, selectedPeriod)}
@@ -103,7 +103,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
                                     key={minute}
                                     className={`p-2 text-center rounded-lg cursor-pointer ${
                                         selectedMinute === minute
-                                            ? "bg-blue-500 text-white"
+                                            ? "bg-primary text-primary-foreground"
                                             : "hover:bg-muted"
                                     }`}
                                     onClick={() => handleTimeChange(selectedHour, minute, selectedPeriod)}
@@ -118,7 +118,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
                             <div
                                 className={`p-2 text-center rounded-lg cursor-pointer ${
                                     selectedPeriod === "AM"
-                                        ? "bg-blue-500 text-white"
+                                        ? "bg-primary text-primary-foreground"
                                         : "hover:bg-muted"
                                 }`}
                                 onClick={() => handleTimeChange(selectedHour, selectedMinute, "AM")}
@@ -128,7 +128,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
                             <div
                                 className={`p-2 text-center rounded-lg cursor-pointer ${
                                     selectedPeriod === "PM"
-                                        ? "bg-blue-500 text-white"
+                                        ? "bg-primary text-primary-foreground"
                                         : "hover:bg-muted"
                                 }`}
                                 onClick={() => handleTimeChange(selectedHour, selectedMinute, "PM")}

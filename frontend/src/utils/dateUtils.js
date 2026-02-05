@@ -1,27 +1,27 @@
-import { parse, format } from "date-fns";
-
-// For "YYYY-MM-DD HH:mm:ss.SSSSSS" format from DB
-const parseDBTimestamp = (rawDateTime) => {
-    if (!rawDateTime) return null;
-
-    // The database format: "2025-03-23 19:48:13.486595"
-    // We'll strip microseconds and parse the rest
-    const cleaned = rawDateTime.split(".")[0]; // Remove microseconds
-    return parse(cleaned, "yyyy-MM-dd HH:mm:ss", new Date());
-};
+import { format } from "date-fns";
+import { formatDateInTimeZone, formatDateTimeInTimeZone } from "./timezone";
 
 // Convert to MM/DD/YYYY
 export const formatDate = (rawDateTime) => {
-    const parsed = parseDBTimestamp(rawDateTime);
-    if (!parsed || isNaN(parsed)) return "N/A";
-    return format(parsed, "MM/dd/yyyy");
+    const formatted = formatDateInTimeZone(rawDateTime, null, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+    });
+    return formatted === "—" ? "N/A" : formatted;
 };
 
 // Convert to MM/DD/YYYY hh:mm a
 export const formatDateTime = (rawDateTime) => {
-    const parsed = parseDBTimestamp(rawDateTime);
-    if (!parsed || isNaN(parsed)) return "N/A";
-    return format(parsed, "MM/dd/yyyy hh:mm a");
+    const formatted = formatDateTimeInTimeZone(rawDateTime, null, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+    });
+    return formatted === "—" ? "N/A" : formatted;
 };
 
 // For sending back to DB from input type="datetime-local"

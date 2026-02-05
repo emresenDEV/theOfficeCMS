@@ -87,7 +87,7 @@ const Filters = ({
             <div className="flex gap-2">
                 <button
                     className={`px-4 py-2 rounded ${
-                        viewMode === "yearly" ? "bg-blue-500 text-white" : "bg-muted text-foreground"
+                        viewMode === "yearly" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                     }`}
                     onClick={() => setViewMode("yearly")}
                 >
@@ -95,7 +95,7 @@ const Filters = ({
                 </button>
                 <button
                     className={`px-4 py-2 rounded ${
-                        viewMode === "monthly" ? "bg-blue-500 text-white" : "bg-muted text-foreground"
+                        viewMode === "monthly" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                     }`}
                     onClick={() => setViewMode("monthly")}
                 >
@@ -103,7 +103,7 @@ const Filters = ({
                 </button>
                 <button
                     className={`px-4 py-2 rounded ${
-                        viewMode === "weekly" ? "bg-blue-500 text-white" : "bg-muted text-foreground"
+                        viewMode === "weekly" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                     }`}
                     onClick={() => setViewMode("weekly")}
                 >

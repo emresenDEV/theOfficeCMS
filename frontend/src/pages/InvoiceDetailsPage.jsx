@@ -23,7 +23,7 @@ import AuditSection from "../components/AuditSection";
 import InvoiceActions from "../components/InvoiceActions";
 import PaidBox from "../components/PaidBox";
 import { fetchAccountDetails } from "../services/accountService";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 import PropTypes from "prop-types";
 
 
@@ -193,13 +193,12 @@ const formatCurrency = (amount) => {
 };
 
 const formatDate = (rawDate) => {
-    if (!rawDate) return "N/A";
-    try {
-        return format(new Date(rawDate), "MM/dd/yyyy");
-        } catch (e) {
-        console.error("❌ formatDate error:", rawDate, e);
-        return "Invalid Date";
-    }
+    const formatted = formatDateInTimeZone(rawDate, user, {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
+    });
+    return formatted === "—" ? "N/A" : formatted;
 };
 
 const refreshInvoiceTasks = async () => {
@@ -517,7 +516,7 @@ if (!invoice)
                     {!showEditInvoiceForm && (
                     <button
                         onClick={() => setShowEditInvoiceForm(true)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                        className="bg-primary text-primary-foreground px-3 py-1 rounded hover:bg-primary/90"
                     >
                         Edit Invoice
                     </button>
@@ -604,7 +603,7 @@ if (!invoice)
                 {showEditInvoiceForm && (
                     <div className="flex justify-end gap-3 mt-6">
                     <button
-                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                        className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
                         onClick={async () => {
                             try {
                                 await updateInvoice(invoiceId, {
@@ -628,7 +627,7 @@ if (!invoice)
                         Save Update
                     </button>
                     <button
-                        className="bg-muted text-white px-4 py-2 rounded hover:bg-secondary/80"
+                        className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
                         onClick={() => setShowEditInvoiceForm(false)}
                     >
                         Cancel
@@ -644,7 +643,7 @@ if (!invoice)
                 <h2 className="text-xl font-semibold text-left">Services</h2>
                 <button
                 onClick={handleAddServiceRow}
-                className="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700"
+                className="bg-primary text-primary-foreground px-3 py-1 rounded shadow hover:bg-primary/90"
                 >Add Service</button>
             </div>
             <div className="overflow-y-auto max-h-64 border rounded-lg">
@@ -745,7 +744,7 @@ if (!invoice)
                             {deletedServiceIndex === index ? (
                             <button
                                 onClick={undoDelete}
-                                className="bg-yellow-500 text-white px-2 py-1 rounded"
+                                className="bg-secondary text-secondary-foreground px-2 py-1 rounded"
                             >
                                 Undo
                             </button>
@@ -753,7 +752,7 @@ if (!invoice)
                             <>
                                 <button
                                 onClick={() => handleSaveEdit(index)}
-                                className="bg-green-500 text-white px-2 py-1 rounded"
+                                className="bg-primary text-primary-foreground px-2 py-1 rounded"
                                 >
                                 Save
                                 </button>
@@ -768,13 +767,13 @@ if (!invoice)
                             <>
                                 <button
                                 onClick={() => handleEditService(index)}
-                                className="bg-blue-500 text-white px-2 py-1 rounded"
+                                className="bg-secondary text-secondary-foreground px-2 py-1 rounded"
                                 >
                                 Edit
                                 </button>
                                 <button
                                 onClick={() => handleDeleteService(index)}
-                                className="bg-red-500 text-white px-2 py-1 rounded"
+                                className="bg-destructive text-destructive-foreground px-2 py-1 rounded"
                                 >
                                 Delete
                                 </button>
@@ -860,13 +859,13 @@ if (!invoice)
                         <td className="p-2 border-b text-center space-x-2">
                             <button
                             onClick={handleAddServiceSave}
-                            className="bg-green-600 text-white px-2 py-1 rounded"
+                            className="bg-primary text-primary-foreground px-2 py-1 rounded"
                             >
                             Save
                             </button>
                             <button
                             onClick={() => setAddingService(false)}
-                            className="bg-muted text-white px-2 py-1 rounded"
+                            className="bg-secondary text-secondary-foreground px-2 py-1 rounded"
                             >
                             Cancel
                             </button>
@@ -913,7 +912,7 @@ if (!invoice)
                 <h2 className="text-xl font-semibold">Log Payment</h2>
                 {!showPaymentForm && (
                 <button
-                    className="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700"
+                    className="bg-primary text-primary-foreground px-3 py-1 rounded shadow hover:bg-primary/90"
                     onClick={() => setShowPaymentForm(true)}
                 >
                     Log Payment
@@ -977,13 +976,13 @@ if (!invoice)
 
                 <div className="flex justify-end gap-2 mt-4">
                     <button
-                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
                     onClick={handleLogPayment}
                     >
                     Log Payment
                     </button>
                     <button
-                    className="bg-muted text-white px-4 py-2 rounded hover:bg-secondary/80"
+                    className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
                     onClick={() => setShowPaymentForm(false)}
                     >
                     Cancel
@@ -1096,7 +1095,7 @@ if (!invoice)
                     </select>
                     <button
                         onClick={handleCreateInvoiceTask}
-                        className="bg-blue-600 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
+                        className="bg-primary text-primary-foreground px-4 py-2 rounded shadow-lg hover:bg-primary/90 transition-colors"
                     >
                         Add Task
                     </button>
@@ -1138,15 +1137,21 @@ if (!invoice)
                                                 {assignee ? `${assignee.first_name} ${assignee.last_name}` : "Unassigned"}
                                             </td>
                                             <td className="p-2 border-b border-r text-left">
-                                                {task.due_date ? format(new Date(task.due_date), "MM/dd/yyyy") : "—"}
+                                                {task.due_date
+                                                    ? formatDateInTimeZone(task.due_date, user, {
+                                                        month: "2-digit",
+                                                        day: "2-digit",
+                                                        year: "numeric",
+                                                    })
+                                                    : "—"}
                                             </td>
                                             <td className="p-2 border-b text-center">
                                                 <button
                                                     onClick={() => handleToggleInvoiceTask(task)}
                                                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
                                                         task.is_completed
-                                                            ? "bg-green-500 text-white"
-                                                            : "bg-yellow-500 text-white"
+                                                            ? "bg-success text-success-foreground"
+                                                            : "bg-warning text-warning-foreground"
                                                     }`}
                                                 >
                                                     {task.is_completed ? "Completed" : "Active"}
@@ -1189,7 +1194,7 @@ if (!invoice)
             <div className="flex justify-end mt-6">
             <button
                 onClick={() => deleteInvoice(invoiceId, user.id, user.email).then(() => navigate(`/accounts/details/${invoice.account_id}`))}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                className="bg-destructive text-destructive-foreground px-4 py-2 rounded hover:bg-destructive/90"
             >
                 Delete Invoice
             </button>

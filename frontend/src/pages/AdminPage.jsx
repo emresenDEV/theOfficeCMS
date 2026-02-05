@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { formatDateTimeInTimeZone } from "../utils/timezone";
+import { formatDateInTimeZone, formatDateTimeInTimeZone } from "../utils/timezone";
 import { fetchUsers } from "../services/userService";
 import { fetchAccounts, createAccount, updateAccount, deleteAccount } from "../services/accountService";
 import { fetchAllInvoices, createInvoice, updateInvoice, deleteInvoice, fetchInvoiceById, fetchPaymentMethods, logInvoicePayment } from "../services/invoiceService";
@@ -1420,7 +1419,11 @@ const AdminPage = ({ user }) => {
                     <tr key={task.task_id} className="hover:bg-muted/40">
                       <td className="px-3 py-2 text-foreground">{task.task_description}</td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        {task.due_date ? format(new Date(task.due_date), "MMM d, yyyy") : "—"}
+                        {task.due_date ? formatDateInTimeZone(task.due_date, user, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }) : "—"}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {userOptions.find((u) => u.value === Number(task.assigned_to))?.label || "—"}
@@ -1695,7 +1698,11 @@ const AdminPage = ({ user }) => {
                     <tr key={event.event_id} className="hover:bg-muted/40">
                       <td className="px-3 py-2 text-foreground">{event.event_title}</td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        {event.start_date ? format(new Date(event.start_date), "MMM d, yyyy") : "—"}
+                        {event.start_date ? formatDateInTimeZone(event.start_date, user, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }) : "—"}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {event.start_time ? event.start_time : "—"} {event.end_time ? `– ${event.end_time}` : ""}
@@ -1894,7 +1901,11 @@ const AdminPage = ({ user }) => {
                         ${Number(payment.total_paid || 0).toLocaleString()}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
-                        {payment.date_paid ? format(new Date(payment.date_paid), "MMM d, yyyy") : "—"}
+                        {payment.date_paid ? formatDateInTimeZone(payment.date_paid, user, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        }) : "—"}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <button

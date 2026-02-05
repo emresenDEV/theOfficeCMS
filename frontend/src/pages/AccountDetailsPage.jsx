@@ -6,7 +6,7 @@ import { fetchNotesByAccount } from "../services/notesService";
 import { fetchTasksByAccount, createTask } from "../services/tasksService";
 import { fetchUsers } from "../services/userService";
 import { fetchRoleById } from "../services/userRoleService";
-import { format } from "date-fns";
+import { formatDateInTimeZone } from "../utils/timezone";
 import PropTypes from "prop-types";
 
 import InvoicesSection from "../components/InvoicesSection";
@@ -29,7 +29,11 @@ const AccountDetailsPage = ({ user }) => {
 
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
-        return format(new Date(dateString), "MM/dd/yyyy");
+        return formatDateInTimeZone(dateString, user, {
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+        });
     };
 
     const refreshInvoices = useCallback(async (status = null) => {

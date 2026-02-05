@@ -7,6 +7,16 @@ from notifications import create_notification
 
 contact_bp = Blueprint("contacts", __name__)
 
+def _split_contact_name(name):
+    if not name:
+        return None, None
+    parts = [p for p in name.strip().split(" ") if p]
+    if not parts:
+        return None, None
+    if len(parts) == 1:
+        return parts[0], None
+    return parts[0], " ".join(parts[1:])
+
 
 def _serialize_contact(contact, include_accounts=False):
     owner = Users.query.get(contact.contact_owner_user_id) if contact.contact_owner_user_id else None
@@ -63,6 +73,71 @@ def _notify_contact_followers(contact_id, actor_user_id, title, message, link):
         )
 
 
+def _backfill_contacts_from_accounts(actor_user_id=None, actor_email=None):
+    existing_links = {
+        row.account_id
+        for row in AccountContacts.query.with_entities(AccountContacts.account_id).all()
+    }
+
+    account_query = Account.query.filter(
+        or_(
+            Account.contact_first_name.isnot(None),
+            Account.contact_last_name.isnot(None),
+            Account.contact_name.isnot(None),
+            Account.email.isnot(None),
+            Account.phone_number.isnot(None),
+        )
+    )
+    if existing_links:
+        account_query = account_query.filter(~Account.account_id.in_(existing_links))
+
+    accounts = account_query.all()
+    created = 0
+
+    for account in accounts:
+        first_name = account.contact_first_name
+        last_name = account.contact_last_name
+        if not first_name and not last_name and account.contact_name:
+            first_name, last_name = _split_contact_name(account.contact_name)
+
+        contact = Contact(
+            first_name=first_name,
+            last_name=last_name,
+            phone=account.phone_number,
+            email=account.email,
+            status="active",
+            contact_owner_user_id=account.sales_rep_id or account.updated_by_user_id or actor_user_id,
+        )
+        db.session.add(contact)
+        db.session.flush()
+        db.session.add(AccountContacts(account_id=account.account_id, contact_id=contact.contact_id, is_primary=True))
+
+        create_audit_log(
+            entity_type="contact",
+            entity_id=contact.contact_id,
+            action="create",
+            user_id=actor_user_id,
+            user_email=actor_email,
+            after_data={
+                "contact_id": contact.contact_id,
+                "first_name": contact.first_name,
+                "last_name": contact.last_name,
+                "email": contact.email,
+                "phone": contact.phone,
+                "status": contact.status,
+                "contact_owner_user_id": contact.contact_owner_user_id,
+                "account_ids": [account.account_id],
+            },
+            contact_id=contact.contact_id,
+        )
+
+        created += 1
+
+    if created:
+        db.session.commit()
+    return created
+
+
 @contact_bp.route("", methods=["GET"])
 @contact_bp.route("/", methods=["GET"])
 def get_contacts():
@@ -70,6 +145,10 @@ def get_contacts():
     status = request.args.get("status")
     account_id = request.args.get("account_id", type=int)
     owner_id = request.args.get("owner_id", type=int)
+
+    if not search and not status and not account_id and not owner_id:
+        if Contact.query.count() == 0:
+            _backfill_contacts_from_accounts()
 
     query = Contact.query
 
@@ -110,6 +189,16 @@ def get_contacts():
 
     contacts = query.order_by(Contact.last_name.asc().nullslast(), Contact.first_name.asc().nullslast()).all()
     return jsonify([_serialize_contact(contact, include_accounts=True) for contact in contacts]), 200
+
+
+@contact_bp.route("/backfill", methods=["POST"])
+def backfill_contacts():
+    data = request.json or {}
+    created = _backfill_contacts_from_accounts(
+        actor_user_id=data.get("actor_user_id"),
+        actor_email=data.get("actor_email"),
+    )
+    return jsonify({"created": created}), 200
 
 
 @contact_bp.route("/<int:contact_id>", methods=["GET"])
