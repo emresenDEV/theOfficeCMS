@@ -136,19 +136,19 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 <div>
                     <button 
                         onClick={() => setTaskFilter("completed")} 
-                        className="bg-green-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-green-600 transition-colors"
+                        className="bg-emerald-100 text-emerald-700 px-3 py-2 mx-1 rounded shadow-sm hover:bg-emerald-200 transition-colors"
                     >
                         Completed
                     </button>
                     <button 
                         onClick={() => setTaskFilter("incomplete")} 
-                        className="bg-red-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-red-600 transition-colors"
+                        className="bg-rose-100 text-rose-700 px-3 py-2 mx-1 rounded shadow-sm hover:bg-rose-200 transition-colors"
                     >
                         Incomplete
                     </button>
                     <button 
                         onClick={clearFilters} 
-                        className="bg-muted text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-secondary/80 transition-colors"
+                        className="bg-secondary text-secondary-foreground px-3 py-2 mx-1 rounded shadow-sm hover:bg-secondary/80 transition-colors"
                     >
                         Clear
                     </button>
@@ -194,7 +194,7 @@ const TasksSection = ({ tasks, users, userId, accountId, setTasks, refreshTasks 
                 />
                 <button
                     onClick={handleCreateTask}
-                    className="bg-blue-600 text-white px-3 py-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
+                    className="bg-primary text-primary-foreground px-3 py-2 rounded shadow-sm hover:bg-primary/90 transition-colors"
                 >
                     Create
                 </button>

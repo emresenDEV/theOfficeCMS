@@ -7,10 +7,6 @@ from notifications import create_notification
 
 
 def _build_task_link(task):
-    if task.invoice_id:
-        return f"/invoice/{task.invoice_id}?taskId={task.task_id}"
-    if task.contact_id:
-        return f"/contacts/{task.contact_id}?taskId={task.task_id}"
     return f"/tasks/{task.task_id}"
 
 

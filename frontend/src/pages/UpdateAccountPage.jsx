@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchAccountDetails, updateAccount } from "../services/accountService";
 import { fetchIndustries, createIndustry } from "../services/industryService";
+import { fetchRegions, createRegion } from "../services/regionService";
 import { fetchSalesReps } from "../services/userService";
 import { fetchBranches } from "../services/branchService";
 import { useLocation } from "react-router-dom"; 
@@ -25,7 +26,7 @@ const UpdateAccountPage = () => {
         city: "",
         state: "",
         zip_code: "",
-        region: "",
+        region_id: "",
         industry_id: "",
         user_id: "",
         branch_id: "",
@@ -36,6 +37,9 @@ const UpdateAccountPage = () => {
     const [branches, setBranches] = useState([]);
     const [newIndustry, setNewIndustry] = useState("");
     const [isDataLoaded, setIsDataLoaded] = useState(false);
+    const [regions, setRegions] = useState([]);
+    const [newRegion, setNewRegion] = useState("");
+    const [showNewRegionInput, setShowNewRegionInput] = useState(false);
 
     // useEffect(() => {
     //     async function loadAccountAndDropdowns() {
@@ -123,6 +127,7 @@ const UpdateAccountPage = () => {
                 const fetchedIndustries = await fetchIndustries();
                 const fetchedSalesReps = await fetchSalesReps();
                 const fetchedBranches = await fetchBranches();
+                const fetchedRegions = await fetchRegions();
 
                 if (fetchedAccount) {
                     // ✅ Format Date and Time of Last Update
@@ -138,6 +143,7 @@ const UpdateAccountPage = () => {
                         ...fetchedAccount,
                         contact_first_name: fetchedAccount.contact_first_name || "",
                         contact_last_name: fetchedAccount.contact_last_name || "",
+                        region_id: fetchedAccount.region_id || "",
                         industry_id: fetchedIndustries.find(ind => ind.industry_name === fetchedAccount.industry)?.industry_id || "",
                         user_id: fetchedAccount.sales_rep?.user_id ? String(fetchedAccount.sales_rep.user_id) : "",
                         branch_id: fetchedAccount.branch?.branch_id
@@ -193,6 +199,7 @@ const UpdateAccountPage = () => {
                     setIndustries(updatedIndustries);
                     setSalesReps(updatedSalesReps);
                     setBranches(updatedBranches);
+                    setRegions(fetchedRegions);
                 }
     
                 setIsDataLoaded(true);
@@ -236,6 +243,18 @@ const UpdateAccountPage = () => {
         }
     };
 
+    const handleRegionChange = (e) => {
+        const selectedValue = e.target.value;
+        if (selectedValue === "new") {
+            setNewRegion("");
+            setAccountData({ ...accountData, region_id: "" });
+            setShowNewRegionInput(true);
+        } else {
+            setAccountData({ ...accountData, region_id: selectedValue });
+            setShowNewRegionInput(false);
+        }
+    };
+
     const handleSaveNewIndustry = async () => {
         if (!newIndustry) return;
         const industryData = await createIndustry({ industry_name: newIndustry });
@@ -243,6 +262,17 @@ const UpdateAccountPage = () => {
             setIndustries([...industries, industryData]);
             setAccountData({ ...accountData, industry_id: industryData.industry_id });
             setNewIndustry("");
+        }
+    };
+
+    const handleSaveNewRegion = async () => {
+        if (!newRegion) return;
+        const regionData = await createRegion(newRegion);
+        if (regionData) {
+            setRegions([...regions, regionData]);
+            setAccountData({ ...accountData, region_id: regionData.region_id });
+            setNewRegion("");
+            setShowNewRegionInput(false);
         }
     };
 
@@ -299,6 +329,7 @@ const UpdateAccountPage = () => {
                 ...accountData,
                 branch_id: accountData.branch_id || accountData.branch?.branch_id || null,
                 industry_id: accountData.industry_id || null,
+                region_id: accountData.region_id || null,
                 user_id: accountData.user_id || null,
                 updated_by_user_id: user?.user_id || null // Track the user performing the update
             };
@@ -427,13 +458,38 @@ const UpdateAccountPage = () => {
                 />
                 {/* ✅ Region */}
                 <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Region</label>
-                <input
-                    type="text"
-                    name="region"
-                    value={accountData.region || ""}
-                    onChange={handleChange}
+                <select
+                    name="region_id"
+                    value={accountData.region_id || ""}
+                    onChange={handleRegionChange}
                     className="w-full p-2 border rounded mb-4"
-                />
+                >
+                    <option value="">Select Region</option>
+                    {regions.map((region) => (
+                        <option key={region.region_id} value={region.region_id}>
+                            {region.region_name}
+                        </option>
+                    ))}
+                    <option value="new">➕ Add New Region</option>
+                </select>
+                {showNewRegionInput && (
+                    <div className="flex gap-2 mb-4">
+                        <input
+                            type="text"
+                            className="w-full p-2 border rounded"
+                            placeholder="Enter new region"
+                            value={newRegion}
+                            onChange={(e) => setNewRegion(e.target.value)}
+                        />
+                        <button
+                            type="button"
+                            className="px-3 py-2 rounded bg-secondary text-secondary-foreground"
+                            onClick={handleSaveNewRegion}
+                        >
+                            Add
+                        </button>
+                    </div>
+                )}
                 {/* ✅ Industry Dropdown */}
                 <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Industry</label>
                 <select 
@@ -462,7 +518,7 @@ const UpdateAccountPage = () => {
                         />
                         <button 
                             onClick={handleSaveNewIndustry} 
-                            className="bg-green-500 text-white px-4 py-2 rounded"
+                            className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
                         >
                             Save Industry
                         </button>
@@ -503,7 +559,7 @@ const UpdateAccountPage = () => {
                 <div className="flex justify-end mt-6">
                     <button 
                         type="submit" 
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg shadow-md"
                     >
                         Save
                     </button>
@@ -535,7 +591,8 @@ UpdateAccountPage.propTypes = {
         city: PropTypes.string,
         state: PropTypes.string,
         zip_code: PropTypes.string,
-        region: PropTypes.string,
+        region_id: PropTypes.number,
+        region_name: PropTypes.string,
         industry_id: PropTypes.number,
         user_id: PropTypes.number,
         branch_id: PropTypes.number,

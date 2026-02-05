@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchIndustries, createIndustry } from "../services/industryService";
+import { fetchRegions, createRegion } from "../services/regionService";
 import { fetchSalesReps } from "../services/userService";
 import { fetchBranches } from "../services/branchService";
 import { createAccount } from "../services/accountService";
@@ -10,6 +11,7 @@ const CreateNewAccountPage = ({ user }) => {
     const navigate = useNavigate();
     
     const [industries, setIndustries] = useState([]);
+    const [regions, setRegions] = useState([]);
     const [salesReps, setSalesReps] = useState([]);
     const [branches, setBranches] = useState([]);
     
@@ -23,7 +25,7 @@ const CreateNewAccountPage = ({ user }) => {
         city: "",
         state: "",
         zip_code: "",
-        region: "",
+        region_id: "",
         industry_id: "",
         user_id: "",
         branch_id: "",
@@ -32,6 +34,8 @@ const CreateNewAccountPage = ({ user }) => {
 
     const [newIndustry, setNewIndustry] = useState("");
     const [showNewIndustryInput, setShowNewIndustryInput] = useState(false);
+    const [newRegion, setNewRegion] = useState("");
+    const [showNewRegionInput, setShowNewRegionInput] = useState(false);
 
     useEffect(() => {
         async function loadDropdownData() {
@@ -50,6 +54,8 @@ const CreateNewAccountPage = ({ user }) => {
             setBranches(fetchedBranches);
             const fetchedSalesReps = await fetchSalesReps();
             setSalesReps(fetchedSalesReps);
+            const fetchedRegions = await fetchRegions();
+            setRegions(fetchedRegions);
         }
         loadDropdownData();
     }, []);
@@ -84,6 +90,16 @@ const CreateNewAccountPage = ({ user }) => {
         }
     };
 
+    const handleRegionChange = (e) => {
+        const value = e.target.value;
+        if (value === "new") {
+            setShowNewRegionInput(true);
+        } else {
+            setAccountData({ ...accountData, region_id: value });
+            setShowNewRegionInput(false);
+        }
+    };
+
     // Handle Creating New Industry
     const handleCreateIndustry = async () => {
         if (!newIndustry.trim()) return;
@@ -112,6 +128,27 @@ const CreateNewAccountPage = ({ user }) => {
             console.error("❌ Error creating industry:", error);
         }
     };
+
+    const handleCreateRegion = async () => {
+        if (!newRegion.trim()) return;
+        const isDuplicate = regions.some(region => region.region_name.toLowerCase() === newRegion.toLowerCase());
+        if (isDuplicate) {
+            alert("❌ Region already exists!");
+            return;
+        }
+        try {
+            const response = await createRegion(newRegion);
+            if (response && response.region_id) {
+                const updatedRegions = [...regions, { region_id: response.region_id, region_name: newRegion }];
+                setRegions(updatedRegions);
+                setAccountData({ ...accountData, region_id: response.region_id });
+                setNewRegion("");
+                setShowNewRegionInput(false);
+            }
+        } catch (error) {
+            console.error("❌ Error creating region:", error);
+        }
+    };
     
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -120,6 +157,7 @@ const CreateNewAccountPage = ({ user }) => {
         const sanitizedData = {
             ...accountData,
             industry_id: accountData.industry_id ? parseInt(accountData.industry_id) : null,
+            region_id: accountData.region_id ? parseInt(accountData.region_id) : null,
             user_id: accountData.user_id ? parseInt(accountData.user_id) : null,
             branch_id: accountData.branch_id ? parseInt(accountData.branch_id) : null,
             created_by: user?.user_id || null,
@@ -205,13 +243,42 @@ const CreateNewAccountPage = ({ user }) => {
                     onChange={handleChange} 
                     className="border p-2 w-full" 
                 />
-                <input
-                    type="text"
-                    name="region"
-                    placeholder="Region"
-                    onChange={handleChange}
+                <select
+                    name="region_id"
+                    value={accountData.region_id || ""}
+                    onChange={handleRegionChange}
                     className="border p-2 w-full"
-                />
+                >
+                    <option value="">Select Region</option>
+                    {regions.length > 0 ? (
+                        regions.map(region => (
+                            <option key={region.region_id} value={region.region_id}>
+                                {region.region_name}
+                            </option>
+                        ))
+                    ) : (
+                        <option disabled>No regions available</option>
+                    )}
+                    <option value="new">➕ Add New Region</option>
+                </select>
+                {showNewRegionInput && (
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="Enter new region"
+                            className="w-full p-2 border border-border bg-card text-foreground rounded"
+                            value={newRegion}
+                            onChange={(e) => setNewRegion(e.target.value)}
+                        />
+                        <button
+                            type="button"
+                            className="px-3 py-2 rounded bg-secondary text-secondary-foreground"
+                            onClick={handleCreateRegion}
+                        >
+                            Add
+                        </button>
+                    </div>
+                )}
 
                 {/* Industry Selection */}
                 <select 
@@ -246,7 +313,7 @@ const CreateNewAccountPage = ({ user }) => {
                         <button 
                             type="button" 
                             onClick={handleCreateIndustry} 
-                            className="bg-green-500 text-white px-4 ml-2"
+                            className="bg-secondary text-secondary-foreground px-4 ml-2"
                         >
                             Save
                         </button>
@@ -294,7 +361,7 @@ const CreateNewAccountPage = ({ user }) => {
 
                 <button 
                     type="submit" 
-                    className="bg-blue-500 text-white px-4 py-2 w-full"
+                    className="bg-primary text-primary-foreground px-4 py-2 w-full hover:bg-primary/90"
                 >
                     Create Account
                 </button>

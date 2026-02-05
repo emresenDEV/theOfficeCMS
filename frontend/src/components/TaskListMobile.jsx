@@ -15,7 +15,6 @@ const TaskListMobile = ({
 }) => {
     const [showCompleted, setShowCompleted] = useState(false);
     const [completingTask, setCompletingTask] = useState({});
-    const [editingTask, setEditingTask] = useState(null);
     const [confirmDelete, setConfirmDelete] = useState(null);
 
     const handleTaskCompletion = (task) => {
@@ -93,59 +92,18 @@ const TaskListMobile = ({
                                 {/* Task Name and Status Row */}
                                 <div className="flex justify-between items-start gap-2 mb-2">
                                     <div className="flex-1">
-                                        {editingTask?.task_id === task.task_id ? (
-                                            <input
-                                                type="text"
-                                                value={editingTask.task_description}
-                                                onChange={(e) => {
-                                                    setEditingTask((prev) => ({
-                                                        ...prev,
-                                                        task_description: e.target.value,
-                                                    }));
-                                                }}
-                                                className="w-full border px-2 py-1 rounded text-sm font-semibold"
-                                            />
-                                        ) : (
-                                            <h3 className="text-sm font-semibold text-foreground break-words">
-                                                {task.task_description}
-                                            </h3>
-                                        )}
+                                        <h3 className="text-sm font-semibold text-foreground break-words">
+                                            {task.task_description}
+                                        </h3>
                                     </div>
-                                    {editingTask?.task_id !== task.task_id && (
-                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded whitespace-nowrap">
-                                            Active
-                                        </span>
-                                    )}
+                                    <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded whitespace-nowrap">
+                                        Active
+                                    </span>
                                 </div>
 
                                 {/* Due Date Row */}
                                 <div className={`text-xs mb-3 font-medium ${getPriorityColor(task.due_date)}`}>
-                                    {editingTask?.task_id === task.task_id ? (
-                                        <input
-                                            type="date"
-                                            value={
-                                                editingTask?.due_date
-                                                    ? new Date(editingTask.due_date)
-                                                        .toISOString()
-                                                        .split("T")[0]
-                                                    : new Date(task.due_date)
-                                                        .toISOString()
-                                                        .split("T")[0]
-                                            }
-                                            onChange={(e) => {
-                                                setEditingTask((prev) => ({
-                                                    ...prev,
-                                                    due_date: new Date(e.target.value)
-                                                        .toISOString()
-                                                        .replace("T", " ")
-                                                        .split(".")[0],
-                                                }));
-                                            }}
-                                            className="w-full border px-2 py-1 rounded text-xs"
-                                        />
-                                    ) : (
-                                        <>Due: {format(new Date(task.due_date), "MMM d, yyyy")}</>
-                                    )}
+                                    <>Due: {format(new Date(task.due_date), "MMM d, yyyy")}</>
                                 </div>
 
                                 {/* Account and Assigned By Row */}
@@ -171,63 +129,29 @@ const TaskListMobile = ({
 
                                 {/* Action Buttons */}
                                 <div className="flex gap-2">
-                                    {editingTask?.task_id === task.task_id ? (
-                                        <>
-                                            <button
-                                                onClick={() => {
-                                                    onEditTask(task);
-                                                    setEditingTask(null);
-                                                }}
-                                                className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 flex-1"
-                                            >
-                                                Save
-                                            </button>
-                                            <button
-                                                onClick={() => setEditingTask(null)}
-                                                className="text-xs px-3 py-1 rounded bg-secondary text-secondary-foreground hover:bg-secondary/80 flex-1"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={() => {
-                                                    if (task.assigned_by_username === user.username) {
-                                                        setEditingTask({
-                                                            task_id: task.task_id,
-                                                            task_description: task.task_description,
-                                                            due_date: task.due_date
-                                                                ? new Date(task.due_date)
-                                                                    .toISOString()
-                                                                    .split("T")[0]
-                                                                : "",
-                                                        });
-                                                    }
-                                                }}
-                                                disabled={task.assigned_by_username !== user.username}
-                                                className={`text-xs px-3 py-1 rounded flex-1 ${
-                                                    task.assigned_by_username === user.username
-                                                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                                                        : "bg-muted text-muted-foreground cursor-not-allowed"
-                                                }`}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => handleTaskCompletion(task)}
-                                                className={`text-xs px-3 py-1 rounded flex-1 text-white ${
-                                                    completingTask[task.task_id]
-                                                        ? "bg-red-600 hover:bg-red-700"
-                                                        : "bg-green-600 hover:bg-green-700"
-                                                }`}
-                                            >
-                                                {completingTask[task.task_id]
-                                                    ? `Undo (${completingTask[task.task_id].timeLeft}s)`
-                                                    : "Complete"}
-                                            </button>
-                                        </>
-                                    )}
+                                    <button
+                                        onClick={() => onEditTask(task)}
+                                        disabled={task.assigned_by_username !== user.username}
+                                        className={`text-xs px-3 py-1 rounded flex-1 ${
+                                            task.assigned_by_username === user.username
+                                                ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                                        }`}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleTaskCompletion(task)}
+                                        className={`text-xs px-3 py-1 rounded flex-1 ${
+                                            completingTask[task.task_id]
+                                                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                                        }`}
+                                    >
+                                        {completingTask[task.task_id]
+                                            ? `Undo (${completingTask[task.task_id].timeLeft}s)`
+                                            : "Complete"}
+                                    </button>
                                 </div>
                             </div>
                         ))}

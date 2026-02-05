@@ -167,7 +167,7 @@ const AccountDetailsPage = ({ user }) => {
                     <p className="text-foreground text-left"><strong>Address:</strong> {account.address}</p>
                     <p className="text-foreground text-left">{account.city}, {account.state} {account.zip_code}</p>
                     <p className="text-foreground text-left"><strong>Industry:</strong> {account.industry || "N/A"}</p>
-                    <p className="text-foreground text-left"><strong>Region:</strong> {account.region || "N/A"}</p>
+                    <p className="text-foreground text-left"><strong>Region:</strong> {account.region_name || account.region || "N/A"}</p>
                 </div>
                 <div className="w-1/2 text-right text-foreground">
                     <p className="text-lg font-semibold">Account Number: {account.account_id}</p>
@@ -319,7 +319,8 @@ AccountDetailsPage.propTypes = {
         state: PropTypes.string,
         zip_code: PropTypes.string,
         industry: PropTypes.string,
-        region: PropTypes.string,
+        region_id: PropTypes.number,
+        region_name: PropTypes.string,
         date_created: PropTypes.string,
         date_updated: PropTypes.string,
         

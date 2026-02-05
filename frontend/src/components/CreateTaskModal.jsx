@@ -220,7 +220,7 @@ const CreateTaskModal = ({
                     <button
                         onClick={handleCreate}
                         disabled={isCreating}
-                        className="flex-1 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:bg-muted text-sm font-medium"
+                        className="flex-1 px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted text-sm font-medium"
                     >
                         {isCreating ? "Creating..." : "Create Task"}
                     </button>

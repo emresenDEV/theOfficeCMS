@@ -534,7 +534,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                     </button>
                                     <button
                                         onClick={confirmDelete}
-                                        className="px-3 py-2 rounded bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+                                        className="px-3 py-2 rounded bg-destructive text-destructive-foreground text-sm font-semibold hover:bg-destructive/90 disabled:opacity-50"
                                         disabled={loading}
                                     >
                                         {loading ? "Deleting..." : "Yes"}
@@ -543,7 +543,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                             ) : (
                                 <button
                                     onClick={() => setShowDeleteConfirm(true)}
-                                    className="px-3 py-2 rounded bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+                                    className="px-3 py-2 rounded bg-destructive text-destructive-foreground text-sm font-semibold hover:bg-destructive/90 disabled:opacity-50"
                                     disabled={loading}
                                 >
                                     Delete
@@ -566,7 +566,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+                                    className="px-4 py-2 rounded bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50"
                                     disabled={loading}
                                 >
                                     {loading ? "Saving..." : "Save"}
@@ -575,7 +575,7 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
                         ) : (
                             <button
                                 onClick={() => setIsEditMode(true)}
-                                className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                                className="px-4 py-2 rounded bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90"
                             >
                                 Edit
                             </button>

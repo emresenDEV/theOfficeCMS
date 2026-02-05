@@ -305,7 +305,7 @@ const EditInvoice = ({ user }) => {
           </button>
           <button
             type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
             onClick={handleSubmit}
           >
             Save Changes

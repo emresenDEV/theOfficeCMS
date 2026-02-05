@@ -63,7 +63,7 @@ return (
     <div className="flex justify-between items-center mb-4">
         <p className="font-bold">Confirmation #: {payment.payment_id}</p>
         <button
-        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+        className="bg-secondary text-secondary-foreground px-3 py-1 rounded hover:bg-secondary/80"
         onClick={() => setIsEditing(!isEditing)}
         >
         {isEditing ? "Cancel" : "Edit"}
@@ -171,14 +171,14 @@ return (
         {isEditing && (
         <button
             onClick={handleSave}
-            className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700"
+            className="bg-primary text-primary-foreground px-4 py-1 rounded hover:bg-primary/90"
         >
             Save
         </button>
         )}
         <button
         onClick={() => setShowConfirmDelete(true)}
-        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+        className="bg-destructive text-destructive-foreground px-3 py-1 rounded hover:bg-destructive/90"
         >
         Delete
         </button>
@@ -193,7 +193,7 @@ return (
             <div className="flex justify-between">
             <button
                 onClick={handleDelete}
-                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                className="bg-destructive text-destructive-foreground px-3 py-1 rounded hover:bg-destructive/90"
             >
                 Yes, Delete
             </button>

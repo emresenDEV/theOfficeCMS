@@ -22,7 +22,6 @@ const [employees, setEmployees] = useState([]);
 const [showCompleted, setShowCompleted] = useState(false);
 // const [users, setUsers] = useState([]);
 const [editError, setEditError] = useState(null);
-const [editingTask, setEditingTask] = useState(null);
 const [completingTask, setCompletingTask] = useState({});
 const [confirmDelete, setConfirmDelete] = useState(null);
 const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -195,63 +194,7 @@ const handleEditTaskClick = (task) => {
         return;
     }
 
-    setEditError(`You can only edit tasks that you created`);
-    setTimeout(() => setEditError(null), 5000);
-
-    console.log("✏️ Editing Task:", task);  // Debugging Log
-
-    setEditingTask({
-        task_id: task.task_id,
-        task_description: task.task_description,
-        due_date: task.due_date
-            ? new Date(task.due_date).toISOString().split("T")[0]  // Convert to YYYY-MM-DD format for input field
-            : ""
-    });
-};
-
-
-const handleEditTask = async () => {
-    if (!editingTask) return;
-
-    try {
-        const updatedTask = {
-            ...editingTask,  // ✅ Preserve all existing properties
-            due_date: editingTask.due_date 
-                ? new Date(editingTask.due_date).toISOString().replace("T", " ").split(".")[0]
-                : null,
-            actor_user_id: currentUserId,
-            actor_email: user.email,
-        };
-
-        console.log("📤 Sending Update to DB:", updatedTask);
-
-        await updateTask(editingTask.task_id, updatedTask);
-
-        setEditingTask(null);
-
-        // ✅ Update UI Immediately
-        setTasks((prevTasks) =>
-            prevTasks.map((t) =>
-                t.task_id === updatedTask.task_id
-                    ? { ...updatedTask, business_name: t.business_name } // Preserve business_name
-                    : t
-            )
-        );
-        
-
-        setCompletedTasks((prevCompletedTasks) =>
-            prevCompletedTasks.map((t) =>
-                t.task_id === updatedTask.task_id
-                    ? { ...updatedTask, business_name: t.business_name } // Preserve business_name
-                    : t
-            )
-        );
-        
-
-        console.log("✅ Task Updated Successfully");
-    } catch (error) {
-        console.error("❌ Error updating task:", error);
-    }
+    navigate(`/tasks/${task.task_id}`);
 };
 
 
@@ -323,7 +266,7 @@ return (
             <>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="w-full bg-green-600 text-white px-4 py-2 rounded font-medium mt-4 hover:bg-green-700 transition"
+                    className="w-full bg-primary text-primary-foreground px-4 py-2 rounded font-medium mt-4 hover:bg-primary/90 transition"
                 >
                     + New Task
                 </button>
@@ -333,7 +276,7 @@ return (
                         completedTasks={transformedCompletedTasks}
                         onTaskComplete={(task) => handleTaskCompletion(task)}
                         onTaskUndo={(task) => handleTaskCompletion(task)}
-                        onEditTask={(task) => handleEditTask()}
+                        onEditTask={(task) => handleEditTaskClick(task)}
                         onDeleteTask={(taskId) => handleDeleteTask(taskId)}
                         onAccountClick={(accountId) => navigate(`/accounts/details/${accountId}`)}
                         user={user}
@@ -383,60 +326,10 @@ return (
                     className={`border-b ${highlightTaskId === String(task.task_id) ? "bg-accent/40" : ""}`}
                 >
                 <td className="p-3 text-left">
-                    {editingTask?.task_id === task.task_id ? (
-                        <input
-                            type="text"
-                            value={editingTask.task_description}
-                            onClick={(e) => e.stopPropagation()} // Prevents unwanted clicks outside
-                            onChange={(e) => {
-                                setEditingTask((prev) => ({
-                                    ...prev,
-                                    task_description: e.target.value,
-                                }));
-                            }}
-                            onInput={(e) => {
-                                e.target.style.height = "auto"; // Reset height before recalculating
-                                e.target.style.height = `${e.target.scrollHeight}px`; // Adjust height dynamically
-                            }}
-                            onFocus={(e) => {
-                                e.target.style.height = "auto"; // Reset height before expanding
-                                e.target.style.height = `${e.target.scrollHeight}px`; // Adjust height dynamically
-                            }}  // Selects all text when clicked
-                            className="border px-3 py-2 rounded w-full resize-none overflow-auto text-wrap break-words"
-                            style={{
-                                minHeight: "60px",     
-                                maxHeight: "300px",    
-                                height: "auto",        
-                                whiteSpace: "pre-wrap", 
-                                wordWrap: "break-word",
-                                overflowY: "hidden"
-                            }}
-                        />
-                    ) : (
-                        task.task_description
-                    )}
+                    {task.task_description}
                 </td>
                 <td className="p-3 text-left">
-                    {editingTask?.task_id === task.task_id ? (
-                        <input
-                            type="date"
-                            value={
-                                editingTask?.due_date 
-                                    ? new Date(editingTask.due_date).toISOString().split("T")[0]  
-                                    : new Date(task.due_date).toISOString().split("T")[0]  
-                            }
-                            onClick={(e) => e.stopPropagation()}  
-                            onChange={(e) => {
-                                setEditingTask((prev) => ({
-                                    ...prev,
-                                    due_date: new Date(e.target.value).toISOString().replace("T", " ").split(".")[0]  
-                                }));
-                            }}
-                            className="border px-2 py-1 rounded w-full"
-                        />
-                    ) : (
-                        format(new Date(task.due_date), "MM/dd/yyyy")
-                    )}
+                    {format(new Date(task.due_date), "MM/dd/yyyy")}
                 </td>
 
 
@@ -454,54 +347,30 @@ return (
                     )}
                 </td>
                 <td className="p-3 text-center flex gap-2">
-                    {editingTask?.task_id === task.task_id ? (
-                        <>
-                            {/* ✅ Save Button */}
-                            <button
-                                className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-                                onClick={() => handleEditTask()} // Save changes
-                            >
-                                Save
-                            </button>
-
-                            {/* ✅ Cancel Button */}
-                            <button
-                                className="px-3 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white"
-                                onClick={() => setEditingTask(null)} // Cancels edit mode
-                            >
-                                Cancel
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            {/* Edit Button */}
-                            <button
+                    <button
                         className={`px-3 py-1 rounded-lg transition-colors ${
                             task.assigned_by_username === user.username
-                                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                                 : "bg-muted text-muted-foreground cursor-not-allowed"
                         }`}
-                                onClick={() => handleEditTaskClick(task)}
-                                disabled={task.assigned_by_username !== user.username}
-                            >
-                                Edit
-                            </button>
+                        onClick={() => handleEditTaskClick(task)}
+                        disabled={task.assigned_by_username !== user.username}
+                    >
+                        Edit
+                    </button>
 
-                            {/* Complete Button with Countdown */}
-                            <button
-                                className={`px-3 py-1 rounded-lg transition-colors ${
-                                    completingTask[task.task_id]
-                                        ? "bg-red-500 hover:bg-red-600 text-white"
-                                        : "bg-green-500 hover:bg-green-600 text-white"
-                                }`}
-                                onClick={() => handleTaskCompletion(task)}
-                            >
-                                {completingTask[task.task_id] && !isNaN(completingTask[task.task_id].timeLeft)
-                                    ? `Undo (${completingTask[task.task_id].timeLeft}s)`
-                                    : "Complete"}
-                            </button>
-                        </>
-                    )}
+                    <button
+                        className={`px-3 py-1 rounded-lg transition-colors ${
+                            completingTask[task.task_id]
+                                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                : "bg-primary text-primary-foreground hover:bg-primary/90"
+                        }`}
+                        onClick={() => handleTaskCompletion(task)}
+                    >
+                        {completingTask[task.task_id] && !isNaN(completingTask[task.task_id].timeLeft)
+                            ? `Undo (${completingTask[task.task_id].timeLeft}s)`
+                            : "Complete"}
+                    </button>
                 </td>
                 {editError && (
                     <div className="text-red-600 text-sm mt-2 bg-muted p-2 rounded shadow-lg">
@@ -564,13 +433,13 @@ return (
                     </td>
                     <td className="p-3 text-center flex gap-2">
                         <button
-                            className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
+                            className="bg-secondary text-secondary-foreground px-3 py-1 rounded-lg hover:bg-secondary/80"
                             onClick={() => handleTaskCompletion(task)}
                         >
                             Undo
                         </button>
                         <button
-                            className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
+                            className="bg-destructive text-destructive-foreground px-3 py-1 rounded-lg hover:bg-destructive/90"
                             onClick={() => handleDeleteTask(task.task_id)}
                         >
                             {confirmDelete === task.task_id ? "Are you sure?" : "Delete"}

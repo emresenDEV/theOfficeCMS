@@ -334,7 +334,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
             {/* Buttons */}
             <div className="flex justify-between mt-4">
                 <button className="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg" onClick={closeForm}>Cancel</button>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg" onClick={handleCreateEvent}>Save</button>
+                <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90" onClick={handleCreateEvent}>Save</button>
             </div>
         </div>
     );

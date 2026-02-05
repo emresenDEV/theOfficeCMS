@@ -8,6 +8,7 @@ import { fetchAccounts, createAccount, updateAccount, deleteAccount } from "../s
 import { fetchAllInvoices, createInvoice, updateInvoice, deleteInvoice, fetchInvoiceById, fetchPaymentMethods, logInvoicePayment } from "../services/invoiceService";
 import { fetchServices } from "../services/servicesService";
 import { fetchIndustries } from "../services/industryService";
+import { fetchRegions } from "../services/regionService";
 import { fetchBranches } from "../services/branchService";
 import { fetchDepartments } from "../services/departmentService";
 import { fetchAllRoles } from "../services/userRoleService";
@@ -51,6 +52,7 @@ const AdminPage = ({ user }) => {
   const [departments, setDepartments] = useState([]);
   const [branches, setBranches] = useState([]);
   const [industries, setIndustries] = useState([]);
+  const [regions, setRegions] = useState([]);
   const [auditSummary, setAuditSummary] = useState(null);
   const [paymentMethods, setPaymentMethods] = useState([]);
 
@@ -76,7 +78,7 @@ const AdminPage = ({ user }) => {
     city: "",
     state: "",
     zip_code: "",
-    region: "",
+    region_id: "",
     industry_id: "",
     user_id: "",
     branch_id: "",
@@ -155,6 +157,7 @@ const AdminPage = ({ user }) => {
         deptList,
         branchList,
         industryList,
+        regionList,
         paymentMethodList,
         summary,
       ] = await Promise.all([
@@ -169,6 +172,7 @@ const AdminPage = ({ user }) => {
         fetchDepartments(),
         fetchBranches(),
         fetchIndustries(),
+        fetchRegions(),
         fetchPaymentMethods(),
         fetchAuditSummary(7),
       ]);
@@ -183,6 +187,7 @@ const AdminPage = ({ user }) => {
       setDepartments(deptList);
       setBranches(branchList);
       setIndustries(industryList);
+      setRegions(regionList);
       setPaymentMethods(paymentMethodList);
       setAuditSummary(summary);
     };
@@ -258,7 +263,7 @@ const AdminPage = ({ user }) => {
       city: "",
       state: "",
       zip_code: "",
-      region: "",
+      region_id: "",
       industry_id: "",
       user_id: "",
       branch_id: "",
@@ -838,12 +843,18 @@ const AdminPage = ({ user }) => {
                 value={newAccount.zip_code}
                 onChange={(e) => setNewAccount({ ...newAccount, zip_code: e.target.value })}
               />
-              <input
+              <select
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
-                placeholder="Region"
-                value={newAccount.region}
-                onChange={(e) => setNewAccount({ ...newAccount, region: e.target.value })}
-              />
+                value={newAccount.region_id}
+                onChange={(e) => setNewAccount({ ...newAccount, region_id: e.target.value })}
+              >
+                <option value="">Region</option>
+                {regions.map((region) => (
+                  <option key={region.region_id} value={region.region_id}>
+                    {region.region_name}
+                  </option>
+                ))}
+              </select>
               <select
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                 value={newAccount.industry_id}
@@ -920,12 +931,18 @@ const AdminPage = ({ user }) => {
                   value={editingAccount.email || ""}
                   onChange={(e) => setEditingAccount({ ...editingAccount, email: e.target.value })}
                 />
-                <input
+                <select
                   className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
-                  placeholder="Region"
-                  value={editingAccount.region || ""}
-                  onChange={(e) => setEditingAccount({ ...editingAccount, region: e.target.value })}
-                />
+                  value={editingAccount.region_id || ""}
+                  onChange={(e) => setEditingAccount({ ...editingAccount, region_id: e.target.value })}
+                >
+                  <option value="">Region</option>
+                  {regions.map((region) => (
+                    <option key={region.region_id} value={region.region_id}>
+                      {region.region_name}
+                    </option>
+                  ))}
+                </select>
                 <select
                   className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                   value={editingAccount.sales_rep_id || ""}

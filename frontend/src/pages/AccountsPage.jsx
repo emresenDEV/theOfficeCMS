@@ -103,7 +103,7 @@ const AccountsPage = ({ user }) => {
                     </div>
                     <div>
                         <button
-                            className="bg-green-600 text-white px-4 py-2 rounded shadow-lg"
+                            className="bg-primary text-primary-foreground px-4 py-2 rounded shadow-sm hover:bg-primary/90"
                             onClick={() => navigate("/accounts/create")}
                         >
                             + New Account
@@ -138,7 +138,7 @@ const AccountsPage = ({ user }) => {
 
                             {/* Button (Right-aligned) */}
                             <button 
-                                className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg"
+                                className="bg-secondary text-secondary-foreground px-4 py-2 rounded shadow-sm hover:bg-secondary/80"
                                 onClick={() => {
                                     console.log(`Navigating to /accounts/details/${account.account_id}`);
                                     if (account.account_id) {

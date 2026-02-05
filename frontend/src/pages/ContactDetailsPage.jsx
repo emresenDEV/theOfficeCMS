@@ -55,6 +55,7 @@ const ContactDetailsPage = ({ user }) => {
     due_date: "",
     note: "",
     account_id: "",
+    assigned_to: "",
   });
   const [highlightTaskId, setHighlightTaskId] = useState(null);
 
@@ -110,6 +111,10 @@ const ContactDetailsPage = ({ user }) => {
       setInteractions(contactData?.interactions || []);
       setTasks(contactData?.tasks || []);
       setIsFollowing(!!contactData?.is_following);
+      setFollowupForm((prev) => ({
+        ...prev,
+        assigned_to: contactData?.contact_owner_user_id || user?.user_id || "",
+      }));
       setLoading(false);
     };
     load();
@@ -157,6 +162,17 @@ const ContactDetailsPage = ({ user }) => {
       row.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [highlightTaskId, tasks]);
+
+  useEffect(() => {
+    const handler = (event) => {
+      if (!event.altKey) return;
+      if (event.key.toLowerCase() !== "m") return;
+      if (!user?.user_id) return;
+      setFollowupForm((prev) => ({ ...prev, assigned_to: user.user_id }));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [user?.user_id]);
 
   const userMap = useMemo(() => {
     const map = new Map();
@@ -341,7 +357,9 @@ const ContactDetailsPage = ({ user }) => {
       : descriptionBase;
     const payload = {
       user_id: user?.user_id,
-      assigned_to: user?.user_id,
+      assigned_to: followupForm.assigned_to
+        ? Number(followupForm.assigned_to)
+        : contact.contact_owner_user_id || user?.user_id,
       task_description: description,
       due_date: followupForm.due_date,
       account_id: followupForm.account_id ? Number(followupForm.account_id) : null,
@@ -610,6 +628,28 @@ const ContactDetailsPage = ({ user }) => {
                 value={followupForm.due_date}
                 onChange={(e) => setFollowupForm((prev) => ({ ...prev, due_date: e.target.value }))}
               />
+              <div className="flex gap-2">
+                <select
+                  className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                  value={followupForm.assigned_to}
+                  onChange={(e) => setFollowupForm((prev) => ({ ...prev, assigned_to: e.target.value }))}
+                >
+                  <option value="">Assign to (defaults to contact owner)</option>
+                  {users.map((u) => (
+                    <option key={u.user_id} value={u.user_id}>
+                      {u.first_name} {u.last_name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="rounded-md border border-border px-3 text-xs font-semibold text-foreground hover:bg-muted/40"
+                  onClick={() => setFollowupForm((prev) => ({ ...prev, assigned_to: user?.user_id }))}
+                  title="Assign to me (Alt+M)"
+                >
+                  Me
+                </button>
+              </div>
               <select
                 className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
                 value={followupForm.account_id}

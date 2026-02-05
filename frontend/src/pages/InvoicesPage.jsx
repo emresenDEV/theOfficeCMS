@@ -255,7 +255,7 @@ const InvoicesPage = ({ user }) => {
 
                 <button 
                     onClick={() => navigate("/")} 
-                    className="mt-4 bg-blue-500 text-white p-2 rounded"
+                    className="mt-4 bg-primary text-primary-foreground p-2 rounded hover:bg-primary/90"
                 >
                     Back to Dashboard
                 </button>

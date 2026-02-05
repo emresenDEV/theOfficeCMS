@@ -164,10 +164,7 @@ def create_task():
 
     account = Account.query.get(new_task.account_id) if new_task.account_id else None
     notification_link = f"/tasks/{new_task.task_id}"
-    if new_task.invoice_id:
-        notification_link = f"/invoice/{new_task.invoice_id}?taskId={new_task.task_id}"
-    elif new_task.contact_id:
-        notification_link = f"/contacts/{new_task.contact_id}?taskId={new_task.task_id}"
+    contact_link = f"/contacts/{new_task.contact_id}?taskId={new_task.task_id}" if new_task.contact_id else notification_link
 
     create_notification(
         user_id=new_task.assigned_to,
@@ -184,7 +181,7 @@ def create_task():
         data.get("actor_user_id") or new_task.user_id,
         "Contact task created",
         new_task.task_description,
-        notification_link,
+        contact_link,
     )
     create_audit_log(
         entity_type="task",
@@ -268,10 +265,7 @@ def update_task(task_id):
     if assigned_before != task.assigned_to:
         account = Account.query.get(task.account_id) if task.account_id else None
         notification_link = f"/tasks/{task.task_id}"
-        if task.invoice_id:
-            notification_link = f"/invoice/{task.invoice_id}?taskId={task.task_id}"
-        elif task.contact_id:
-            notification_link = f"/contacts/{task.contact_id}?taskId={task.task_id}"
+        contact_link = f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else notification_link
 
         create_notification(
             user_id=task.assigned_to,
@@ -291,7 +285,7 @@ def update_task(task_id):
                 notif_type="task_completed",
                 title="Task completed",
                 message=task.task_description,
-                link=f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else f"/tasks/{task.task_id}",
+                link=f"/tasks/{task.task_id}",
                 source_type="task",
                 source_id=task.task_id,
             )
@@ -300,7 +294,7 @@ def update_task(task_id):
             actor_user_id,
             "Contact task completed",
             task.task_description,
-            f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else f"/tasks/{task.task_id}",
+            contact_link,
         )
 
     create_audit_log(

@@ -129,7 +129,7 @@ return (
         )}
         <button 
         onClick={handleCreateNote} 
-        className="bg-blue-600 text-white px-3 py-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
+        className="bg-primary text-primary-foreground px-3 py-2 rounded shadow-sm hover:bg-primary/90 transition-colors"
         >
         Save Note
         </button>
@@ -163,7 +163,7 @@ return (
                 {note.invoice_id ? (
                     <button
                     onClick={() => navigate(`/invoice/${note.invoice_id}`)}
-                    className="bg-blue-600 text-white px-4 py-1 rounded shadow-lg hover:bg-blue-700 transition-colors w-24"
+                    className="bg-secondary text-secondary-foreground px-4 py-1 rounded shadow-sm hover:bg-secondary/80 transition-colors w-24"
                     >
                     {note.invoice_id}
                     </button>

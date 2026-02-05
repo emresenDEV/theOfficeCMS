@@ -22,6 +22,7 @@ class Account(db.Model):
     sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     notes = db.Column(db.Text)
     region = db.Column(db.String(50))
+    region_id = db.Column(db.Integer, db.ForeignKey("regions.region_id"))
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'), nullable=True)
@@ -43,6 +44,7 @@ class Account(db.Model):
         secondary="account_contacts",
         back_populates="accounts",
     )
+    region_rel = db.relationship("Region", foreign_keys=[region_id])
 
     # Convert object to dictionary for JSON responses
     def to_dict(self):
@@ -51,6 +53,12 @@ class Account(db.Model):
             contact_name = " ".join([p for p in [self.contact_first_name, self.contact_last_name] if p])
         elif self.contact_name:
             contact_name = self.contact_name
+
+        region_name = None
+        if self.region_rel:
+            region_name = self.region_rel.region_name
+        elif self.region:
+            region_name = self.region
 
         return {
             "account_id": self.account_id,
@@ -68,7 +76,8 @@ class Account(db.Model):
             "sales_rep_id": self.sales_rep_id,
             "branch_id": self.branch_id,
             "notes": self.notes,
-            "region": self.region,
+            "region_id": self.region_id,
+            "region_name": region_name,
             "date_created": self.date_created.strftime("%Y-%m-%d %H:%M:%S") if self.date_created else None,
             "date_updated": self.date_updated.strftime("%Y-%m-%d %H:%M:%S") if self.date_updated else None,
             "updated_by_user_id": self.updated_by_user_id,
@@ -181,6 +190,11 @@ class Industry(db.Model):
     __tablename__ = 'industries'
     industry_id = db.Column(db.Integer, primary_key = True)
     industry_name = db.Column(db.String(100))
+
+class Region(db.Model):
+    __tablename__ = "regions"
+    region_id = db.Column(db.Integer, primary_key=True)
+    region_name = db.Column(db.String(100), unique=True, nullable=False)
 
 class Invoice(db.Model):
     __tablename__ = 'invoices'
