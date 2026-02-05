@@ -24,8 +24,20 @@ import InvoiceActions from "../components/InvoiceActions";
 import PaidBox from "../components/PaidBox";
 import { fetchAccountDetails } from "../services/accountService";
 import { formatDateInTimeZone } from "../utils/timezone";
+import PipelineStatusBar from "../components/PipelineStatusBar";
+import { fetchPipelineDetail, updatePipelineStage } from "../services/pipelineService";
+import { PIPELINE_STAGES, PIPELINE_STAGE_MAP } from "../utils/pipelineStages";
 import PropTypes from "prop-types";
 
+const PIPELINE_STAGE_FIELDS = {
+    contact_customer: "contacted_at",
+    order_placed: "order_placed_at",
+    payment_not_received: "payment_not_received_at",
+    payment_received: "payment_received_at",
+    order_packaged: "order_packaged_at",
+    order_shipped: "order_shipped_at",
+    order_delivered: "order_delivered_at",
+};
 
 const InvoiceDetailsPage = ({ user }) => {
 const { invoiceId } = useParams();
@@ -75,6 +87,11 @@ const [newTaskDueDate, setNewTaskDueDate] = useState("");
 const [newTaskAssignee, setNewTaskAssignee] = useState("");
 const [highlightTaskId, setHighlightTaskId] = useState(null);
 const [activeTab, setActiveTab] = useState("audit");
+const [pipelineDetail, setPipelineDetail] = useState(null);
+const [pipelineStage, setPipelineStage] = useState("order_placed");
+const [pipelineNote, setPipelineNote] = useState("");
+const [pipelineSaving, setPipelineSaving] = useState(false);
+const [pipelineToast, setPipelineToast] = useState("");
 
 const openPaymentModal = () => {
     setPaymentForm({
@@ -156,6 +173,23 @@ useEffect(() => {
 
     loadData();
 }, [invoiceId]);
+
+useEffect(() => {
+    async function loadPipeline() {
+        const detail = await fetchPipelineDetail(invoiceId);
+        if (detail) {
+            setPipelineDetail(detail);
+            setPipelineStage(detail.pipeline?.current_stage || "order_placed");
+        }
+    }
+    loadPipeline();
+}, [invoiceId]);
+
+useEffect(() => {
+    if (!pipelineToast) return;
+    const timer = setTimeout(() => setPipelineToast(""), 3000);
+    return () => clearTimeout(timer);
+}, [pipelineToast]);
 
 useEffect(() => {
     const loadTasks = async () => {
@@ -356,6 +390,25 @@ const handleLogPayment = async () => {
         alert("Error logging payment.");
         }
     };
+
+const handleUpdatePipeline = async () => {
+    const actorId = user?.user_id ?? user?.id;
+    if (!actorId || !pipelineStage) return;
+    setPipelineSaving(true);
+    const updated = await updatePipelineStage(invoiceId, {
+        stage: pipelineStage,
+        note: pipelineNote,
+        actor_user_id: actorId,
+        actor_email: user?.email,
+    });
+    if (updated) {
+        const refreshed = await fetchPipelineDetail(invoiceId);
+        setPipelineDetail(refreshed);
+        setPipelineNote("");
+        setPipelineToast("Pipeline updated.");
+    }
+    setPipelineSaving(false);
+};
 const handleDeleteService = async (index) => {
     const serviceToDelete = services[index];
 
@@ -463,6 +516,11 @@ if (!invoice)
 
     return (
         <div className="p-6 max-w-6xl mx-auto bg-card border border-border shadow-lg rounded-lg">
+            {pipelineToast && (
+                <div className="fixed right-6 bottom-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+                    {pipelineToast}
+                </div>
+            )}
             <div className="flex justify-between items-center mb-4">
                 <button
                     onClick={() => navigate(`/accounts/details/${invoice.account_id}`)}
@@ -994,6 +1052,87 @@ if (!invoice)
                         >
                             Log Payment
                         </button>
+                    </div>
+                </div>
+            </section>
+
+            {/* Pipeline */}
+            <section className="mb-6 border border-border p-4 rounded-lg bg-card">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-lg font-semibold text-foreground">Paper Sales Pipeline</h2>
+                        <p className="text-xs text-muted-foreground">Track invoice progress and customer updates.</p>
+                    </div>
+                    <button
+                        className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                        onClick={() => navigate(`/pipelines/invoice/${invoice.invoice_id}`)}
+                    >
+                        Open Pipeline
+                    </button>
+                </div>
+
+                <div className="mt-4 rounded-lg border border-border bg-background p-4">
+                    <PipelineStatusBar
+                        currentStage={pipelineDetail?.pipeline?.current_stage || "order_placed"}
+                        onStageSelect={(stage) => setPipelineStage(stage)}
+                    />
+                </div>
+
+                <div className="mt-4 grid gap-4 lg:grid-cols-[2fr,1fr]">
+                    <div className="rounded-lg border border-border bg-card p-4">
+                        <h3 className="text-sm font-semibold text-foreground">Update Stage</h3>
+                        <p className="text-xs text-muted-foreground">Manual update with optional note.</p>
+                        <div className="mt-3 space-y-3">
+                            <select
+                                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                value={pipelineStage}
+                                onChange={(e) => setPipelineStage(e.target.value)}
+                            >
+                                {PIPELINE_STAGES.map((stage) => (
+                                    <option key={stage.key} value={stage.key}>
+                                        {stage.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <textarea
+                                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                rows={3}
+                                placeholder="Add a note (optional)"
+                                value={pipelineNote}
+                                onChange={(e) => setPipelineNote(e.target.value)}
+                            />
+                            <button
+                                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                                onClick={handleUpdatePipeline}
+                                disabled={pipelineSaving}
+                            >
+                                {pipelineSaving ? "Saving..." : "Update Pipeline"}
+                            </button>
+                            {pipelineStage === "payment_not_received" && (
+                                <p className="text-xs text-amber-700">
+                                    Payment issue email will be logged and escalated after 2 days if unresolved.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg border border-border bg-card p-4">
+                        <h3 className="text-sm font-semibold text-foreground">Suggested Timeline</h3>
+                        <p className="text-xs text-muted-foreground">Targets based on Day 1–5 timeline.</p>
+                        <div className="mt-3 space-y-2 text-sm">
+                            {PIPELINE_STAGES.map((stage) => {
+                                const suggested = pipelineDetail?.suggested_dates?.[stage.key];
+                                const actual = pipelineDetail?.pipeline?.[PIPELINE_STAGE_FIELDS[stage.key]];
+                                return (
+                                    <div key={stage.key} className="flex items-center justify-between gap-2">
+                                        <span className="text-muted-foreground">{stage.label}</span>
+                                        <span className="text-xs text-foreground">
+                                            {actual ? formatDate(actual) : suggested ? formatDate(suggested) : "—"}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </section>
