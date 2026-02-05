@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchAccountDetails } from "../services/accountService";
+import { fetchAccountDetails, fetchAccountPurchaseHistory } from "../services/accountService";
 import { fetchInvoiceByAccount } from "../services/invoiceService";
 import { fetchNotesByAccount } from "../services/notesService";
 import { fetchTasksByAccount, createTask } from "../services/tasksService";
@@ -24,6 +24,8 @@ const AccountDetailsPage = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [users, setUsers] = useState([]);
     const [userRole, setUserRole] = useState("");
+    const [purchaseHistory, setPurchaseHistory] = useState([]);
+    const [purchaseSort, setPurchaseSort] = useState({ key: "quantity", order: "desc" });
 
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -33,6 +35,14 @@ const AccountDetailsPage = ({ user }) => {
     const refreshInvoices = useCallback(async (status = null) => {
         const fetched = await fetchInvoiceByAccount(accountId, status);
         setInvoices(fetched);
+    }, [accountId]);
+
+    const refreshPurchaseHistory = useCallback(async (sortKey = "quantity", order = "desc") => {
+        const data = await fetchAccountPurchaseHistory(accountId, {
+            sort: sortKey === "quantity" ? "quantity" : sortKey,
+            order,
+        });
+        setPurchaseHistory(Array.isArray(data) ? data : []);
     }, [accountId]);
 
     const refreshNotes = useCallback(async () => {
@@ -86,7 +96,6 @@ const AccountDetailsPage = ({ user }) => {
                 setAccount(await fetchAccountDetails(accountId));
                 await refreshInvoices();
                 await refreshNotes();
-        
                 
                 setTasks(await fetchTasksByAccount(accountId)); 
                         
@@ -102,6 +111,29 @@ const AccountDetailsPage = ({ user }) => {
             loadData();
         }
     }, [accountId, refreshNotes, refreshInvoices]);
+
+    useEffect(() => {
+        if (!accountId) return;
+        refreshPurchaseHistory(purchaseSort.key, purchaseSort.order);
+    }, [accountId, purchaseSort.key, purchaseSort.order, refreshPurchaseHistory]);
+
+    const formatCurrency = (value) => {
+        const amount = Number(value || 0);
+        return new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: 2,
+        }).format(amount);
+    };
+
+    const handlePurchaseSort = (key) => {
+        setPurchaseSort((prev) => {
+            if (prev.key === key) {
+                return { key, order: prev.order === "desc" ? "asc" : "desc" };
+            }
+            return { key, order: "desc" };
+        });
+    };
 // debugging useEffect to verify whenever the users prop updates debugging
     useEffect(() => {
         console.log("TasksSection: users prop updated:", users);
@@ -111,6 +143,14 @@ const AccountDetailsPage = ({ user }) => {
 
     if (loading) return <p className="text-muted-foreground text-center">Loading account details...</p>;
     if (!account) return <p className="text-red-600 text-center">Account not found.</p>;
+
+    const mostPurchased = purchaseHistory[0];
+    const leastPurchased = purchaseHistory[purchaseHistory.length - 1];
+    const lastPurchaseDate = purchaseHistory.reduce((latest, item) => {
+        if (!item.last_purchase) return latest;
+        if (!latest) return item.last_purchase;
+        return new Date(item.last_purchase) > new Date(latest) ? item.last_purchase : latest;
+    }, null);
 
     return (
         <div className="p-6 max-w-6xl mx-auto bg-card border border-border shadow-lg rounded-lg">
@@ -127,12 +167,13 @@ const AccountDetailsPage = ({ user }) => {
                     <p className="text-foreground text-left"><strong>Address:</strong> {account.address}</p>
                     <p className="text-foreground text-left">{account.city}, {account.state} {account.zip_code}</p>
                     <p className="text-foreground text-left"><strong>Industry:</strong> {account.industry || "N/A"}</p>
+                    <p className="text-foreground text-left"><strong>Region:</strong> {account.region || "N/A"}</p>
                 </div>
                 <div className="w-1/2 text-right text-foreground">
                     <p className="text-lg font-semibold">Account Number: {account.account_id}</p>
                     {/* Update Account Button - `user` is passed via state */}
                     <button
-                        className="bg-yellow-500 text-white px-3 py-2 rounded my-2"
+                        className="bg-secondary text-secondary-foreground px-3 py-2 rounded my-2 border border-border hover:bg-secondary/80"
                         onClick={() => navigate(`/accounts/update/${account.account_id}`, { state: { user } })}
                     >
                         Update Account
@@ -153,6 +194,80 @@ const AccountDetailsPage = ({ user }) => {
             onCreateInvoice={() => navigate(`/create-invoice/${account.account_id}`)}
             refreshInvoices={refreshInvoices}
             />
+
+            <div className="mt-6 border border-border p-4 rounded-lg bg-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 className="text-xl font-semibold text-foreground">Purchase History</h2>
+                        <p className="text-xs text-muted-foreground">
+                            {mostPurchased ? `Most purchased: ${mostPurchased.service_name} (${mostPurchased.total_quantity})` : "No purchases yet."}
+                            {leastPurchased && purchaseHistory.length > 1 ? ` • Least purchased: ${leastPurchased.service_name} (${leastPurchased.total_quantity})` : ""}
+                            {lastPurchaseDate ? ` • Last purchase: ${formatDate(lastPurchaseDate)}` : ""}
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                        <button
+                            className={`rounded-full px-3 py-1 font-semibold ${
+                                purchaseSort.key === "quantity" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                            }`}
+                            onClick={() => handlePurchaseSort("quantity")}
+                        >
+                            Quantity
+                        </button>
+                        <button
+                            className={`rounded-full px-3 py-1 font-semibold ${
+                                purchaseSort.key === "total_spent" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                            }`}
+                            onClick={() => handlePurchaseSort("total_spent")}
+                        >
+                            Spend
+                        </button>
+                        <button
+                            className={`rounded-full px-3 py-1 font-semibold ${
+                                purchaseSort.key === "last_purchase" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                            }`}
+                            onClick={() => handlePurchaseSort("last_purchase")}
+                        >
+                            Last Purchase
+                        </button>
+                        <button
+                            className="rounded-full px-3 py-1 font-semibold bg-muted text-muted-foreground"
+                            onClick={() => setPurchaseSort((prev) => ({ ...prev, order: prev.order === \"desc\" ? \"asc\" : \"desc\" }))}
+                        >
+                            {purchaseSort.order === "desc" ? "Desc" : "Asc"}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="mt-4 overflow-x-auto">
+                    {purchaseHistory.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No purchase history available.</p>
+                    ) : (
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                                <tr>
+                                    <th className="px-3 py-2 text-left">Item</th>
+                                    <th className="px-3 py-2 text-left">Total Quantity</th>
+                                    <th className="px-3 py-2 text-left">Total Spend</th>
+                                    <th className="px-3 py-2 text-left">Last Purchased</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border">
+                                {purchaseHistory.map((item) => (
+                                    <tr key={item.service_id} className="hover:bg-muted/40">
+                                        <td className="px-3 py-2 text-foreground">{item.service_name}</td>
+                                        <td className="px-3 py-2 text-muted-foreground">{item.total_quantity}</td>
+                                        <td className="px-3 py-2 text-muted-foreground">{formatCurrency(item.total_spent)}</td>
+                                        <td className="px-3 py-2 text-muted-foreground">
+                                            {item.last_purchase ? formatDate(item.last_purchase) : "—"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            </div>
 
 
             <NotesSection 
@@ -204,6 +319,7 @@ AccountDetailsPage.propTypes = {
         state: PropTypes.string,
         zip_code: PropTypes.string,
         industry: PropTypes.string,
+        region: PropTypes.string,
         date_created: PropTypes.string,
         date_updated: PropTypes.string,
         

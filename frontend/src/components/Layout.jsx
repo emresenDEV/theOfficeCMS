@@ -1,10 +1,13 @@
+import { useState } from "react";
 import Sidebar from "./Sidebar";
 import { ThemeToggle } from "./ThemeToggle";
 import { TooltipProvider } from "./ui/tooltip";
 import GlobalSearch from "./GlobalSearch";
 import NotificationBell from "./NotificationBell";
+import QuickAddModal from "./QuickAddModal";
 
 const Layout = ({ children, sidebarOpen, setSidebarOpen, user, handleLogout }) => {
+    const [showQuickAdd, setShowQuickAdd] = useState(false);
     return (
         <TooltipProvider delayDuration={0}>
             <div className="flex min-h-screen w-full bg-background text-foreground">
@@ -52,7 +55,10 @@ const Layout = ({ children, sidebarOpen, setSidebarOpen, user, handleLogout }) =
                             </div>
 
                             <div className="hidden sm:flex items-center gap-2">
-                                <button className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm hover:bg-muted">
+                                <button
+                                    className="rounded-md border border-border bg-secondary px-3 py-2 text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/80"
+                                    onClick={() => setShowQuickAdd(true)}
+                                >
                                     Quick Add
                                 </button>
                             <NotificationBell user={user} />
@@ -78,6 +84,7 @@ const Layout = ({ children, sidebarOpen, setSidebarOpen, user, handleLogout }) =
                     </div>
                 </main>
             </div>
+            <QuickAddModal open={showQuickAdd} onClose={() => setShowQuickAdd(false)} user={user} />
         </TooltipProvider>
     );
 };

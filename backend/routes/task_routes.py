@@ -166,6 +166,8 @@ def create_task():
     notification_link = f"/tasks/{new_task.task_id}"
     if new_task.invoice_id:
         notification_link = f"/invoice/{new_task.invoice_id}?taskId={new_task.task_id}"
+    elif new_task.contact_id:
+        notification_link = f"/contacts/{new_task.contact_id}?taskId={new_task.task_id}"
 
     create_notification(
         user_id=new_task.assigned_to,
@@ -252,6 +254,8 @@ def update_task(task_id):
         task.task_description = data["task_description"]
     if "due_date" in data:
         task.due_date = data["due_date"]
+        task.reminder_sent_at = None
+        task.overdue_notified_at = None
     if "is_completed" in data:
         task.is_completed = data["is_completed"]
     if "account_id" in data:
@@ -266,6 +270,8 @@ def update_task(task_id):
         notification_link = f"/tasks/{task.task_id}"
         if task.invoice_id:
             notification_link = f"/invoice/{task.invoice_id}?taskId={task.task_id}"
+        elif task.contact_id:
+            notification_link = f"/contacts/{task.contact_id}?taskId={task.task_id}"
 
         create_notification(
             user_id=task.assigned_to,
@@ -285,7 +291,7 @@ def update_task(task_id):
                 notif_type="task_completed",
                 title="Task completed",
                 message=task.task_description,
-                link=f"/tasks/{task.task_id}",
+                link=f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else f"/tasks/{task.task_id}",
                 source_type="task",
                 source_id=task.task_id,
             )
@@ -294,7 +300,7 @@ def update_task(task_id):
             actor_user_id,
             "Contact task completed",
             task.task_description,
-            f"/tasks/{task.task_id}",
+            f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else f"/tasks/{task.task_id}",
         )
 
     create_audit_log(

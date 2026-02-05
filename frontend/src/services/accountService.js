@@ -100,3 +100,14 @@ export const deleteAccount = async (accountId, actorUserId, actorEmail) => {
         return { success: false };
     }
 };
+
+// Fetch Purchase History By Account
+export const fetchAccountPurchaseHistory = async (accountId, params = {}) => {
+    try {
+        const response = await api.get(`/accounts/${accountId}/purchase_history`, { params });
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching purchase history:", error.response?.data || error.message);
+        return [];
+    }
+};

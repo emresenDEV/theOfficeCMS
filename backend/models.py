@@ -21,6 +21,7 @@ class Account(db.Model):
     industry_id = db.Column(db.Integer, db.ForeignKey('industries.industry_id'))
     sales_rep_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     notes = db.Column(db.Text)
+    region = db.Column(db.String(50))
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_updated = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.branch_id'), nullable=True)
@@ -67,6 +68,7 @@ class Account(db.Model):
             "sales_rep_id": self.sales_rep_id,
             "branch_id": self.branch_id,
             "notes": self.notes,
+            "region": self.region,
             "date_created": self.date_created.strftime("%Y-%m-%d %H:%M:%S") if self.date_created else None,
             "date_updated": self.date_updated.strftime("%Y-%m-%d %H:%M:%S") if self.date_updated else None,
             "updated_by_user_id": self.updated_by_user_id,
@@ -319,6 +321,7 @@ class Tasks(db.Model):
     is_completed = db.Column(db.Boolean)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     overdue_notified_at = db.Column(db.Date)
+    reminder_sent_at = db.Column(db.DateTime)
 
 class UserRoles(db.Model):
     __tablename__ = 'user_roles'

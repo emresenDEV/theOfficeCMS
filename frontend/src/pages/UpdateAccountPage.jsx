@@ -25,6 +25,7 @@ const UpdateAccountPage = () => {
         city: "",
         state: "",
         zip_code: "",
+        region: "",
         industry_id: "",
         user_id: "",
         branch_id: "",
@@ -424,6 +425,15 @@ const UpdateAccountPage = () => {
                     className="w-full p-2 border rounded mb-4" 
                     required
                 />
+                {/* ✅ Region */}
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Region</label>
+                <input
+                    type="text"
+                    name="region"
+                    value={accountData.region || ""}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded mb-4"
+                />
                 {/* ✅ Industry Dropdown */}
                 <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Industry</label>
                 <select 
@@ -525,6 +535,7 @@ UpdateAccountPage.propTypes = {
         city: PropTypes.string,
         state: PropTypes.string,
         zip_code: PropTypes.string,
+        region: PropTypes.string,
         industry_id: PropTypes.number,
         user_id: PropTypes.number,
         branch_id: PropTypes.number,

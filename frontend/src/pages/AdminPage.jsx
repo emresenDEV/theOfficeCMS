@@ -76,6 +76,7 @@ const AdminPage = ({ user }) => {
     city: "",
     state: "",
     zip_code: "",
+    region: "",
     industry_id: "",
     user_id: "",
     branch_id: "",
@@ -257,6 +258,7 @@ const AdminPage = ({ user }) => {
       city: "",
       state: "",
       zip_code: "",
+      region: "",
       industry_id: "",
       user_id: "",
       branch_id: "",
@@ -836,6 +838,12 @@ const AdminPage = ({ user }) => {
                 value={newAccount.zip_code}
                 onChange={(e) => setNewAccount({ ...newAccount, zip_code: e.target.value })}
               />
+              <input
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                placeholder="Region"
+                value={newAccount.region}
+                onChange={(e) => setNewAccount({ ...newAccount, region: e.target.value })}
+              />
               <select
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                 value={newAccount.industry_id}
@@ -911,6 +919,12 @@ const AdminPage = ({ user }) => {
                   className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                   value={editingAccount.email || ""}
                   onChange={(e) => setEditingAccount({ ...editingAccount, email: e.target.value })}
+                />
+                <input
+                  className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                  placeholder="Region"
+                  value={editingAccount.region || ""}
+                  onChange={(e) => setEditingAccount({ ...editingAccount, region: e.target.value })}
                 />
                 <select
                   className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"

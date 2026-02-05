@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from models import Account, Industry, Users, Branches, Tasks, Invoice
+from models import Account, Industry, Users, Branches, Tasks, Invoice, InvoiceServices, Service
 from sqlalchemy import func
 from database import db
 from notifications import create_notification
@@ -93,12 +93,60 @@ def get_account_details(account_id):
         "city": account.city,
         "state": account.state,
         "zip_code": account.zip_code,
+        "region": account.region,
         "industry": industry_name if industry_name else "N/A",
         "sales_rep": assigned_sales_rep if assigned_sales_rep else None,
         "branch": branch_info if branch_info else None,
         "date_created": account.date_created.strftime("%Y-%m-%d"),
         "date_updated": account.date_updated.strftime("%Y-%m-%d"),
     }), 200
+
+
+@account_bp.route("/<int:account_id>/purchase_history", methods=["GET"])
+def get_account_purchase_history(account_id):
+    sort_key = request.args.get("sort", "quantity")
+    order = request.args.get("order", "desc")
+
+    quantity_col = func.coalesce(func.sum(InvoiceServices.quantity), 0).label("total_quantity")
+    spend_col = func.coalesce(func.sum(InvoiceServices.total_price), 0).label("total_spent")
+    last_purchase_col = func.max(Invoice.date_created).label("last_purchase")
+
+    query = (
+        db.session.query(
+            Service.service_id,
+            Service.service_name,
+            quantity_col,
+            spend_col,
+            last_purchase_col,
+        )
+        .join(InvoiceServices, InvoiceServices.service_id == Service.service_id)
+        .join(Invoice, Invoice.invoice_id == InvoiceServices.invoice_id)
+        .filter(Invoice.account_id == account_id)
+        .group_by(Service.service_id, Service.service_name)
+    )
+
+    if sort_key == "total_spent":
+        sort_column = spend_col
+    elif sort_key == "last_purchase":
+        sort_column = last_purchase_col
+    else:
+        sort_column = quantity_col
+
+    query = query.order_by(sort_column.desc() if order == "desc" else sort_column.asc())
+
+    results = query.all()
+    history = [
+        {
+            "service_id": row.service_id,
+            "service_name": row.service_name,
+            "total_quantity": int(row.total_quantity or 0),
+            "total_spent": float(row.total_spent or 0),
+            "last_purchase": row.last_purchase.isoformat() if row.last_purchase else None,
+        }
+        for row in results
+    ]
+
+    return jsonify(history), 200
 
 # Fetch account revenue, last invoice date, and task count - MUST COME BEFORE /<int:account_id>
 @account_bp.route("/account_metrics", methods=["GET"])
@@ -114,6 +162,7 @@ def get_account_metrics():
             Account.contact_name,
             Account.contact_first_name,
             Account.contact_last_name,
+            Account.region,
             Industry.industry_name,
             func.coalesce(func.count(Tasks.task_id).filter(Tasks.is_completed == False), 0).label("task_count"),
             func.coalesce(func.sum(Invoice.final_total), 0).label("total_revenue"),
@@ -138,6 +187,7 @@ def get_account_metrics():
             "task_count": acc.task_count,
             "total_revenue": float(acc.total_revenue or 0),
             "last_invoice_date": acc.last_invoice_date.strftime("%Y-%m-%d") if acc.last_invoice_date else None,
+            "region": acc.region,
         }
         for acc in accounts
     ]
@@ -161,6 +211,7 @@ def get_accounts():
             "city": acc.city,
             "state": acc.state,
             "zip_code": acc.zip_code,
+            "region": acc.region,
             "industry_id": acc.industry_id,
             "sales_rep_id": acc.sales_rep_id,
             "notes": acc.notes,
@@ -187,6 +238,7 @@ def get_account_by_id(account_id):
         "contact_last_name": account.contact_last_name,
         "email": account.email,
         "phone_number": account.phone_number,
+        "region": account.region,
     })
 
 # Update Account Details
@@ -236,6 +288,8 @@ def update_account(account_id):
         account.sales_rep_id = data.get("sales_rep_id", account.sales_rep_id) or None
         account.branch_id = data.get("branch_id", account.branch_id) or None
         account.notes = data.get("notes", account.notes) or None
+        if "region" in data:
+            account.region = _coerce_empty(data.get("region"))
 
         # Automatically update the timestamp
         account.date_updated = db.func.current_timestamp()
@@ -323,6 +377,7 @@ def create_account():
             sales_rep_id=user_id,
             branch_id=branch_id,
             notes=data.get("notes"),
+            region=_coerce_empty(data.get("region")),
             date_created=func.current_timestamp(),
             date_updated=func.current_timestamp(),
             updated_by_user_id=created_by

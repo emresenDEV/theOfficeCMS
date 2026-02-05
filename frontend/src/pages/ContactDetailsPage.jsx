@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import {
   createContactInteraction,
@@ -17,6 +17,7 @@ import { formatDateTimeInTimeZone, formatDateInTimeZone } from "../utils/timezon
 
 const ContactDetailsPage = ({ user }) => {
   const { contactId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [contact, setContact] = useState(null);
   const [form, setForm] = useState(null);
@@ -32,6 +33,8 @@ const ContactDetailsPage = ({ user }) => {
   const [autosaveOverride, setAutosaveOverride] = useState(null);
   const [accountAdds, setAccountAdds] = useState([]);
   const [accountRemoves, setAccountRemoves] = useState([]);
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [accountSaveMessage, setAccountSaveMessage] = useState("");
   const [interactionForm, setInteractionForm] = useState({
     interaction_type: "call",
     subject: "",
@@ -48,6 +51,12 @@ const ContactDetailsPage = ({ user }) => {
     due_date: "",
     account_id: "",
   });
+  const [followupForm, setFollowupForm] = useState({
+    due_date: "",
+    note: "",
+    account_id: "",
+  });
+  const [highlightTaskId, setHighlightTaskId] = useState(null);
 
   const storedAutosave = localStorage.getItem("contacts_autosave");
   const autosaveDefault = user?.contacts_autosave ?? (storedAutosave === null ? true : storedAutosave === "true");
@@ -63,6 +72,16 @@ const ContactDetailsPage = ({ user }) => {
       setAutosaveOverride(null);
     }
   }, [contactId]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const taskIdParam = params.get("taskId");
+    if (taskIdParam) {
+      setHighlightTaskId(Number(taskIdParam));
+    } else {
+      setHighlightTaskId(null);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     let mounted = true;
@@ -106,6 +125,38 @@ const ContactDetailsPage = ({ user }) => {
     }, 800);
     return () => clearTimeout(timeoutId);
   }, [autosaveEnabled, dirty, form]);
+
+  useEffect(() => {
+    if (!contact) return;
+    if (!accountAdds.length && !accountRemoves.length) return;
+    setAccountSaving(true);
+    const timeoutId = setTimeout(async () => {
+      const payload = {
+        add_account_ids: accountAdds.map(Number),
+        remove_account_ids: accountRemoves.map(Number),
+        actor_user_id: user?.user_id,
+        actor_email: user?.email,
+      };
+      const updated = await updateContactAccounts(contact.contact_id, payload);
+      if (updated) {
+        setContact(updated);
+        setAccountAdds([]);
+        setAccountRemoves([]);
+        setAccountSaveMessage("Accounts updated");
+        setTimeout(() => setAccountSaveMessage(""), 1500);
+      }
+      setAccountSaving(false);
+    }, 600);
+    return () => clearTimeout(timeoutId);
+  }, [accountAdds, accountRemoves, contact, user?.user_id, user?.email]);
+
+  useEffect(() => {
+    if (!highlightTaskId) return;
+    const row = document.getElementById(`contact-task-${highlightTaskId}`);
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightTaskId, tasks]);
 
   const userMap = useMemo(() => {
     const map = new Map();
@@ -210,22 +261,6 @@ const ContactDetailsPage = ({ user }) => {
     }
   };
 
-  const handleAccountUpdate = async () => {
-    if (!accountAdds.length && !accountRemoves.length) return;
-    const payload = {
-      add_account_ids: accountAdds.map(Number),
-      remove_account_ids: accountRemoves.map(Number),
-      actor_user_id: user?.user_id,
-      actor_email: user?.email,
-    };
-    const updated = await updateContactAccounts(contact.contact_id, payload);
-    if (updated) {
-      setContact(updated);
-      setAccountAdds([]);
-      setAccountRemoves([]);
-    }
-  };
-
   const handleInteractionSubmit = async () => {
     if (!interactionForm.subject && !interactionForm.notes) return;
 
@@ -295,6 +330,29 @@ const ContactDetailsPage = ({ user }) => {
         due_date: "",
         account_id: "",
       });
+    }
+  };
+
+  const handleFollowupCreate = async () => {
+    if (!followupForm.due_date) return;
+    const descriptionBase = `Follow up with ${displayName}`;
+    const description = followupForm.note
+      ? `${descriptionBase} - ${followupForm.note}`
+      : descriptionBase;
+    const payload = {
+      user_id: user?.user_id,
+      assigned_to: user?.user_id,
+      task_description: description,
+      due_date: followupForm.due_date,
+      account_id: followupForm.account_id ? Number(followupForm.account_id) : null,
+      contact_id: contact.contact_id,
+      actor_user_id: user?.user_id,
+      actor_email: user?.email,
+    };
+    const created = await createTask(payload);
+    if (created) {
+      setTasks((prev) => [created, ...prev]);
+      setFollowupForm({ due_date: "", note: "", account_id: "" });
     }
   };
 
@@ -470,7 +528,12 @@ const ContactDetailsPage = ({ user }) => {
           </div>
 
           <div className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-lg font-semibold text-foreground">Accounts</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-foreground">Accounts</h2>
+              <span className="text-xs text-muted-foreground">
+                {accountSaving ? "Saving..." : accountSaveMessage || "Auto-save on"}
+              </span>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {contact.accounts?.length ? (
                 contact.accounts.map((acc) => (
@@ -532,13 +595,46 @@ const ContactDetailsPage = ({ user }) => {
                 </div>
               </div>
             </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground"
-                onClick={handleAccountUpdate}
-                disabled={!accountAdds.length && !accountRemoves.length}
+            <div className="mt-3 text-xs text-muted-foreground">
+              Account links auto-save as you update selections.
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card p-4">
+            <h2 className="text-lg font-semibold text-foreground">Follow-up</h2>
+            <p className="text-xs text-muted-foreground">Creates a task and reminder for this contact.</p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <input
+                type="date"
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                value={followupForm.due_date}
+                onChange={(e) => setFollowupForm((prev) => ({ ...prev, due_date: e.target.value }))}
+              />
+              <select
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                value={followupForm.account_id}
+                onChange={(e) => setFollowupForm((prev) => ({ ...prev, account_id: e.target.value }))}
               >
-                Save Account Links
+                <option value="">Related account (optional)</option>
+                {contact.accounts?.map((acc) => (
+                  <option key={acc.account_id} value={acc.account_id}>
+                    {acc.business_name}
+                  </option>
+                ))}
+              </select>
+              <input
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground md:col-span-2"
+                placeholder="Follow-up notes (optional)"
+                value={followupForm.note}
+                onChange={(e) => setFollowupForm((prev) => ({ ...prev, note: e.target.value }))}
+              />
+            </div>
+            <div className="mt-3 flex justify-end">
+              <button
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                onClick={handleFollowupCreate}
+              >
+                Create Follow-up Task
               </button>
             </div>
           </div>
@@ -744,7 +840,13 @@ const ContactDetailsPage = ({ user }) => {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {tasks.map((task) => (
-                      <tr key={task.task_id} className="hover:bg-muted/40">
+                      <tr
+                        key={task.task_id}
+                        id={`contact-task-${task.task_id}`}
+                        className={`hover:bg-muted/40 ${
+                          highlightTaskId === task.task_id ? "bg-primary/10 ring-2 ring-primary/40" : ""
+                        }`}
+                      >
                         <td className="px-3 py-2">
                           <button
                             className="text-primary hover:underline"

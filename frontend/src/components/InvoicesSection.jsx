@@ -39,13 +39,13 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
     const getStatusBadge = (status) => {
         switch (status) {
             case "Paid":
-                return "bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200 px-2 py-1 rounded-full text-xs font-semibold";
             case "Partial":
-                return "bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                return "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200 px-2 py-1 rounded-full text-xs font-semibold";
             case "Past Due":
-                return "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                return "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200 px-2 py-1 rounded-full text-xs font-semibold";
             case "Pending":
-                return "bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-semibold";
+                return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200 px-2 py-1 rounded-full text-xs font-semibold";
             default:
                 return "bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs font-semibold";
         }
@@ -86,25 +86,25 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                 <div>
                     <button 
                         onClick={() => setInvoiceFilter("Paid")}
-                        className="bg-green-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-green-600 transition-colors"
+                        className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-colors"
                     >
                         Paid
                     </button>
                     <button 
                         onClick={() => setInvoiceFilter("Past Due")}                            
-                        className="bg-red-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-red-600 transition-colors"
+                        className="bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-rose-200 dark:hover:bg-rose-500/30 transition-colors"
                     >
                         Past Due
                     </button>
                     <button 
                         onClick={() => setInvoiceFilter("Partial")} 
-                        className="bg-purple-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-purple-600"
+                        className="bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-violet-200 dark:hover:bg-violet-500/30"
                     >
                         Partial
                     </button>
                     <button 
                         onClick={() => setInvoiceFilter("Pending")} 
-                        className="bg-yellow-500 text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-yellow-600 transition-colors"
+                        className="bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200 px-3 py-2 mx-1 rounded shadow-sm hover:bg-amber-200 dark:hover:bg-amber-500/30 transition-colors"
                     >
                         Pending
                     </button>
@@ -115,14 +115,14 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             setSearchInvoices("");
                             refreshInvoices();
                         }} 
-                        className="bg-muted text-white px-3 py-2 mx-1 rounded shadow-lg hover:bg-secondary/80 transition-colors"
+                        className="bg-secondary text-secondary-foreground px-3 py-2 mx-1 rounded shadow-sm hover:bg-secondary/80 transition-colors"
                     >
                         Clear
                     </button>
 
                     <button 
                         onClick={onCreateInvoice} 
-                        className="bg-blue-600 text-white px-3 py-2 ml-2 rounded shadow-lg hover:bg-blue-700 transition-colors"
+                        className="bg-primary text-primary-foreground px-3 py-2 ml-2 rounded shadow-sm hover:bg-primary/90 transition-colors"
                     >
                         Create
                     </button>
@@ -140,7 +140,6 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Due Date</th>
                             <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Total</th>
                             <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Status</th>
-                            <th className="font-bold p-2 border-b text-center text-muted-foreground">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -152,7 +151,14 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                                         index % 2 === 0 ? "bg-muted/40" : "bg-card"
                                     }`}
                                 >
-                                    <td className="p-2 border-b border-r text-left">{inv.invoice_id}</td>
+                                    <td className="p-2 border-b border-r text-left">
+                                        <button
+                                            className="rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80"
+                                            onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
+                                        >
+                                            #{inv.invoice_id}
+                                        </button>
+                                    </td>
                                     <td className="p-2 border-b border-r text-left">{formatDueDate(inv.date_created)}</td>
                                     <td className="p-2 border-b border-r text-left">{formatDueDate(inv.due_date)}</td>
                                     <td className="p-2 border-b border-r text-left">{formatTotalAmount(inv.final_total)}</td>
@@ -180,19 +186,11 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                                             );
                                         })()}
                                     </td>
-                                    <td className="p-2 border-b text-center">
-                                        <button
-                                            onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
-                                            className="bg-blue-600 text-white px-3 py-1 rounded shadow-lg hover:bg-blue-700 transition-colors"
-                                        >
-                                            View
-                                        </button>
-                                    </td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6" className="p-4 text-center text-muted-foreground">No invoices available</td>
+                                <td colSpan="5" className="p-4 text-center text-muted-foreground">No invoices available</td>
                             </tr>
                         )}
                     </tbody>

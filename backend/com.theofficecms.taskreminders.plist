@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.theofficecms.taskreminders</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/venv/bin/python</string>
+      <string>/Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/jobs/notify_overdue_tasks.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend</string>
+    <key>StartInterval</key>
+    <integer>900</integer>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/monicanieckula/Library/Logs/theofficecms-taskreminders.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/monicanieckula/Library/Logs/theofficecms-taskreminders.err.log</string>
+  </dict>
+</plist>

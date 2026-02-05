@@ -23,6 +23,7 @@ const CreateNewAccountPage = ({ user }) => {
         city: "",
         state: "",
         zip_code: "",
+        region: "",
         industry_id: "",
         user_id: "",
         branch_id: "",
@@ -203,6 +204,13 @@ const CreateNewAccountPage = ({ user }) => {
                     placeholder="Zip Code" 
                     onChange={handleChange} 
                     className="border p-2 w-full" 
+                />
+                <input
+                    type="text"
+                    name="region"
+                    placeholder="Region"
+                    onChange={handleChange}
+                    className="border p-2 w-full"
                 />
 
                 {/* Industry Selection */}
