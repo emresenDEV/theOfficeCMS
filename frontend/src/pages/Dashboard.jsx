@@ -224,7 +224,7 @@ const Dashboard = ({ user }) => {
 
     return (
         <div className="w-full">
-            <div className="flex-1 p-4 sm:p-6 space-y-6">
+            <div className="flex-1 px-4 pb-6 pt-0 sm:px-6 sm:pb-6 sm:pt-0 space-y-6">
                 <DashboardHeader
                     userName={`${userData.first_name} ${userData.last_name}`}
                     roleName={userData.role_name || "Sales"}
