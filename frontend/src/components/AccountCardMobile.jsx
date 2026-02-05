@@ -1,11 +1,18 @@
 import { formatDateInTimeZone } from "../utils/timezone";
 import PropTypes from "prop-types";
 
-const AccountCardMobile = ({ account, onViewAccount }) => {
+const AccountCardMobile = ({ account, onViewAccount, onViewContact }) => {
     return (
-        <button
+        <div
             onClick={() => onViewAccount(account.account_id)}
             className="w-full border rounded-lg p-4 bg-card hover:bg-muted/60 transition text-left"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    onViewAccount(account.account_id);
+                }
+            }}
         >
             {/* Business Name - Clickable Button Style */}
             <h2 className="text-base font-semibold text-primary hover:text-primary/80 mb-3">
@@ -16,8 +23,20 @@ const AccountCardMobile = ({ account, onViewAccount }) => {
             <div className="space-y-2 text-sm">
                 {/* Contact Name */}
                 <div>
-                    <span className="font-medium text-muted-foreground">Contact:</span>
-                    <span className="text-muted-foreground ml-2">{account.contact_name}</span>
+                    <span className="font-medium text-muted-foreground">Contact:</span>{" "}
+                    {account.primary_contact_id ? (
+                        <button
+                            className="ml-2 text-primary underline"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onViewContact(account.primary_contact_id);
+                            }}
+                        >
+                            {account.primary_contact_name || account.contact_name}
+                        </button>
+                    ) : (
+                        <span className="text-muted-foreground ml-2">{account.contact_name}</span>
+                    )}
                 </div>
 
                 {/* Phone Number */}
@@ -86,7 +105,7 @@ const AccountCardMobile = ({ account, onViewAccount }) => {
             <div className="mt-3 text-blue-600 text-xs font-medium flex items-center">
                 View Details →
             </div>
-        </button>
+        </div>
     );
 };
 
@@ -95,6 +114,8 @@ AccountCardMobile.propTypes = {
         account_id: PropTypes.number.isRequired,
         business_name: PropTypes.string.isRequired,
         contact_name: PropTypes.string,
+        primary_contact_id: PropTypes.number,
+        primary_contact_name: PropTypes.string,
         phone_number: PropTypes.string,
         industry: PropTypes.string,
         revenue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -106,6 +127,7 @@ AccountCardMobile.propTypes = {
         task_count: PropTypes.number,
     }).isRequired,
     onViewAccount: PropTypes.func.isRequired,
+    onViewContact: PropTypes.func.isRequired,
 };
 
 export default AccountCardMobile;

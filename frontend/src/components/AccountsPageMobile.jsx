@@ -5,6 +5,7 @@ import AccountCardMobile from "./AccountCardMobile";
 const AccountsPageMobile = ({
     accounts = [],
     onViewAccount,
+    onViewContact,
     onCreateNew,
     searchQuery,
     onSearchChange,
@@ -101,6 +102,7 @@ const AccountsPageMobile = ({
                                 key={account.account_id}
                                 account={account}
                                 onViewAccount={onViewAccount}
+                                onViewContact={onViewContact}
                             />
                         ))
                     ) : (
@@ -127,6 +129,7 @@ const AccountsPageMobile = ({
 AccountsPageMobile.propTypes = {
     accounts: PropTypes.array,
     onViewAccount: PropTypes.func.isRequired,
+    onViewContact: PropTypes.func.isRequired,
     onCreateNew: PropTypes.func.isRequired,
     searchQuery: PropTypes.string.isRequired,
     onSearchChange: PropTypes.func.isRequired,

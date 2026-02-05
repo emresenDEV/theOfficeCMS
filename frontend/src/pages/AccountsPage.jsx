@@ -81,6 +81,7 @@ const AccountsPage = ({ user }) => {
         <AccountsPageMobile
             accounts={accounts}
             onViewAccount={(accountId) => navigate(`/accounts/details/${accountId}`)}
+            onViewContact={(contactId) => navigate(`/contacts/${contactId}`)}
             onCreateNew={() => navigate("/accounts/create")}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -121,7 +122,18 @@ const AccountsPage = ({ user }) => {
                             <div className="text-left">
                                 <h2 className="text-lg font-semibold text-foreground">{account.business_name}</h2>
                                 <p className="text-muted-foreground">
-                                    <span className="font-medium">Contact:</span> {account.contact_name} | 
+                                    <span className="font-medium">Contact:</span>{" "}
+                                    {account.primary_contact_id ? (
+                                        <button
+                                            className="font-semibold underline text-primary hover:text-primary/80"
+                                            onClick={() => navigate(`/contacts/${account.primary_contact_id}`)}
+                                        >
+                                            {account.primary_contact_name || account.contact_name}
+                                        </button>
+                                    ) : (
+                                        <span className="font-semibold text-foreground">{account.contact_name}</span>
+                                    )}{" "}
+                                    | 
                                     <span className="font-medium"> Phone:</span> {account.phone_number}
                                 </p>
                                 <p className="text-muted-foreground"><span className="font-medium">Email:</span> {account.email}</p>

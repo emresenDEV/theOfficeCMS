@@ -376,8 +376,7 @@ const ContactDetailsPage = ({ user }) => {
   }, [contact]);
 
   const isFollowupTask = (task) => {
-    if (!task?.task_description) return false;
-    return task.task_description.toLowerCase().startsWith("follow up with");
+    return !!task?.is_followup;
   };
 
   const followupTasks = useMemo(() => {
@@ -560,6 +559,7 @@ const ContactDetailsPage = ({ user }) => {
       due_date: followupForm.due_date,
       account_id: followupForm.account_id ? Number(followupForm.account_id) : null,
       contact_id: contact.contact_id,
+      is_followup: true,
       actor_user_id: user?.user_id,
       actor_email: user?.email,
     };

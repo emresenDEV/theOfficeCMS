@@ -167,7 +167,19 @@ return (
         <p>{account.city}, {account.state} {account.zipcode}</p>
         <p>Tax Rate: {(form.tax_rate * 100).toFixed(2)}%</p>
         <br />
-        <p><strong>Contact:</strong> {account.contact_name}</p>
+        <p>
+            <strong>Contact:</strong>{" "}
+            {account.primary_contact_id ? (
+                <button
+                    className="font-semibold underline text-primary hover:text-primary/80"
+                    onClick={() => navigate(`/contacts/${account.primary_contact_id}`)}
+                >
+                    {account.primary_contact_name || account.contact_name}
+                </button>
+            ) : (
+                <span className="font-semibold text-foreground">{account.contact_name}</span>
+            )}
+        </p>
         <p><strong>Phone:</strong> {account.phone_number}</p>
         <p><strong>Email:</strong> {account.email}</p>
         </div>

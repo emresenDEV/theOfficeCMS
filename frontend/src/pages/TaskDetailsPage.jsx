@@ -32,6 +32,7 @@ const TaskDetailsPage = ({ user }) => {
     const [accountSearch, setAccountSearch] = useState("");
     const [invoiceSearch, setInvoiceSearch] = useState("");
     const [contactSearch, setContactSearch] = useState("");
+    const [toast, setToast] = useState("");
 
     useEffect(() => {
         let active = true;
@@ -120,6 +121,7 @@ const TaskDetailsPage = ({ user }) => {
             const refreshed = await fetchTaskById(taskId);
             setTask(refreshed);
             setLinkEdit(false);
+            setToast("Links updated successfully.");
         }
         setLinkSaving(false);
     };
@@ -155,8 +157,15 @@ const TaskDetailsPage = ({ user }) => {
         const updated = await updateTask(task.task_id, payload);
         if (updated) {
             setTask((prev) => ({ ...prev, ...updated }));
+            setToast("Task updated successfully.");
         }
     };
+
+    useEffect(() => {
+        if (!toast) return;
+        const timeoutId = setTimeout(() => setToast(""), 3000);
+        return () => clearTimeout(timeoutId);
+    }, [toast]);
 
     if (loading) {
         return <p className="text-muted-foreground text-center">Loading task details...</p>;
@@ -205,6 +214,11 @@ const TaskDetailsPage = ({ user }) => {
 
     return (
         <div className="p-6 max-w-4xl mx-auto bg-card border border-border shadow-lg rounded-lg">
+            {toast && (
+                <div className="mb-4 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                    {toast}
+                </div>
+            )}
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">Task #{task.task_id}</h1>

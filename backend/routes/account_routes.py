@@ -217,6 +217,22 @@ def get_account_metrics():
 @account_bp.route("/", methods=["GET"])
 def get_accounts():
     accounts = Account.query.all()
+    primary_links = AccountContacts.query.order_by(
+        AccountContacts.is_primary.desc(),
+        AccountContacts.created_at.asc(),
+    ).all()
+    primary_contact_map = {}
+    for link in primary_links:
+        if link.account_id not in primary_contact_map:
+            primary_contact_map[link.account_id] = link.contact_id
+    contact_ids = list({cid for cid in primary_contact_map.values() if cid})
+    contact_name_map = {}
+    if contact_ids:
+        contacts = Contact.query.filter(Contact.contact_id.in_(contact_ids)).all()
+        contact_name_map = {
+            contact.contact_id: f"{contact.first_name or ''} {contact.last_name or ''}".strip() or None
+            for contact in contacts
+        }
     account_list = [
         {
             "account_id": acc.account_id,
@@ -224,6 +240,8 @@ def get_accounts():
             "contact_name": _compose_contact_name(acc.contact_first_name, acc.contact_last_name) or acc.contact_name,
             "contact_first_name": acc.contact_first_name,
             "contact_last_name": acc.contact_last_name,
+            "primary_contact_id": primary_contact_map.get(acc.account_id),
+            "primary_contact_name": contact_name_map.get(primary_contact_map.get(acc.account_id)),
             "phone_number": acc.phone_number,
             "email": acc.email,
             "address": acc.address,
@@ -313,6 +331,12 @@ def update_account(account_id):
             account.region_id = int(data.get("region_id")) if data.get("region_id") else None
         if "region" in data and "region_id" not in data:
             account.region = _coerce_empty(data.get("region"))
+        if "branch_id" in data and "region_id" not in data:
+            branch = Branches.query.get(account.branch_id) if account.branch_id else None
+            if branch and branch.branch_name:
+                region = Region.query.filter_by(region_name=branch.branch_name).first()
+                if region:
+                    account.region_id = region.region_id
 
         # Automatically update the timestamp
         account.date_updated = db.func.current_timestamp()

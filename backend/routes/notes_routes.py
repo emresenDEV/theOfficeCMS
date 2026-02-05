@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import Notes, Users
+from models import Notes, Users, TaskNotes, Tasks
 from database import db
 from audit import create_audit_log
 
@@ -112,7 +112,7 @@ def get_notes_by_account(account_id):
             Users, Notes.user_id == Users.user_id
         ).filter(Notes.account_id == account_id).all()
 
-        notes_list = [
+        account_notes = [
             {
                 "note_id": note.Notes.note_id,
                 "account_id": note.Notes.account_id,
@@ -120,12 +120,36 @@ def get_notes_by_account(account_id):
                 "username": note.username,  
                 "invoice_id": note.Notes.invoice_id,
                 "note_text": note.Notes.note_text,
-                "date_created": note.Notes.date_created.strftime("%Y-%m-%d %H:%M:%S")
+                "date_created": note.Notes.date_created.strftime("%Y-%m-%d %H:%M:%S"),
+                "note_type": "account_note",
             }
             for note in notes
         ]
 
-        return jsonify(notes_list), 200
+        task_notes = db.session.query(TaskNotes, Users.username, Tasks).join(
+            Users, TaskNotes.user_id == Users.user_id
+        ).join(
+            Tasks, TaskNotes.task_id == Tasks.task_id
+        ).filter(Tasks.account_id == account_id).all()
+
+        task_notes_list = [
+            {
+                "note_id": f"task-{note.TaskNotes.task_note_id}",
+                "task_note_id": note.TaskNotes.task_note_id,
+                "task_id": note.TaskNotes.task_id,
+                "account_id": account_id,
+                "user_id": note.TaskNotes.user_id,
+                "username": note.username,
+                "invoice_id": note.Tasks.invoice_id,
+                "note_text": note.TaskNotes.note_text,
+                "date_created": note.TaskNotes.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "note_type": "task_note",
+            }
+            for note in task_notes
+        ]
+
+        combined = account_notes + task_notes_list
+        return jsonify(combined), 200
 
     except Exception as e:
         print(f"❌ Error fetching notes: {str(e)}")

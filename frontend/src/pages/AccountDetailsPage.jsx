@@ -26,6 +26,7 @@ const AccountDetailsPage = ({ user }) => {
     const [userRole, setUserRole] = useState("");
     const [purchaseHistory, setPurchaseHistory] = useState([]);
     const [purchaseSort, setPurchaseSort] = useState({ key: "quantity", order: "desc" });
+    const [activeTab, setActiveTab] = useState("audit");
 
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -213,104 +214,153 @@ const AccountDetailsPage = ({ user }) => {
             refreshInvoices={refreshInvoices}
             />
 
-            <div className="mt-6 border border-border p-4 rounded-lg bg-card">
+            <div className="mt-6 rounded-lg border border-border bg-card p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h2 className="text-xl font-semibold text-foreground">Purchase History</h2>
-                        <p className="text-xs text-muted-foreground">
-                            {mostPurchased ? `Most purchased: ${mostPurchased.service_name} (${mostPurchased.total_quantity})` : "No purchases yet."}
-                            {leastPurchased && purchaseHistory.length > 1 ? ` • Least purchased: ${leastPurchased.service_name} (${leastPurchased.total_quantity})` : ""}
-                            {lastPurchaseDate ? ` • Last purchase: ${formatDate(lastPurchaseDate)}` : ""}
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-xs">
-                        <button
-                            className={`rounded-full px-3 py-1 font-semibold ${
-                                purchaseSort.key === "quantity" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                            }`}
-                            onClick={() => handlePurchaseSort("quantity")}
-                        >
-                            Quantity
-                        </button>
-                        <button
-                            className={`rounded-full px-3 py-1 font-semibold ${
-                                purchaseSort.key === "total_spent" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                            }`}
-                            onClick={() => handlePurchaseSort("total_spent")}
-                        >
-                            Spend
-                        </button>
-                        <button
-                            className={`rounded-full px-3 py-1 font-semibold ${
-                                purchaseSort.key === "last_purchase" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                            }`}
-                            onClick={() => handlePurchaseSort("last_purchase")}
-                        >
-                            Last Purchase
-                        </button>
-                        <button
-                            className="rounded-full px-3 py-1 font-semibold bg-muted text-muted-foreground"
-                            onClick={() => setPurchaseSort((prev) => ({ ...prev, order: prev.order === "desc" ? "asc" : "desc" }))}
-                        >
-                            {purchaseSort.order === "desc" ? "Desc" : "Asc"}
-                        </button>
-                    </div>
+                    <h2 className="text-lg font-semibold text-foreground">Account Activity</h2>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+                    <button
+                        className={`rounded-full px-3 py-1 ${
+                            activeTab === "audit" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}
+                        onClick={() => setActiveTab("audit")}
+                    >
+                        Audit
+                    </button>
+                    <button
+                        className={`rounded-full px-3 py-1 ${
+                            activeTab === "notes" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}
+                        onClick={() => setActiveTab("notes")}
+                    >
+                        Notes
+                    </button>
+                    <button
+                        className={`rounded-full px-3 py-1 ${
+                            activeTab === "tasks" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}
+                        onClick={() => setActiveTab("tasks")}
+                    >
+                        Tasks
+                    </button>
+                    <button
+                        className={`rounded-full px-3 py-1 ${
+                            activeTab === "purchase" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}
+                        onClick={() => setActiveTab("purchase")}
+                    >
+                        Purchase History
+                    </button>
                 </div>
 
-                <div className="mt-4 overflow-x-auto">
-                    {purchaseHistory.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">No purchase history available.</p>
-                    ) : (
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                                <tr>
-                                    <th className="px-3 py-2 text-left">Item</th>
-                                    <th className="px-3 py-2 text-left">Total Quantity</th>
-                                    <th className="px-3 py-2 text-left">Total Spend</th>
-                                    <th className="px-3 py-2 text-left">Last Purchased</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {purchaseHistory.map((item) => (
-                                    <tr key={item.service_id} className="hover:bg-muted/40">
-                                        <td className="px-3 py-2 text-foreground">{item.service_name}</td>
-                                        <td className="px-3 py-2 text-muted-foreground">{item.total_quantity}</td>
-                                        <td className="px-3 py-2 text-muted-foreground">{formatCurrency(item.total_spent)}</td>
-                                        <td className="px-3 py-2 text-muted-foreground">
-                                            {item.last_purchase ? formatDate(item.last_purchase) : "—"}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <div className="mt-4">
+                    {activeTab === "audit" && (
+                        <AuditSection
+                            title="Account Audit Trail"
+                            filters={{ account_id: account.account_id }}
+                            limit={100}
+                        />
+                    )}
+
+                    {activeTab === "notes" && (
+                        <NotesSection 
+                            notes={notes}
+                            accountId={account?.account_id || 0}
+                            userId={user?.user_id ?? user?.id ?? 0}
+                            setNotes={setNotes}
+                            refreshNotes={refreshNotes}
+                            invoiceId={invoices.length > 0 ? invoices[0].invoice_id : null}
+                        />
+                    )}
+
+                    {activeTab === "tasks" && (
+                        <TasksSection
+                            tasks={tasks}
+                            users={users}  
+                            userId={user?.user_id ?? user?.id ?? 0}  
+                            accountId={account?.account_id || 0}  
+                            setTasks={setTasks}
+                            refreshTasks={refreshTasks}
+                        />
+                    )}
+
+                    {activeTab === "purchase" && (
+                        <div className="border border-border p-4 rounded-lg bg-card">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <h2 className="text-xl font-semibold text-foreground">Purchase History</h2>
+                                    <p className="text-xs text-muted-foreground">
+                                        {mostPurchased ? `Most purchased: ${mostPurchased.service_name} (${mostPurchased.total_quantity})` : "No purchases yet."}
+                                        {leastPurchased && purchaseHistory.length > 1 ? ` • Least purchased: ${leastPurchased.service_name} (${leastPurchased.total_quantity})` : ""}
+                                        {lastPurchaseDate ? ` • Last purchase: ${formatDate(lastPurchaseDate)}` : ""}
+                                    </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2 text-xs">
+                                    <button
+                                        className={`rounded-full px-3 py-1 font-semibold ${
+                                            purchaseSort.key === "quantity" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                                        }`}
+                                        onClick={() => handlePurchaseSort("quantity")}
+                                    >
+                                        Quantity
+                                    </button>
+                                    <button
+                                        className={`rounded-full px-3 py-1 font-semibold ${
+                                            purchaseSort.key === "total_spent" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                                        }`}
+                                        onClick={() => handlePurchaseSort("total_spent")}
+                                    >
+                                        Spend
+                                    </button>
+                                    <button
+                                        className={`rounded-full px-3 py-1 font-semibold ${
+                                            purchaseSort.key === "last_purchase" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                                        }`}
+                                        onClick={() => handlePurchaseSort("last_purchase")}
+                                    >
+                                        Last Purchase
+                                    </button>
+                                    <button
+                                        className="rounded-full px-3 py-1 font-semibold bg-muted text-muted-foreground"
+                                        onClick={() => setPurchaseSort((prev) => ({ ...prev, order: prev.order === "desc" ? "asc" : "desc" }))}
+                                    >
+                                        {purchaseSort.order === "desc" ? "Desc" : "Asc"}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 overflow-x-auto">
+                                {purchaseHistory.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No purchase history available.</p>
+                                ) : (
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left">Item</th>
+                                                <th className="px-3 py-2 text-left">Total Quantity</th>
+                                                <th className="px-3 py-2 text-left">Total Spend</th>
+                                                <th className="px-3 py-2 text-left">Last Purchased</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            {purchaseHistory.map((item) => (
+                                                <tr key={item.service_id} className="hover:bg-muted/40">
+                                                    <td className="px-3 py-2 text-foreground">{item.service_name}</td>
+                                                    <td className="px-3 py-2 text-muted-foreground">{item.total_quantity}</td>
+                                                    <td className="px-3 py-2 text-muted-foreground">{formatCurrency(item.total_spent)}</td>
+                                                    <td className="px-3 py-2 text-muted-foreground">
+                                                        {item.last_purchase ? formatDate(item.last_purchase) : "—"}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
-
-
-            <NotesSection 
-                notes={notes}
-                accountId={account?.account_id || 0}
-                userId={user?.user_id ?? user?.id ?? 0}
-                setNotes={setNotes}
-                refreshNotes={refreshNotes}
-                invoiceId={invoices.length > 0 ? invoices[0].invoice_id : null}
-            />
-            
-            <TasksSection
-                tasks={tasks}
-                users={users}  
-                userId={user?.user_id ?? user?.id ?? 0}  
-                accountId={account?.account_id || 0}  
-                setTasks={setTasks}
-                refreshTasks={refreshTasks}
-            />
-
-            <AuditSection
-                title="Account Audit Trail"
-                filters={{ account_id: account.account_id }}
-                limit={100}
-            />
         </div>
     );
 };

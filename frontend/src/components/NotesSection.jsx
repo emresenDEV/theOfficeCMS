@@ -21,7 +21,8 @@ const filteredNotes = notes.filter((note) =>
     searchNotes === "" ||
     (note.username && note.username.toLowerCase().includes(searchNotes.toLowerCase())) ||
     (note.note_text && note.note_text.includes(searchNotes)) ||
-    (note.invoice_id && note.invoice_id.toString().includes(searchNotes))
+    (note.invoice_id && note.invoice_id.toString().includes(searchNotes)) ||
+    (note.task_id && note.task_id.toString().includes(searchNotes))
 );
 
 // Sort notes from newest to oldest
@@ -144,13 +145,14 @@ return (
             <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Date</th>
             <th className="font-bold p-2 border-b border-r text-left whitespace-nowrap text-muted-foreground">Time</th>
             <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Note</th>
-            <th className="font-bold p-2 border-b text-center whitespace-nowrap text-muted-foreground">Invoice ID</th>
+            <th className="font-bold p-2 border-b border-r text-center whitespace-nowrap text-muted-foreground">Task</th>
+            <th className="font-bold p-2 border-b text-center whitespace-nowrap text-muted-foreground">Invoice</th>
             </tr>
         </thead>
         <tbody>
             {sortedNotes.map((note, index) => (
             <tr 
-                key={note.note_id} 
+                key={note.note_id || note.task_note_id} 
                 className={`hover:bg-muted/60 ${
                     index % 2 === 0 ? "bg-muted/40" : "bg-card"
                 }`}
@@ -159,6 +161,18 @@ return (
                 <td className="p-2 border-b border-r text-left">{formatDate(note.date_created)}</td>
                 <td className="p-2 border-b border-r text-left whitespace-nowrap">{formatTime(note.date_created)}</td>
                 <td className="p-2 border-b border-r text-left">{note.note_text || "No text provided"}</td>
+                <td className="p-2 border-b border-r text-center">
+                {note.task_id ? (
+                    <button
+                    onClick={() => navigate(`/tasks/${note.task_id}`)}
+                    className="bg-secondary text-secondary-foreground px-3 py-1 rounded shadow-sm hover:bg-secondary/80 transition-colors"
+                    >
+                    #{note.task_id}
+                    </button>
+                ) : (
+                    <span className="text-muted-foreground">—</span>
+                )}
+                </td>
                 <td className="p-2 border-b text-center">
                 {note.invoice_id ? (
                     <button
@@ -183,12 +197,13 @@ return (
 NotesSection.propTypes = {
 notes: PropTypes.arrayOf(
     PropTypes.shape({
-    note_id: PropTypes.number.isRequired,
+    note_id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     // Make username optional in case it's missing from the API
     username: PropTypes.string,
     date_created: PropTypes.string.isRequired,
     note_text: PropTypes.string.isRequired,
     invoice_id: PropTypes.number,
+    task_id: PropTypes.number,
     })
 ).isRequired,
 accountId: PropTypes.number.isRequired,

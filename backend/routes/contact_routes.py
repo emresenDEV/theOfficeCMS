@@ -237,6 +237,7 @@ def get_contact(contact_id):
                 "user_id": task.user_id,
                 "due_date": task.due_date.isoformat() if task.due_date else None,
                 "is_completed": task.is_completed,
+                "is_followup": task.is_followup,
                 "account_id": task.account_id,
                 "invoice_id": task.invoice_id,
             }

@@ -35,7 +35,7 @@ const [salesReps, setSalesReps] = useState([]);
 const [invoice, setInvoice] = useState(null);
 const [notes, setNotes] = useState([]);
 const [paymentMethods, setPaymentMethods] = useState([]);
-const [showPaymentForm, setShowPaymentForm] = useState(false);
+const [showPaymentModal, setShowPaymentModal] = useState(false);
 const [paymentForm, setPaymentForm] = useState({
     payment_method: "",
     last_four_payment_method: "",
@@ -74,6 +74,7 @@ const [newTaskDescription, setNewTaskDescription] = useState("");
 const [newTaskDueDate, setNewTaskDueDate] = useState("");
 const [newTaskAssignee, setNewTaskAssignee] = useState("");
 const [highlightTaskId, setHighlightTaskId] = useState(null);
+const [activeTab, setActiveTab] = useState("audit");
 
 useEffect(() => {
     async function loadData() {
@@ -320,7 +321,7 @@ const handleLogPayment = async () => {
             setPayments(updatedInvoice.payments || []);
     
             // Reset form and close
-            setShowPaymentForm(false);
+            setShowPaymentModal(false);
             setPaymentForm({
             payment_method: "",
             last_four_payment_method: "",
@@ -492,7 +493,19 @@ if (!invoice)
                 <div className="text-left">
                     <p className="text-lg font-semibold">{invoice.business_name}</p>
                     {invoice.contact_name && (
-                        <p className="text-sm text-muted-foreground">Contact: {invoice.contact_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                            Contact:{" "}
+                            {invoice.primary_contact_id ? (
+                                <button
+                                    className="font-semibold underline text-primary hover:text-primary/80"
+                                    onClick={() => navigate(`/contacts/${invoice.primary_contact_id}`)}
+                                >
+                                    {invoice.primary_contact_name || invoice.contact_name}
+                                </button>
+                            ) : (
+                                <span className="font-semibold text-foreground">{invoice.contact_name}</span>
+                            )}
+                        </p>
                     )}
                     <p>{invoice.address}, {invoice.city}, {invoice.state} {invoice.zip_code}</p>
                     <p className="text-blue-600 font-medium">{invoice.email}</p>
@@ -878,319 +891,370 @@ if (!invoice)
             </div>
             </section>
 
-            {/* FInancial Summary */}
+            {/* Financial Summary */}
             <section className="mb-6 border p-4 rounded-lg text-left">
-            <h2 className="text-xl font-semibold mb-2">Financial Summary</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-                Discounts are applied in two ways:
-                <ul className="list-disc list-inside mt-1">
-                <li><strong>Service Discount</strong> — applied per service.</li>
-                <li><strong>Invoice Discount</strong> — applied on the subtotal before tax.</li>
-                </ul>
-            </p>
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                    <div className="flex-1 min-w-[240px]">
+                        <h2 className="text-xl font-semibold mb-2">Financial Summary</h2>
+                        <p className="text-sm text-muted-foreground">Discounts are applied in two ways:</p>
+                        <ul className="list-disc list-inside mt-1 text-sm text-muted-foreground">
+                            <li><strong>Service Discount</strong> — applied per service.</li>
+                            <li><strong>Invoice Discount</strong> — applied on the subtotal before tax.</li>
+                        </ul>
 
-            <div className="space-y-1 text-left">
-                <p><strong>Service Total:</strong> {formatCurrency(
-                services.reduce((sum, s) => sum + s.price_per_unit * s.quantity, 0)
-                )}</p>
+                        <div className="mt-4 space-y-1 text-left">
+                            <p><strong>Service Total:</strong> {formatCurrency(
+                                services.reduce((sum, s) => sum + s.price_per_unit * s.quantity, 0)
+                            )}</p>
 
-                <p><strong>Service Discount:</strong> {formatCurrency(calculateFinancials().perServiceDiscountTotal)}</p>
+                            <p><strong>Service Discount:</strong> {formatCurrency(calculateFinancials().perServiceDiscountTotal)}</p>
 
-                <p><strong>Invoice Discount:</strong> {formatCurrency(calculateFinancials().invoiceLevelDiscountAmount)} ({(invoice.discount_percent * 100).toFixed(0)}%)</p>
+                            <p><strong>Invoice Discount:</strong> {formatCurrency(calculateFinancials().invoiceLevelDiscountAmount)} ({(invoice.discount_percent * 100).toFixed(0)}%)</p>
 
-                <p><strong>Tax:</strong> {formatCurrency(calculateFinancials().taxAmount)} ({(invoice.tax_rate * 100).toFixed(2)}%)</p>
+                            <p><strong>Tax:</strong> {formatCurrency(calculateFinancials().taxAmount)} ({(invoice.tax_rate * 100).toFixed(2)}%)</p>
 
-                <p className="font-bold text-lg"><strong>Total:</strong> {formatCurrency(calculateFinancials().total)}</p>
+                            <p className="font-bold text-lg"><strong>Total:</strong> {formatCurrency(calculateFinancials().total)}</p>
 
-                <p><strong>Due Date:</strong> {formatDate(invoice.due_date)}</p>
-            </div>
+                            <p><strong>Due Date:</strong> {formatDate(invoice.due_date)}</p>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-3">
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">Share Invoice</p>
+                                <p className="text-xs text-muted-foreground">Send or download the invoice.</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                {accountDetails ? (
+                                    <InvoiceActions
+                                        invoice={invoice}
+                                        services={services}
+                                        salesRep={{
+                                            first_name: invoice.sales_rep_name?.split(" ")[0] || "",
+                                            last_name: invoice.sales_rep_name?.split(" ")[1] || "",
+                                            email: invoice.sales_rep_email,
+                                            phone_number: invoice.sales_rep_phone,
+                                        }}
+                                        branch={branch}
+                                        accountDetails={accountDetails}
+                                        payment={invoice.payments?.[0] || null}
+                                        user={user}
+                                    />
+                                ) : (
+                                    <p>Loading account details...</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-3">
+                        <button
+                            className="bg-primary text-primary-foreground px-4 py-2 rounded shadow hover:bg-primary/90"
+                            onClick={() => setShowPaymentModal(true)}
+                        >
+                            Log Payment
+                        </button>
+                    </div>
+                </div>
             </section>
 
-            {/* LOG PAYMENT */}
-            <section className="mb-6 border p-4 rounded-lg text-left">
-            <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-semibold">Log Payment</h2>
-                {!showPaymentForm && (
-                <button
-                    className="bg-primary text-primary-foreground px-3 py-1 rounded shadow hover:bg-primary/90"
-                    onClick={() => setShowPaymentForm(true)}
-                >
-                    Log Payment
-                </button>
-                )}
-            </div>
-
-            {showPaymentForm && (
-                <div className="bg-muted p-4 rounded border">
-                <div className="mb-2">
-                    <label className="block text-sm font-medium">Payment Method</label>
-                    <select
-                    className="w-full p-2 border rounded"
-                    value={paymentForm.payment_method}
-                    onChange={(e) =>
-                        setPaymentForm((prev) => ({
-                        ...prev,
-                        payment_method: parseInt(e.target.value),
-                        }))
-                    }
-                    >
-                    <option value="">-- Select a Method --</option>
-                    {paymentMethods.map((pm) => (
-                        <option key={pm.method_id} value={pm.method_id}>
-                        {pm.method_name}
-                        </option>
-                    ))}
-                    </select>
+            <section className="mb-6 border border-border p-4 rounded-lg bg-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground">Invoice Activity</h2>
+                    <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                        <button
+                            className={`rounded-full px-3 py-1 ${
+                                activeTab === "audit" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}
+                            onClick={() => setActiveTab("audit")}
+                        >
+                            Audit
+                        </button>
+                        <button
+                            className={`rounded-full px-3 py-1 ${
+                                activeTab === "tasks" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}
+                            onClick={() => setActiveTab("tasks")}
+                        >
+                            Tasks
+                        </button>
+                        <button
+                            className={`rounded-full px-3 py-1 ${
+                                activeTab === "notes" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}
+                            onClick={() => setActiveTab("notes")}
+                        >
+                            Notes
+                        </button>
+                        <button
+                            className={`rounded-full px-3 py-1 ${
+                                activeTab === "payments" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}
+                            onClick={() => setActiveTab("payments")}
+                        >
+                            Payments
+                        </button>
+                    </div>
                 </div>
 
-                <div className="mb-2">
-                    <label className="block text-sm font-medium">Last Four (optional)</label>
-                    <input
-                    className="w-full p-2 border rounded"
-                    value={paymentForm.last_four_payment_method}
-                    onChange={(e) =>
-                        setPaymentForm((prev) => ({
-                        ...prev,
-                        last_four_payment_method: e.target.value,
-                        }))
-                    }
-                    placeholder="1234"
-                    maxLength={4}
-                    />
-                </div>
+                <div className="mt-4">
+                    {activeTab === "audit" && (
+                        <AuditSection
+                            title="Invoice Audit Trail"
+                            filters={{ invoice_id: Number(invoiceId) }}
+                            limit={100}
+                        />
+                    )}
 
-                <div className="mb-2">
-                    <label className="block text-sm font-medium">Total Paid</label>
-                    <input
-                    type="number"
-                    className="w-full p-2 border rounded"
-                    value={paymentForm.total_paid}
-                    onChange={(e) =>
-                        setPaymentForm((prev) => ({
-                        ...prev,
-                        total_paid: parseFloat(e.target.value) || 0,
-                        }))
-                    }
-                    />
-                </div>
+                    {activeTab === "tasks" && (
+                        <div className="rounded-lg border border-border bg-card p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                <h2 className="text-xl font-semibold text-left text-foreground">Tasks</h2>
+                                <span className="text-xs text-muted-foreground">
+                                    {invoiceTasks.length} task{invoiceTasks.length === 1 ? "" : "s"}
+                                </span>
+                            </div>
+                            <div className="grid gap-2 md:grid-cols-[2fr,1fr,1fr,auto]">
+                                <input
+                                    type="text"
+                                    placeholder="New task for this invoice..."
+                                    className="border border-border bg-card text-foreground p-2 rounded w-full"
+                                    value={newTaskDescription}
+                                    onChange={(e) => setNewTaskDescription(e.target.value)}
+                                />
+                                <input
+                                    type="date"
+                                    className="border border-border bg-card text-foreground p-2 rounded w-full"
+                                    value={newTaskDueDate}
+                                    onChange={(e) => setNewTaskDueDate(e.target.value)}
+                                />
+                                <select
+                                    className="border border-border bg-card text-foreground p-2 rounded w-full"
+                                    value={newTaskAssignee}
+                                    onChange={(e) => setNewTaskAssignee(e.target.value)}
+                                >
+                                    <option value="">Assign to me</option>
+                                    {taskUsers.map((u) => (
+                                        <option key={u.user_id} value={u.user_id}>
+                                            {u.first_name} {u.last_name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={handleCreateInvoiceTask}
+                                    className="bg-primary text-primary-foreground px-4 py-2 rounded shadow-lg hover:bg-primary/90 transition-colors"
+                                >
+                                    Add Task
+                                </button>
+                            </div>
 
-                <div className="flex justify-end gap-2 mt-4">
-                    <button
-                    className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
-                    onClick={handleLogPayment}
-                    >
-                    Log Payment
-                    </button>
-                    <button
-                    className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
-                    onClick={() => setShowPaymentForm(false)}
-                    >
-                    Cancel
-                    </button>
-                </div>
-                </div>
-            )}
-            </section>
-
-            {/* PAYMENT RECORDS */}
-            {payments.length > 0 && (
-            <section className="mb-6 border p-4 rounded-lg text-left">
-                <h2 className="text-xl font-semibold mb-3">Payment Records</h2>
-                {payments.map((payment, idx) => (
-                <PaidBox
-                    key={payment.payment_id}
-                    payment={payment}
-                    paymentMethods={paymentMethods}
-                    invoiceTotal={invoice.final_total}
-                    totalPaidSoFar={payments.reduce((sum, p) => sum + parseFloat(p.total_paid || 0), 0)}
-                    loggedInUsername={user.username}
-                    onUpdate={async (updatedPayment) => {
-                        const res = await updatePayment(payment.payment_id, updatedPayment, user.id, user.email);
-                        if (res) {
-                            const updatedPayments = [...payments];
-                            updatedPayments[idx] = res;
-                            setPayments(updatedPayments);
-                        }
-                    }}
-                    
-                    onDelete={async (paymentId) => {
-                        const res = await deletePayment(paymentId, user.id, user.email);
-                        if (res) {
-                            const updated = payments.filter(p => p.payment_id !== paymentId);
-                            setPayments(updated);
-                        }
-                    }}
-                    
-                />
-                ))}
-            </section>
-            )}
-
-            {/* SHARE INVOICE PDF */}
-            <section className="mb-6 border p-4 rounded-lg text-left">
-            <h2 className="text-xl font-semibold mb-2">Share Invoice</h2>
-            <div className="text-sm text-muted-foreground mb-4">
-            <p>Discounts are applied in two ways:</p>
-                <ul className="list-disc list-inside mt-1">
-                    <li><strong>Service Discount</strong> — applied per service.</li>
-                    <li><strong>Invoice Discount</strong> — applied on the subtotal before tax.</li>
-                </ul>
-            </div>
-
-            <div className="flex justify-end gap-4">
-            {accountDetails ? (
-                <InvoiceActions
-                    invoice={invoice}
-                    services={services}
-                    salesRep={{
-                    first_name: invoice.sales_rep_name?.split(" ")[0] || "",
-                    last_name: invoice.sales_rep_name?.split(" ")[1] || "",
-                    email: invoice.sales_rep_email,
-                    phone_number: invoice.sales_rep_phone,
-                    }}
-                    branch={branch}
-                    accountDetails={accountDetails}
-                    payment={invoice.payments?.[0] || null}
-                    user={user}
-                />
-                ) : (
-                <p>Loading account details...</p>
-                )}
-            </div>
-            </section>
-
-            {/* TASKS */}
-            <section id="invoice-tasks" className="mb-6 border border-border p-4 rounded-lg bg-card">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <h2 className="text-xl font-semibold text-left text-foreground">Tasks</h2>
-                    <span className="text-xs text-muted-foreground">
-                        {invoiceTasks.length} task{invoiceTasks.length === 1 ? "" : "s"}
-                    </span>
-                </div>
-                <div className="grid gap-2 md:grid-cols-[2fr,1fr,1fr,auto]">
-                    <input
-                        type="text"
-                        placeholder="New task for this invoice..."
-                        className="border border-border bg-card text-foreground p-2 rounded w-full"
-                        value={newTaskDescription}
-                        onChange={(e) => setNewTaskDescription(e.target.value)}
-                    />
-                    <input
-                        type="date"
-                        className="border border-border bg-card text-foreground p-2 rounded w-full"
-                        value={newTaskDueDate}
-                        onChange={(e) => setNewTaskDueDate(e.target.value)}
-                    />
-                    <select
-                        className="border border-border bg-card text-foreground p-2 rounded w-full"
-                        value={newTaskAssignee}
-                        onChange={(e) => setNewTaskAssignee(e.target.value)}
-                    >
-                        <option value="">Assign to me</option>
-                        {taskUsers.map((u) => (
-                            <option key={u.user_id} value={u.user_id}>
-                                {u.first_name} {u.last_name}
-                            </option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={handleCreateInvoiceTask}
-                        className="bg-primary text-primary-foreground px-4 py-2 rounded shadow-lg hover:bg-primary/90 transition-colors"
-                    >
-                        Add Task
-                    </button>
-                </div>
-
-                <div className="mt-4 overflow-y-auto max-h-64 border border-border rounded-lg">
-                    <table className="w-full text-foreground text-sm">
-                        <thead className="sticky top-0 bg-card shadow-sm">
-                            <tr>
-                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Task</th>
-                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Assigned To</th>
-                                <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Due</th>
-                                <th className="font-bold p-2 border-b text-center text-muted-foreground">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {invoiceTasks.length > 0 ? (
-                                invoiceTasks.map((task, index) => {
-                                    const assignee =
-                                        taskUsers.find((u) => Number(u.user_id) === Number(task.assigned_to)) || null;
-                                    return (
-                                        <tr
-                                            key={task.task_id}
-                                            id={`invoice-task-${task.task_id}`}
-                                            className={`hover:bg-muted/60 ${
-                                                highlightTaskId === String(task.task_id)
-                                                    ? "bg-accent/40"
-                                                    : index % 2 === 0
-                                                        ? "bg-muted/40"
-                                                        : "bg-card"
-                                            }`}
-                                        >
-                                            <td className="p-2 border-b border-r text-left">
-                                                <Link className="text-primary hover:underline" to={`/tasks/${task.task_id}`}>
-                                                    {task.task_description}
-                                                </Link>
-                                            </td>
-                                            <td className="p-2 border-b border-r text-left">
-                                                {assignee ? `${assignee.first_name} ${assignee.last_name}` : "Unassigned"}
-                                            </td>
-                                            <td className="p-2 border-b border-r text-left">
-                                                {task.due_date
-                                                    ? formatDateInTimeZone(task.due_date, user, {
-                                                        month: "2-digit",
-                                                        day: "2-digit",
-                                                        year: "numeric",
-                                                    })
-                                                    : "—"}
-                                            </td>
-                                            <td className="p-2 border-b text-center">
-                                                <button
-                                                    onClick={() => handleToggleInvoiceTask(task)}
-                                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                        task.is_completed
-                                                            ? "bg-success text-success-foreground"
-                                                            : "bg-warning text-warning-foreground"
-                                                    }`}
-                                                >
-                                                    {task.is_completed ? "Completed" : "Active"}
-                                                </button>
-                                            </td>
+                            <div className="mt-4 overflow-y-auto max-h-64 border border-border rounded-lg">
+                                <table className="w-full text-foreground text-sm">
+                                    <thead className="sticky top-0 bg-card shadow-sm">
+                                        <tr>
+                                            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Task</th>
+                                            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Assigned To</th>
+                                            <th className="font-bold p-2 border-b border-r text-left text-muted-foreground">Due</th>
+                                            <th className="font-bold p-2 border-b text-center text-muted-foreground">Status</th>
                                         </tr>
-                                    );
-                                })
+                                    </thead>
+                                    <tbody>
+                                        {invoiceTasks.length > 0 ? (
+                                            invoiceTasks.map((task, index) => {
+                                                const assignee =
+                                                    taskUsers.find((u) => Number(u.user_id) === Number(task.assigned_to)) || null;
+                                                return (
+                                                    <tr
+                                                        key={task.task_id}
+                                                        id={`invoice-task-${task.task_id}`}
+                                                        className={`hover:bg-muted/60 ${
+                                                            highlightTaskId === String(task.task_id)
+                                                                ? "bg-accent/40"
+                                                                : index % 2 === 0
+                                                                    ? "bg-muted/40"
+                                                                    : "bg-card"
+                                                        }`}
+                                                    >
+                                                        <td className="p-2 border-b border-r text-left">
+                                                            <Link className="text-primary hover:underline" to={`/tasks/${task.task_id}`}>
+                                                                {task.task_description}
+                                                            </Link>
+                                                        </td>
+                                                        <td className="p-2 border-b border-r text-left">
+                                                            {assignee ? `${assignee.first_name} ${assignee.last_name}` : "Unassigned"}
+                                                        </td>
+                                                        <td className="p-2 border-b border-r text-left">
+                                                            {task.due_date
+                                                                ? formatDateInTimeZone(task.due_date, user, {
+                                                                    month: "2-digit",
+                                                                    day: "2-digit",
+                                                                    year: "numeric",
+                                                                })
+                                                                : "—"}
+                                                        </td>
+                                                        <td className="p-2 border-b text-center">
+                                                            <button
+                                                                onClick={() => handleToggleInvoiceTask(task)}
+                                                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                                    task.is_completed
+                                                                        ? "bg-success text-success-foreground"
+                                                                        : "bg-warning text-warning-foreground"
+                                                                }`}
+                                                            >
+                                                                {task.is_completed ? "Completed" : "Active"}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="4" className="p-4 text-center text-muted-foreground">
+                                                    No tasks for this invoice.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "notes" && (
+                        <NotesSection
+                            notes={notes}
+                            accountId={invoice.account_id}
+                            userId={user.user_id ?? user.id ?? 0}
+                            setNotes={setNotes}
+                            refreshNotes={async () => {
+                                const updated = await fetchNotesByInvoice(invoiceId);
+                                setNotes(updated);
+                            }}
+                            invoiceId={invoiceId}
+                        />
+                    )}
+
+                    {activeTab === "payments" && (
+                        <div>
+                            {payments.length > 0 ? (
+                                <div className="space-y-4">
+                                    {payments.map((payment, idx) => (
+                                        <PaidBox
+                                            key={payment.payment_id}
+                                            payment={payment}
+                                            paymentMethods={paymentMethods}
+                                            invoiceTotal={invoice.final_total}
+                                            totalPaidSoFar={payments.reduce((sum, p) => sum + parseFloat(p.total_paid || 0), 0)}
+                                            loggedInUsername={user.username}
+                                            onUpdate={async (updatedPayment) => {
+                                                const res = await updatePayment(payment.payment_id, updatedPayment, user.id, user.email);
+                                                if (res) {
+                                                    const updatedPayments = [...payments];
+                                                    updatedPayments[idx] = res;
+                                                    setPayments(updatedPayments);
+                                                }
+                                            }}
+                                            onDelete={async (paymentId) => {
+                                                const res = await deletePayment(paymentId, user.id, user.email);
+                                                if (res) {
+                                                    const updated = payments.filter(p => p.payment_id !== paymentId);
+                                                    setPayments(updated);
+                                                }
+                                            }}
+                                        />
+                                    ))}
+                                </div>
                             ) : (
-                                <tr>
-                                    <td colSpan="4" className="p-4 text-center text-muted-foreground">
-                                        No tasks for this invoice.
-                                    </td>
-                                </tr>
+                                <p className="text-sm text-muted-foreground">No payment records yet.</p>
                             )}
-                        </tbody>
-                    </table>
+                        </div>
+                    )}
                 </div>
             </section>
 
-            {/* NOTES TABLE */}
-            <NotesSection
-                notes={notes}
-                accountId={invoice.account_id}
-                userId={user.user_id ?? user.id ?? 0}
-                setNotes={setNotes}
-                refreshNotes={async () => {
-                    const updated = await fetchNotesByInvoice(invoiceId);
-                    setNotes(updated);
-            }}
-            invoiceId={invoiceId}
-            />
+            {showPaymentModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-foreground">Log Payment</h2>
+                            <button
+                                className="text-xl text-muted-foreground hover:text-foreground"
+                                onClick={() => setShowPaymentModal(false)}
+                                aria-label="Close"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium">Payment Method</label>
+                                <select
+                                    className="w-full p-2 border rounded"
+                                    value={paymentForm.payment_method}
+                                    onChange={(e) =>
+                                        setPaymentForm((prev) => ({
+                                            ...prev,
+                                            payment_method: parseInt(e.target.value),
+                                        }))
+                                    }
+                                >
+                                    <option value="">-- Select a Method --</option>
+                                    {paymentMethods.map((pm) => (
+                                        <option key={pm.method_id} value={pm.method_id}>
+                                            {pm.method_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-            <AuditSection
-                title="Invoice Audit Trail"
-                filters={{ invoice_id: Number(invoiceId) }}
-                limit={100}
-            />
+                            <div>
+                                <label className="block text-sm font-medium">Last Four (optional)</label>
+                                <input
+                                    className="w-full p-2 border rounded"
+                                    value={paymentForm.last_four_payment_method}
+                                    onChange={(e) =>
+                                        setPaymentForm((prev) => ({
+                                            ...prev,
+                                            last_four_payment_method: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="1234"
+                                    maxLength={4}
+                                />
+                            </div>
 
+                            <div>
+                                <label className="block text-sm font-medium">Total Paid</label>
+                                <input
+                                    type="number"
+                                    className="w-full p-2 border rounded"
+                                    value={paymentForm.total_paid}
+                                    onChange={(e) =>
+                                        setPaymentForm((prev) => ({
+                                            ...prev,
+                                            total_paid: parseFloat(e.target.value) || 0,
+                                        }))
+                                    }
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-4 flex justify-end gap-2">
+                            <button
+                                className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
+                                onClick={handleLogPayment}
+                            >
+                                Log Payment
+                            </button>
+                            <button
+                                className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/80"
+                                onClick={() => setShowPaymentModal(false)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="flex justify-end mt-6">
             <button
                 onClick={() => deleteInvoice(invoiceId, user.id, user.email).then(() => navigate(`/accounts/details/${invoice.account_id}`))}

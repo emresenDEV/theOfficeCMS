@@ -55,6 +55,7 @@ def get_tasks():
         "task_description": task.task_description,
         "due_date": task.due_date,
         "is_completed": task.is_completed,
+        "is_followup": task.is_followup,
         "account_id": task.account_id, # If task is associated with an account
         "invoice_id": task.invoice_id,
         "contact_id": task.contact_id,
@@ -79,6 +80,7 @@ def get_tasks_by_account(account_id):
         "task_description": task.task_description,
         "due_date": task.due_date,
         "is_completed": task.is_completed,
+        "is_followup": task.is_followup,
         "account_id": task.account_id,  # If task is associated with an account
         "invoice_id": task.invoice_id,
         "contact_id": task.contact_id,
@@ -106,6 +108,7 @@ def get_task_by_id(task_id):
         "task_description": task.task_description,
         "due_date": task.due_date,
         "is_completed": task.is_completed,
+        "is_followup": task.is_followup,
         "account_id": task.account_id,
         "invoice_id": task.invoice_id,
         "contact_id": task.contact_id,
@@ -200,6 +203,7 @@ def get_tasks_by_invoice(invoice_id):
         "task_description": task.task_description,
         "due_date": task.due_date,
         "is_completed": task.is_completed,
+        "is_followup": task.is_followup,
         "account_id": task.account_id,
         "invoice_id": task.invoice_id,
         "account_name": Account.query.get(task.account_id).business_name if task.account_id else "No Account",
@@ -227,7 +231,8 @@ def create_task():
         account_id=data.get("account_id"),  
         invoice_id=data.get("invoice_id"),
         contact_id=data.get("contact_id"),
-        is_completed=False
+        is_completed=False,
+        is_followup=bool(data.get("is_followup", False)),
     )
 
     db.session.add(new_task)
@@ -267,6 +272,7 @@ def create_task():
             "task_description": new_task.task_description,
             "due_date": new_task.due_date,
             "is_completed": new_task.is_completed,
+            "is_followup": new_task.is_followup,
             "account_id": new_task.account_id,
             "invoice_id": new_task.invoice_id,
             "contact_id": new_task.contact_id,
@@ -284,6 +290,7 @@ def create_task():
         "task_description": new_task.task_description,
         "due_date": new_task.due_date,
         "is_completed": new_task.is_completed,
+        "is_followup": new_task.is_followup,
         "account_id": new_task.account_id,
         "invoice_id": new_task.invoice_id,
         "contact_id": new_task.contact_id,
@@ -308,6 +315,7 @@ def update_task(task_id):
         "task_description": task.task_description,
         "due_date": task.due_date,
         "is_completed": task.is_completed,
+        "is_followup": task.is_followup,
         "account_id": task.account_id,
         "invoice_id": task.invoice_id,
         "contact_id": task.contact_id,
@@ -332,6 +340,8 @@ def update_task(task_id):
         task.invoice_id = data["invoice_id"]
     if "contact_id" in data:
         task.contact_id = data["contact_id"]
+    if "is_followup" in data:
+        task.is_followup = data["is_followup"]
 
     if assigned_before != task.assigned_to:
         account = Account.query.get(task.account_id) if task.account_id else None
@@ -382,6 +392,7 @@ def update_task(task_id):
             "task_description": task.task_description,
             "due_date": task.due_date,
             "is_completed": task.is_completed,
+            "is_followup": task.is_followup,
             "account_id": task.account_id,
             "invoice_id": task.invoice_id,
             "contact_id": task.contact_id,
@@ -399,6 +410,7 @@ def update_task(task_id):
         "task_description": task.task_description,
         "due_date": task.due_date,
         "is_completed": task.is_completed,
+        "is_followup": task.is_followup,
         "account_id": task.account_id,
         "invoice_id": task.invoice_id,
         "contact_id": task.contact_id,

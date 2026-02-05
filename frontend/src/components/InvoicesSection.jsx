@@ -151,17 +151,15 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
                             filteredInvoices.map((inv, index) => (
                                 <tr
                                     key={inv.invoice_id}
-                                    className={`hover:bg-muted/60 ${
+                                    className={`cursor-pointer hover:bg-muted/60 ${
                                         index % 2 === 0 ? "bg-muted/40" : "bg-card"
                                     }`}
+                                    onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
                                 >
                                     <td className="p-2 border-b border-r text-left">
-                                        <button
-                                            className="rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80"
-                                            onClick={() => navigate(`/invoice/${inv.invoice_id}`)}
-                                        >
+                                        <span className="rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
                                             #{inv.invoice_id}
-                                        </button>
+                                        </span>
                                     </td>
                                     <td className="p-2 border-b border-r text-left">{formatDueDate(inv.date_created)}</td>
                                     <td className="p-2 border-b border-r text-left">{formatDueDate(inv.due_date)}</td>

@@ -341,6 +341,7 @@ class Tasks(db.Model):
     task_description = db.Column(db.Text)
     due_date = db.Column(db.DateTime)
     is_completed = db.Column(db.Boolean)
+    is_followup = db.Column(db.Boolean, default=False)
     date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     overdue_notified_at = db.Column(db.Date)
     reminder_sent_at = db.Column(db.DateTime)

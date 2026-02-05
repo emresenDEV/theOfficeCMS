@@ -107,12 +107,19 @@ const TaskListMobile = ({
                                 </div>
 
                                 {/* Due Date Row */}
-                                <div className={`text-xs mb-3 font-medium ${getPriorityColor(task.due_date)}`}>
+                                <div className={`text-xs mb-2 font-medium ${getPriorityColor(task.due_date)}`}>
                                     <>Due: {formatDateInTimeZone(task.due_date, user, {
                                         month: "short",
                                         day: "numeric",
                                         year: "numeric",
                                     })}</>
+                                </div>
+                                <div className="text-xs text-muted-foreground mb-3">
+                                    Created: {task.date_created ? formatDateInTimeZone(task.date_created, user, {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                    }) : "—"}
                                 </div>
 
                                 {/* Account and Assigned By Row */}
@@ -122,7 +129,7 @@ const TaskListMobile = ({
                                         {task.business_name !== "No Account" ? (
                                             <button
                                                 onClick={() => onAccountClick(task.account_id)}
-                                                className="text-primary hover:underline"
+                                                className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
                                             >
                                                 {task.business_name}
                                             </button>
@@ -205,6 +212,13 @@ const TaskListMobile = ({
                                             {task.task_description}
                                         </button>
                                     </h3>
+                                    <div className="text-xs text-muted-foreground mb-2">
+                                        Created: {task.date_created ? formatDateInTimeZone(task.date_created, user, {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                        }) : "—"}
+                                    </div>
 
                                     {/* Due Date */}
                                     <div className="text-xs text-muted-foreground mb-2">
@@ -221,7 +235,7 @@ const TaskListMobile = ({
                                         {task.business_name !== "No Account" ? (
                                             <button
                                                 onClick={() => onAccountClick(task.account_id)}
-                                                className="text-primary hover:underline"
+                                                className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 transition-colors"
                                             >
                                                 {task.business_name}
                                             </button>

@@ -268,7 +268,7 @@ const handleCreateTask = async (taskPayload) => {
 
         setTasks(updatedTasks.filter((task) => !task.is_completed));
         setCompletedTasks(updatedTasks.filter((task) => task.is_completed));
-        if (created?.task_id) {
+        if (created) {
             setTaskToast("Task created successfully.");
         }
         return created;
@@ -348,6 +348,14 @@ return (
                 >
                     + New Task
                 </button>
+                <div className="mt-3 flex justify-end">
+                    <button
+                        className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted"
+                        onClick={() => setCreatedSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))}
+                    >
+                        {createdSortOrder === "desc" ? "Newest First" : "Oldest First"}
+                    </button>
+                </div>
                 <div className="mt-6">
                     <TaskListMobile
                         tasks={sortedActiveTasks.map((task) => ({
