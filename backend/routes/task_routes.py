@@ -224,6 +224,21 @@ def create_task():
         if field not in data:
             return jsonify({"error": f"{field} is required"}), 400
 
+    def _parse_bool(value):
+        if isinstance(value, bool):
+            return value
+        if value in (None, "", "null"):
+            return None
+        if isinstance(value, (int, float)):
+            return bool(value)
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in ("true", "1", "yes", "y", "t"):
+                return True
+            if normalized in ("false", "0", "no", "n", "f"):
+                return False
+        return value
+
     new_task = Tasks(
         user_id=data["user_id"],
         assigned_to=data.get("assigned_to", data["user_id"]),
@@ -233,7 +248,7 @@ def create_task():
         invoice_id=data.get("invoice_id"),
         contact_id=data.get("contact_id"),
         is_completed=False,
-        is_followup=bool(data.get("is_followup", False)),
+        is_followup=_parse_bool(data.get("is_followup", False)) or False,
     )
 
     db.session.add(new_task)
@@ -318,6 +333,21 @@ def update_task(task_id):
         except (TypeError, ValueError):
             return value
 
+    def _parse_bool(value):
+        if isinstance(value, bool):
+            return value
+        if value in (None, "", "null"):
+            return None
+        if isinstance(value, (int, float)):
+            return bool(value)
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in ("true", "1", "yes", "y", "t"):
+                return True
+            if normalized in ("false", "0", "no", "n", "f"):
+                return False
+        return value
+
     def _parse_datetime(value):
         if value in (None, "", "null"):
             return None
@@ -354,7 +384,9 @@ def update_task(task_id):
         task.reminder_sent_at = None
         task.overdue_notified_at = None
     if "is_completed" in data:
-        task.is_completed = data["is_completed"]
+        parsed_completed = _parse_bool(data["is_completed"])
+        if parsed_completed is not None:
+            task.is_completed = parsed_completed
     if "account_id" in data:
         task.account_id = _clean_int(data["account_id"])
     if "invoice_id" in data:
@@ -362,7 +394,9 @@ def update_task(task_id):
     if "contact_id" in data:
         task.contact_id = _clean_int(data["contact_id"])
     if "is_followup" in data:
-        task.is_followup = data["is_followup"]
+        parsed_followup = _parse_bool(data["is_followup"])
+        if parsed_followup is not None:
+            task.is_followup = parsed_followup
 
     notification_link = f"/tasks/{task.task_id}"
     contact_link = f"/contacts/{task.contact_id}?taskId={task.task_id}" if task.contact_id else notification_link

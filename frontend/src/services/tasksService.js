@@ -1,6 +1,21 @@
 // tasksService.js
 import api from "./api";
 
+const normalizeTask = (task) => {
+    if (!task) return task;
+    const raw = task.is_completed;
+    const isCompleted = raw === true || raw === 1 || raw === "1" || raw === "true";
+    const isFollowupRaw = task.is_followup;
+    const isFollowup = isFollowupRaw === true || isFollowupRaw === 1 || isFollowupRaw === "1" || isFollowupRaw === "true";
+    return {
+        ...task,
+        is_completed: isCompleted,
+        is_followup: isFollowup,
+    };
+};
+
+const normalizeTasks = (tasks) => (Array.isArray(tasks) ? tasks.map(normalizeTask) : []);
+
 
 // CRUD Operations for Task Events
 
@@ -20,7 +35,7 @@ export const createTask = async (task) => {
             }
         });
         console.log("✅ Task Created:", response.data);
-        return response.data;
+        return normalizeTask(response.data);
     } catch (error) {
         console.error("❌ Error creating task:", error.response?.data || error.message);
         return null;
@@ -34,7 +49,7 @@ export const fetchTasks = async (userId) => {
             params: { assigned_to: userId },
         });
         console.log("✅ Fetched Tasks:", response.data);
-        return response.data;
+        return normalizeTasks(response.data);
     } catch (error) {
         console.error("❌ Error fetching tasks:", error.response?.data || error.message);
         return [];
@@ -45,7 +60,7 @@ export const fetchTasks = async (userId) => {
 export const fetchAllTasks = async () => {
     try {
         const response = await api.get("/tasks", { params: { all: true } });
-        return response.data;
+        return normalizeTasks(response.data);
     } catch (error) {
         console.error("❌ Error fetching all tasks:", error.response?.data || error.message);
         return [];
@@ -56,7 +71,7 @@ export const fetchTasksByAccount = async (accountId) => {
     try {
         const response = await api.get(`/tasks/accounts/${accountId}/tasks`);
         console.log(`✅ Fetched Tasks for Account ID ${accountId}:`, response.data);
-        return response.data;
+        return normalizeTasks(response.data);
     } catch (error) {
         console.error(`❌ Error fetching tasks for account ID ${accountId}:`, error.response?.data || error.message);
         return [];
@@ -67,7 +82,7 @@ export const fetchTasksByAccount = async (accountId) => {
 export const fetchTasksByInvoice = async (invoiceId) => {
     try {
         const response = await api.get(`/tasks/invoice/${invoiceId}`);
-        return response.data;
+        return normalizeTasks(response.data);
     } catch (error) {
         console.error(`❌ Error fetching tasks for invoice ID ${invoiceId}:`, error.response?.data || error.message);
         return [];
@@ -78,7 +93,7 @@ export const fetchTasksByInvoice = async (invoiceId) => {
 export const fetchTaskById = async (taskId) => {
     try {
         const response = await api.get(`/tasks/${taskId}`);
-        return response.data;
+        return normalizeTask(response.data);
     } catch (error) {
         console.error(`❌ Error fetching task ${taskId}:`, error.response?.data || error.message);
         return null;
@@ -118,7 +133,7 @@ export const updateTask = async (taskId, updatedData) => {
             actor_email: updatedData.actor_email,
         };
         const response = await api.put(`/tasks/${taskId}`, payload);
-        return response.data;
+        return normalizeTask(response.data);
     } catch (error) {
         console.error("❌ Error updating task:", error.response?.data || error.message);
         return null;
