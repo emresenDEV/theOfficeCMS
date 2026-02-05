@@ -35,6 +35,10 @@ const SettingsPage = ({ user }) => {
   );
   const [timezoneSaving, setTimezoneSaving] = useState(false);
   const [timezoneHighlight, setTimezoneHighlight] = useState(false);
+  const [contactsAutosave, setContactsAutosave] = useState(
+    user?.contacts_autosave ?? (localStorage.getItem("contacts_autosave") !== "false")
+  );
+  const [contactsSaving, setContactsSaving] = useState(false);
 
   const timeZones = useMemo(() => {
     if (typeof Intl.supportedValuesOf === "function") {
@@ -110,6 +114,21 @@ const SettingsPage = ({ user }) => {
       }
     }
     setTimezoneSaving(false);
+  };
+
+  const saveContactsAutosave = async (value) => {
+    if (!user?.user_id) return;
+    setContactsSaving(true);
+    const response = await updateUser(user.user_id, {
+      contacts_autosave: value,
+      actor_user_id: user.user_id,
+      actor_email: user.email,
+    });
+    if (response) {
+      setContactsAutosave(value);
+      localStorage.setItem("contacts_autosave", value ? "true" : "false");
+    }
+    setContactsSaving(false);
   };
 
   return (
@@ -220,6 +239,25 @@ const SettingsPage = ({ user }) => {
           )}
         </div>
 
+        {/* Contacts Autosave */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
+          <div>
+            <p className="font-semibold text-foreground">Contacts Autosave</p>
+            <p className="text-xs text-muted-foreground">
+              Default autosave behavior for contact edits. You can override per contact.
+            </p>
+          </div>
+          <button
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              contactsAutosave ? "bg-emerald-600 text-white" : "bg-secondary text-secondary-foreground"
+            }`}
+            onClick={() => saveContactsAutosave(!contactsAutosave)}
+            disabled={contactsSaving}
+          >
+            {contactsSaving ? "Saving..." : contactsAutosave ? "Autosave On" : "Autosave Off"}
+          </button>
+        </div>
+
         {/* Reset to Default Settings */}
         <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-card p-4">
           <span className="font-semibold text-foreground">Reset Settings</span>
@@ -244,6 +282,7 @@ SettingsPage.propTypes = {
     email: PropTypes.string,
     timezone: PropTypes.string,
     timezone_mode: PropTypes.string,
+    contacts_autosave: PropTypes.bool,
   }).isRequired,
 };
 

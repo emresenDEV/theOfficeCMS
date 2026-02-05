@@ -17,7 +17,8 @@ const UpdateAccountPage = () => {
     const navigate = useNavigate();
     const [accountData, setAccountData] = useState({
         business_name: "",
-        contact_name: "",
+        contact_first_name: "",
+        contact_last_name: "",
         phone_number: "",
         email: "",
         address: "",
@@ -134,6 +135,8 @@ const UpdateAccountPage = () => {
     
                     setAccountData({
                         ...fetchedAccount,
+                        contact_first_name: fetchedAccount.contact_first_name || "",
+                        contact_last_name: fetchedAccount.contact_last_name || "",
                         industry_id: fetchedIndustries.find(ind => ind.industry_name === fetchedAccount.industry)?.industry_id || "",
                         user_id: fetchedAccount.sales_rep?.user_id ? String(fetchedAccount.sales_rep.user_id) : "",
                         branch_id: fetchedAccount.branch?.branch_id
@@ -354,15 +357,22 @@ const UpdateAccountPage = () => {
                     className="w-full p-2 border rounded mb-4" 
                     required
                 />
-                {/* ✅ Contact Name */}
-                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Contact Name</label>
+                {/* ✅ Contact First/Last Name */}
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Contact First Name</label>
                 <input 
                     type="text" 
-                    name="contact_name" 
-                    value={accountData.contact_name} 
+                    name="contact_first_name" 
+                    value={accountData.contact_first_name} 
                     onChange={handleChange}
                     className="w-full p-2 border rounded mb-4" 
-                    required
+                />
+                <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Contact Last Name</label>
+                <input 
+                    type="text" 
+                    name="contact_last_name" 
+                    value={accountData.contact_last_name} 
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded mb-4" 
                 />
                 {/* ✅ Phone Number */}
                 <label className="block text-lg font-semibold text-muted-foreground mb-2 text-left">Phone Number</label>
@@ -507,7 +517,8 @@ UpdateAccountPage.propTypes = {
     account: PropTypes.shape({
         account_id: PropTypes.number.isRequired,
         business_name: PropTypes.string.isRequired,
-        contact_name: PropTypes.string,
+        contact_first_name: PropTypes.string,
+        contact_last_name: PropTypes.string,
         phone_number: PropTypes.string,
         email: PropTypes.string,
         address: PropTypes.string,

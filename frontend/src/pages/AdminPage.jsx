@@ -68,7 +68,8 @@ const AdminPage = ({ user }) => {
 
   const [newAccount, setNewAccount] = useState({
     business_name: "",
-    contact_name: "",
+    contact_first_name: "",
+    contact_last_name: "",
     phone_number: "",
     email: "",
     address: "",
@@ -248,7 +249,8 @@ const AdminPage = ({ user }) => {
     });
     setNewAccount({
       business_name: "",
-      contact_name: "",
+      contact_first_name: "",
+      contact_last_name: "",
       phone_number: "",
       email: "",
       address: "",
@@ -788,9 +790,15 @@ const AdminPage = ({ user }) => {
               />
               <input
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
-                placeholder="Contact name"
-                value={newAccount.contact_name}
-                onChange={(e) => setNewAccount({ ...newAccount, contact_name: e.target.value })}
+                placeholder="Contact first name"
+                value={newAccount.contact_first_name}
+                onChange={(e) => setNewAccount({ ...newAccount, contact_first_name: e.target.value })}
+              />
+              <input
+                className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                placeholder="Contact last name"
+                value={newAccount.contact_last_name}
+                onChange={(e) => setNewAccount({ ...newAccount, contact_last_name: e.target.value })}
               />
               <input
                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
@@ -889,8 +897,15 @@ const AdminPage = ({ user }) => {
                 />
                 <input
                   className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
-                  value={editingAccount.contact_name || ""}
-                  onChange={(e) => setEditingAccount({ ...editingAccount, contact_name: e.target.value })}
+                  placeholder="Contact first name"
+                  value={editingAccount.contact_first_name || ""}
+                  onChange={(e) => setEditingAccount({ ...editingAccount, contact_first_name: e.target.value })}
+                />
+                <input
+                  className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                  placeholder="Contact last name"
+                  value={editingAccount.contact_last_name || ""}
+                  onChange={(e) => setEditingAccount({ ...editingAccount, contact_last_name: e.target.value })}
                 />
                 <input
                   className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"

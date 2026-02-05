@@ -193,7 +193,11 @@ def get_invoice_by_id(invoice_id):
             "zip_code": account.zip_code if account else None,
             "phone_number": account.phone_number if account else None,
             "email": account.email if account else None,
-            "contact_name": account.contact_name if account else None,
+            "contact_name": (
+                " ".join([p for p in [account.contact_first_name, account.contact_last_name] if p])
+                if account and (account.contact_first_name or account.contact_last_name)
+                else (account.contact_name if account else None)
+            ),
 
             # Sales rep details
             "sales_rep_name": f"{getattr(sales_rep, 'first_name', '')} {getattr(sales_rep, 'last_name', '')}".strip() if sales_rep else None,

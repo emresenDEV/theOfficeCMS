@@ -6,7 +6,7 @@ import { createAccount } from "../services/accountService";
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
-const CreateNewAccountPage = () => {
+const CreateNewAccountPage = ({ user }) => {
     const navigate = useNavigate();
     
     const [industries, setIndustries] = useState([]);
@@ -15,7 +15,8 @@ const CreateNewAccountPage = () => {
     
     const [accountData, setAccountData] = useState({
         business_name: "",
-        contact_name: "",
+        contact_first_name: "",
+        contact_last_name: "",
         phone_number: "",
         email: "",
         address: "",
@@ -149,10 +150,17 @@ const CreateNewAccountPage = () => {
                 />
                 <input
                     type="text"
-                    placeholder="Contact Name"
+                    placeholder="Contact First Name"
                     className="w-full p-2 border border-border bg-card text-foreground rounded"
-                    value={accountData.contact_name}
-                    onChange={(e) => setAccountData({ ...accountData, contact_name: e.target.value })}
+                    value={accountData.contact_first_name}
+                    onChange={(e) => setAccountData({ ...accountData, contact_first_name: e.target.value })}
+                />
+                <input
+                    type="text"
+                    placeholder="Contact Last Name"
+                    className="w-full p-2 border border-border bg-card text-foreground rounded"
+                    value={accountData.contact_last_name}
+                    onChange={(e) => setAccountData({ ...accountData, contact_last_name: e.target.value })}
                 />
                 <input
                     type="text"
@@ -285,6 +293,12 @@ const CreateNewAccountPage = () => {
             </form>
         </div>
     );
+};
+
+CreateNewAccountPage.propTypes = {
+    user: PropTypes.shape({
+        user_id: PropTypes.number,
+    }),
 };
 
 

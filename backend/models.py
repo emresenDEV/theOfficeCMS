@@ -45,10 +45,16 @@ class Account(db.Model):
 
     # Convert object to dictionary for JSON responses
     def to_dict(self):
+        contact_name = None
+        if self.contact_first_name or self.contact_last_name:
+            contact_name = " ".join([p for p in [self.contact_first_name, self.contact_last_name] if p])
+        elif self.contact_name:
+            contact_name = self.contact_name
+
         return {
             "account_id": self.account_id,
             "business_name": self.business_name,
-            "contact_name": self.contact_name,
+            "contact_name": contact_name,
             "contact_first_name": self.contact_first_name,
             "contact_last_name": self.contact_last_name,
             "phone_number": self.phone_number,

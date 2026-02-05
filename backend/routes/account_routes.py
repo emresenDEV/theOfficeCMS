@@ -9,6 +9,28 @@ from audit import create_audit_log
 # Create Blueprint
 account_bp = Blueprint("accounts", __name__)
 
+def _coerce_empty(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped if stripped else None
+    return value
+
+
+def _split_contact_name(name):
+    if not name:
+        return None, None
+    parts = name.strip().split(" ", 1)
+    first = parts[0] if parts else None
+    last = parts[1].strip() if len(parts) > 1 else None
+    return first or None, last or None
+
+
+def _compose_contact_name(first, last):
+    pieces = [p for p in [first, last] if p]
+    return " ".join(pieces) if pieces else None
+
 # GET Assigned Accounts API
 @account_bp.route("/assigned", methods=["GET"])
 def get_assigned_accounts():
@@ -62,7 +84,9 @@ def get_account_details(account_id):
     return jsonify({
         "account_id": account.account_id,
         "business_name": account.business_name,
-        "contact_name": account.contact_name,
+        "contact_name": _compose_contact_name(account.contact_first_name, account.contact_last_name) or account.contact_name,
+        "contact_first_name": account.contact_first_name,
+        "contact_last_name": account.contact_last_name,
         "phone_number": account.phone_number,
         "email": account.email,
         "address": account.address,
@@ -88,6 +112,8 @@ def get_account_metrics():
             Account.account_id,
             Account.business_name,
             Account.contact_name,
+            Account.contact_first_name,
+            Account.contact_last_name,
             Industry.industry_name,
             func.coalesce(func.count(Tasks.task_id).filter(Tasks.is_completed == False), 0).label("task_count"),
             func.coalesce(func.sum(Invoice.final_total), 0).label("total_revenue"),
@@ -105,7 +131,9 @@ def get_account_metrics():
         {
             "account_id": acc.account_id,
             "business_name": acc.business_name,
-            "contact_name": acc.contact_name,
+            "contact_name": _compose_contact_name(acc.contact_first_name, acc.contact_last_name) or acc.contact_name,
+            "contact_first_name": acc.contact_first_name,
+            "contact_last_name": acc.contact_last_name,
             "industry_name": acc.industry_name or "Unknown Industry",
             "task_count": acc.task_count,
             "total_revenue": float(acc.total_revenue or 0),
@@ -124,7 +152,9 @@ def get_accounts():
         {
             "account_id": acc.account_id,
             "business_name": acc.business_name,
-            "contact_name": acc.contact_name,
+            "contact_name": _compose_contact_name(acc.contact_first_name, acc.contact_last_name) or acc.contact_name,
+            "contact_first_name": acc.contact_first_name,
+            "contact_last_name": acc.contact_last_name,
             "phone_number": acc.phone_number,
             "email": acc.email,
             "address": acc.address,
@@ -152,7 +182,9 @@ def get_account_by_id(account_id):
     return jsonify({
         "account_id": account.account_id,
         "business_name": account.business_name,
-        "contact_name": account.contact_name,
+        "contact_name": _compose_contact_name(account.contact_first_name, account.contact_last_name) or account.contact_name,
+        "contact_first_name": account.contact_first_name,
+        "contact_last_name": account.contact_last_name,
         "email": account.email,
         "phone_number": account.phone_number,
     })
@@ -178,7 +210,22 @@ def update_account(account_id):
 
         # Update account fields
         account.business_name = data.get("business_name", account.business_name)
-        account.contact_name = data.get("contact_name", account.contact_name) or None
+        incoming_first = data.get("contact_first_name")
+        incoming_last = data.get("contact_last_name")
+        incoming_name = data.get("contact_name")
+
+        if incoming_first is not None or incoming_last is not None:
+            if incoming_first is not None:
+                account.contact_first_name = _coerce_empty(incoming_first)
+            if incoming_last is not None:
+                account.contact_last_name = _coerce_empty(incoming_last)
+            account.contact_name = _compose_contact_name(account.contact_first_name, account.contact_last_name)
+        elif incoming_name is not None:
+            contact_name = _coerce_empty(incoming_name)
+            account.contact_name = contact_name
+            first, last = _split_contact_name(contact_name)
+            account.contact_first_name = first
+            account.contact_last_name = last
         account.phone_number = data.get("phone_number", account.phone_number) or None
         account.email = data.get("email", account.email) or None
         account.address = data.get("address", account.address)
@@ -252,9 +299,20 @@ def create_account():
         branch_id = int(data.get("branch_id")) if data.get("branch_id") else None
         created_by = int(data.get("created_by")) if data.get("created_by") else None
 
+        contact_first_name = _coerce_empty(data.get("contact_first_name"))
+        contact_last_name = _coerce_empty(data.get("contact_last_name"))
+        contact_name = _coerce_empty(data.get("contact_name"))
+
+        if contact_first_name or contact_last_name:
+            contact_name = _compose_contact_name(contact_first_name, contact_last_name)
+        elif contact_name:
+            contact_first_name, contact_last_name = _split_contact_name(contact_name)
+
         new_account = Account(
             business_name=data.get("business_name"),
-            contact_name=data.get("contact_name") or None,
+            contact_name=contact_name,
+            contact_first_name=contact_first_name,
+            contact_last_name=contact_last_name,
             phone_number=data.get("phone_number") or None,
             email=data.get("email") or None,
             address=data.get("address"),

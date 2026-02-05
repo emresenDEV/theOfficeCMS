@@ -8,6 +8,8 @@ import CalendarPage from "./pages/CalendarPage";
 import CreateCalendarEvent from "./components/CreateCalendarEvent";
 import CreateNewAccountPage from "./pages/CreateNewAccount";
 import CommissionsPage from "./pages/CommissionsPage";
+import ContactsPage from "./pages/ContactsPage";
+import ContactDetailsPage from "./pages/ContactDetailsPage";
 import CreateInvoicePage from "./pages/CreateInvoicePage";
 import Dashboard from "./pages/Dashboard";
 import EditInvoicePage from "./pages/EditInvoicePage";
@@ -62,6 +64,9 @@ function App() {
         }
         if (fullUser?.timezone) {
           localStorage.setItem("timezone", fullUser.timezone);
+        }
+        if (typeof fullUser?.contacts_autosave === "boolean") {
+          localStorage.setItem("contacts_autosave", fullUser.contacts_autosave ? "true" : "false");
         }
       } catch (error) {
         console.error("❌ Session Check Failed:", error);
@@ -175,6 +180,10 @@ const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
           <Route path="/accounts/details/:accountId" element={<ProtectedRoute user={user} loading={loading}><AccountDetailsPage user={user} /></ProtectedRoute>} />
           <Route path="/accounts/update/:accountId" element={<ProtectedRoute user={user} loading={loading}><UpdateAccountPage user={user} /></ProtectedRoute>} />
           <Route path="/accounts/create" element={<ProtectedRoute user={user} loading={loading}><CreateNewAccountPage user={user}/></ProtectedRoute>} />
+
+          {/* Contacts Routes */}
+          <Route path="/contacts" element={<ProtectedRoute user={user} loading={loading}><ContactsPage user={user} /></ProtectedRoute>} />
+          <Route path="/contacts/:contactId" element={<ProtectedRoute user={user} loading={loading}><ContactDetailsPage user={user} /></ProtectedRoute>} />
 
           {/* Commissions */}
           <Route path="/commissions" element={<ProtectedRoute user={user} loading={loading}><CommissionsPage user={user} /></ProtectedRoute>} />

@@ -5,6 +5,7 @@ import {
     LayoutDashboard,
     Users,
     Building2,
+    UserRound,
     FileText,
     CreditCard,
     DollarSign,
@@ -24,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 const mainNavItems = [
     { title: "Dashboard", href: "/", icon: LayoutDashboard },
     { title: "Accounts", href: "/accounts", icon: Building2 },
+    { title: "Contacts", href: "/contacts", icon: UserRound },
     { title: "Invoices", href: "/invoices", icon: FileText },
     { title: "Payments", href: "/payments", icon: CreditCard },
     { title: "Commissions", href: "/commissions", icon: DollarSign },

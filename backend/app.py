@@ -12,6 +12,7 @@ from routes.audit_routes import audit_bp
 from routes.branch_routes import branch_bp
 from routes.calendar_routes import calendar_bp
 from routes.commission_routes import commission_bp
+from routes.contact_routes import contact_bp
 from routes.department_routes import department_bp
 from routes.employee_routes import employee_bp
 from routes.industry_routes import industry_bp
@@ -50,6 +51,7 @@ app.register_blueprint(audit_bp, url_prefix="/audit")
 app.register_blueprint(branch_bp, url_prefix="/branches")
 app.register_blueprint(calendar_bp, url_prefix="/calendar")
 app.register_blueprint(commission_bp, url_prefix="/commissions")
+app.register_blueprint(contact_bp, url_prefix="/contacts")
 app.register_blueprint(department_bp, url_prefix="/departments")
 app.register_blueprint(employee_bp, url_prefix="/employees")
 app.register_blueprint(industry_bp, url_prefix="/industries")
