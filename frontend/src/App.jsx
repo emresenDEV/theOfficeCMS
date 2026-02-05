@@ -135,6 +135,17 @@ const AppRoutes = ({ user, loading, handleLogout, setUser }) => {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login"; // DETECT LOGIN PAGE
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const lastPath = localStorage.getItem("last_path") || "/";
+
+  useEffect(() => {
+    if (!user) return;
+    if (location.pathname === "/login") return;
+    localStorage.setItem("last_path", `${location.pathname}${location.search}`);
+  }, [location.pathname, location.search, user]);
+
+  if (user && isLoginPage) {
+    return <Navigate to={lastPath} replace />;
+  }
 
   return (
     <>
