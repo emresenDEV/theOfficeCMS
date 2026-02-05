@@ -9,7 +9,7 @@ const getGreeting = () => {
 
 export function DashboardHeader({ userName, roleName }) {
     return (
-        <div className="w-full -mx-4 sm:-mx-6 px-4 sm:px-6 py-0 bg-transparent border-b border-border">
+        <div className="w-full -mx-4 sm:-mx-6 px-4 sm:px-6 py-0 bg-card/90 backdrop-blur border-b border-border shadow-sm">
             <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
