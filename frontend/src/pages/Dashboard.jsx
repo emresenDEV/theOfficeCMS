@@ -38,7 +38,7 @@ const Dashboard = ({ user }) => {
         currentCommission: 0,
     });
     const [pipelineSummary, setPipelineSummary] = useState([]);
-    const [pipelineRange, setPipelineRange] = useState("month");
+    const [pipelineRange, setPipelineRange] = useState("all");
     const navigate = useNavigate();
 
     // Handle window resize for mobile detection
@@ -159,6 +159,9 @@ const Dashboard = ({ user }) => {
     const getPipelineDateRange = (range) => {
         const now = new Date();
         let start = new Date(now);
+        if (range === "all") {
+            return {};
+        }
         if (range === "day") {
             start.setHours(0, 0, 0, 0);
         } else if (range === "week") {
@@ -186,8 +189,8 @@ const Dashboard = ({ user }) => {
         async function loadPipelineSummary() {
             const range = getPipelineDateRange(pipelineRange);
             const data = await fetchPipelineSummary(userData.user_id, {
-                date_from: range.date_from,
-                date_to: range.date_to,
+                ...(range.date_from ? { date_from: range.date_from } : {}),
+                ...(range.date_to ? { date_to: range.date_to } : {}),
                 date_field: "created",
             });
             setPipelineSummary(Array.isArray(data) ? data : []);
@@ -251,6 +254,7 @@ const Dashboard = ({ user }) => {
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                         {[
+                            { key: "all", label: "All" },
                             { key: "day", label: "Day" },
                             { key: "week", label: "Week" },
                             { key: "month", label: "Month" },

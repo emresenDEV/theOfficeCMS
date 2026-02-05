@@ -192,7 +192,7 @@ def _flag_payment_not_received(now):
             continue
 
         days_since_order = (now.date() - order_date.date()).days
-        if days_since_order < 1:
+        if days_since_order < 2:
             continue
 
         if pipeline.payment_issue_notified_at is not None:

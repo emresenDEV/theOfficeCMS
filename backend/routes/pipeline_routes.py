@@ -106,13 +106,8 @@ def _effective_stage(invoice, pipeline):
     paid_in_full = final_total <= 0 or total_paid >= final_total
 
     if not paid_in_full:
-        if pipeline.payment_not_received_at:
+        if pipeline.current_stage == "payment_not_received" or pipeline.payment_not_received_at or pipeline.payment_issue_notified_at:
             return "payment_not_received"
-        order_date = pipeline.order_placed_at or invoice.date_created
-        if order_date:
-            days_since = (datetime.utcnow().date() - order_date.date()).days
-            if days_since >= 1:
-                return "payment_not_received"
         if pipeline.current_stage in ("contact_customer", "order_placed"):
             return pipeline.current_stage
         return "order_placed"
