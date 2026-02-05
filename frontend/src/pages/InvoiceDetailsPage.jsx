@@ -179,7 +179,7 @@ useEffect(() => {
         const detail = await fetchPipelineDetail(invoiceId);
         if (detail) {
             setPipelineDetail(detail);
-            setPipelineStage(detail.pipeline?.current_stage || "order_placed");
+            setPipelineStage(detail.effective_stage || detail.pipeline?.current_stage || "order_placed");
         }
     }
     loadPipeline();
@@ -1073,15 +1073,17 @@ if (!invoice)
 
                 <div className="mt-4 rounded-lg border border-border bg-background p-4">
                     <PipelineStatusBar
-                        currentStage={pipelineDetail?.pipeline?.current_stage || "order_placed"}
+                        currentStage={pipelineDetail?.effective_stage || pipelineDetail?.pipeline?.current_stage || "order_placed"}
                         onStageSelect={(stage) => setPipelineStage(stage)}
                     />
                 </div>
 
-                <div className="mt-4 grid gap-4 lg:grid-cols-[2fr,1fr]">
-                    <div className="rounded-lg border border-border bg-card p-4">
-                        <h3 className="text-sm font-semibold text-foreground">Update Stage</h3>
-                        <p className="text-xs text-muted-foreground">Manual update with optional note.</p>
+                        <div className="mt-4 grid gap-4 lg:grid-cols-[2fr,1fr]">
+                            <div className="rounded-lg border border-border bg-card p-4">
+                                <h3 className="text-sm font-semibold text-foreground">Update Stage</h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Manual update with optional note. Effective stage is auto‑computed from payment status.
+                                </p>
                         <div className="mt-3 space-y-3">
                             <select
                                 className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"

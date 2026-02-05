@@ -12,6 +12,7 @@ from models import (
     Invoice,
     InvoicePipeline,
     InvoicePipelineHistory,
+    Payment,
     Users,
 )
 from notifications import create_notification
@@ -81,6 +82,38 @@ def _serialize_pipeline(pipeline):
     }
 
 
+def _payment_stats(invoice_id):
+    total_paid = db.session.query(func.coalesce(func.sum(Payment.total_paid), 0)).filter(
+        Payment.invoice_id == invoice_id
+    ).scalar() or 0
+    latest_payment = db.session.query(func.max(Payment.date_paid)).filter(
+        Payment.invoice_id == invoice_id
+    ).scalar()
+    return float(total_paid), latest_payment
+
+
+def _effective_stage(invoice, pipeline):
+    total_paid, latest_payment = _payment_stats(invoice.invoice_id)
+    final_total = float(invoice.final_total or 0)
+    paid_in_full = final_total <= 0 or total_paid >= final_total
+
+    if not paid_in_full:
+        return "payment_not_received"
+
+    payment_date = pipeline.payment_received_at or latest_payment or invoice.date_updated or invoice.date_created
+    if not payment_date:
+        return "payment_received"
+
+    days_since = (datetime.utcnow().date() - payment_date.date()).days
+    if days_since >= 3:
+        return "order_delivered"
+    if days_since >= 2:
+        return "order_shipped"
+    if days_since >= 1:
+        return "order_packaged"
+    return "payment_received"
+
+
 def _get_primary_contact(account_id):
     if not account_id:
         return None
@@ -124,24 +157,26 @@ def _suggested_dates(start_date):
 def pipeline_summary():
     user_id = request.args.get("user_id", type=int)
     query = (
-        db.session.query(
-            InvoicePipeline.current_stage,
-            func.count(InvoicePipeline.invoice_id).label("invoice_count"),
-            func.count(func.distinct(Invoice.account_id)).label("account_count"),
-        )
+        db.session.query(InvoicePipeline, Invoice)
         .join(Invoice, Invoice.invoice_id == InvoicePipeline.invoice_id)
     )
     if user_id:
         query = query.filter(Invoice.sales_rep_id == user_id)
-    rows = query.group_by(InvoicePipeline.current_stage).all()
+
+    stage_counts = {}
+    stage_accounts = {}
+    for pipeline, invoice in query.all():
+        stage = _effective_stage(invoice, pipeline)
+        stage_counts[stage] = stage_counts.get(stage, 0) + 1
+        stage_accounts.setdefault(stage, set()).add(invoice.account_id)
 
     return jsonify([
         {
-            "stage": row.current_stage,
-            "invoice_count": int(row.invoice_count or 0),
-            "account_count": int(row.account_count or 0),
+            "stage": stage,
+            "invoice_count": int(stage_counts.get(stage, 0)),
+            "account_count": len(stage_accounts.get(stage, set())),
         }
-        for row in rows
+        for stage in stage_counts
     ]), 200
 
 
@@ -154,13 +189,14 @@ def pipeline_list():
         .join(Invoice, Invoice.invoice_id == InvoicePipeline.invoice_id)
         .join(Account, Account.account_id == Invoice.account_id)
     )
-    if stage:
-        query = query.filter(InvoicePipeline.current_stage == stage)
     if user_id:
         query = query.filter(Invoice.sales_rep_id == user_id)
 
     results = []
     for pipeline, invoice, account in query.order_by(Invoice.date_created.desc()).all():
+        effective_stage = _effective_stage(invoice, pipeline)
+        if stage and effective_stage != stage:
+            continue
         contact = _get_primary_contact(account.account_id)
         results.append({
             "invoice_id": invoice.invoice_id,
@@ -169,6 +205,7 @@ def pipeline_list():
             "contact_id": contact.contact_id if contact else None,
             "contact_name": f"{contact.first_name or ''} {contact.last_name or ''}".strip() if contact else None,
             "current_stage": pipeline.current_stage,
+            "effective_stage": effective_stage,
             "updated_at": _fmt(pipeline.updated_at),
             "final_total": float(invoice.final_total or 0),
             "due_date": invoice.due_date.isoformat() if invoice.due_date else None,
@@ -188,6 +225,7 @@ def pipeline_detail(invoice_id):
     pipeline = _ensure_pipeline(invoice)
     account = Account.query.get(invoice.account_id)
     contact = _get_primary_contact(invoice.account_id)
+    effective_stage = _effective_stage(invoice, pipeline)
 
     history_rows = (
         db.session.query(InvoicePipelineHistory, Users)
@@ -227,6 +265,7 @@ def pipeline_detail(invoice_id):
             "phone": contact.phone if contact else None,
         },
         "pipeline": _serialize_pipeline(pipeline),
+        "effective_stage": effective_stage,
         "history": history,
         "suggested_dates": _suggested_dates(pipeline.start_date or (invoice.date_created.date() if invoice.date_created else None)),
     }

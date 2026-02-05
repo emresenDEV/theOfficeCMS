@@ -179,11 +179,11 @@ const PipelineDashboard = ({ user }) => {
                         <span
                           className={cn(
                             "rounded-full border border-border px-2 py-0.5 text-xs",
-                            PIPELINE_STAGE_MAP[row.current_stage]?.tone === "danger" && "border-rose-300 text-rose-600",
-                            PIPELINE_STAGE_MAP[row.current_stage]?.tone === "success" && "border-emerald-300 text-emerald-600"
+                            PIPELINE_STAGE_MAP[row.effective_stage || row.current_stage]?.tone === "danger" && "border-rose-300 text-rose-600",
+                            PIPELINE_STAGE_MAP[row.effective_stage || row.current_stage]?.tone === "success" && "border-emerald-300 text-emerald-600"
                           )}
                         >
-                          {PIPELINE_STAGE_MAP[row.current_stage]?.label || row.current_stage}
+                          {PIPELINE_STAGE_MAP[row.effective_stage || row.current_stage]?.label || row.current_stage}
                         </span>
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">{formatDate(row.updated_at)}</td>

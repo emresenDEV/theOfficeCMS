@@ -40,7 +40,7 @@ const PipelineInvoicePage = ({ user }) => {
       const data = await fetchPipelineDetail(invoiceId);
       if (isMounted) {
         setDetail(data);
-        setSelectedStage(data?.pipeline?.current_stage || "");
+        setSelectedStage(data?.effective_stage || data?.pipeline?.current_stage || "");
         setLoading(false);
       }
     }
@@ -146,7 +146,8 @@ const PipelineInvoicePage = ({ user }) => {
               Invoice #{invoice?.invoice_id}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {invoice?.account_name} • Status: {invoice?.status}
+              {invoice?.account_name} • Status: {invoice?.status} • Pipeline:{" "}
+              {PIPELINE_STAGE_MAP[detail?.effective_stage]?.label || detail?.effective_stage || pipeline?.current_stage}
             </p>
           </div>
           <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm">
@@ -178,7 +179,7 @@ const PipelineInvoicePage = ({ user }) => {
 
         <div className="mt-6 rounded-lg border border-border bg-background p-4">
           <PipelineStatusBar
-            currentStage={pipeline?.current_stage}
+            currentStage={detail?.effective_stage || pipeline?.current_stage}
             onStageSelect={(stage) => setSelectedStage(stage)}
           />
         </div>
