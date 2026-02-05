@@ -10,6 +10,7 @@ const QuickAddModal = ({ open, onClose, user }) => {
   const [mode, setMode] = useState("task");
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [contactForm, setContactForm] = useState({
     first_name: "",
     last_name: "",
@@ -57,6 +58,7 @@ const QuickAddModal = ({ open, onClose, user }) => {
 
   const handleCreateContact = async () => {
     if (!contactForm.first_name && !contactForm.last_name) return;
+    setErrorMessage("");
     setLoading(true);
     const payload = {
       first_name: contactForm.first_name,
@@ -67,11 +69,20 @@ const QuickAddModal = ({ open, onClose, user }) => {
       actor_user_id: user?.user_id || user?.id,
       actor_email: user?.email,
     };
-    const created = await createContact(payload);
-    setLoading(false);
-    if (created?.contact_id) {
-      onClose();
-      navigate(`/contacts/${created.contact_id}`);
+    try {
+      const created = await createContact(payload);
+      setLoading(false);
+      if (created?.contact_id) {
+        onClose();
+        navigate(`/contacts/${created.contact_id}`, {
+          state: { toast: { type: "success", message: "Contact created successfully." } },
+        });
+      } else {
+        setErrorMessage("Contact was not created. Please try again.");
+      }
+    } catch (error) {
+      setLoading(false);
+      setErrorMessage(error.response?.data?.error || "Contact was not created. Please try again.");
     }
   };
 
@@ -133,6 +144,9 @@ const QuickAddModal = ({ open, onClose, user }) => {
           </button>
         </div>
 
+        {errorMessage && (
+          <p className="mt-3 text-sm text-destructive">{errorMessage}</p>
+        )}
         {mode === "task" ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <input

@@ -28,7 +28,7 @@ export const createContact = async (payload) => {
     return response.data;
   } catch (error) {
     console.error("❌ Error creating contact:", error.response?.data || error.message);
-    return null;
+    throw error;
   }
 };
 

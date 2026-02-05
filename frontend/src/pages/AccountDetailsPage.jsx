@@ -165,7 +165,21 @@ const AccountDetailsPage = ({ user }) => {
                     <p className="text-muted-foreground text-left">
                         <strong>Created:</strong> {formatDate(account.date_created)} <strong>| Updated: </strong>{formatDate(account.date_updated)}
                     </p>
-                    <p className="text-foreground text-left"><strong>Contact:</strong> {account.contact_name}</p>
+                    <p className="text-foreground text-left">
+                        <strong>Contact:</strong>{" "}
+                        {account.primary_contact_id ? (
+                            <button
+                                className="font-semibold underline text-primary hover:text-primary/80"
+                                onClick={() => navigate(`/contacts/${account.primary_contact_id}`)}
+                            >
+                                {account.primary_contact_name || account.contact_name || "View Contact"}
+                            </button>
+                        ) : (
+                            <span className="font-semibold text-foreground">
+                                {account.contact_name || "N/A"}
+                            </span>
+                        )}
+                    </p>
                     <p className="text-foreground text-left"><strong>Phone:</strong> {account.phone_number}</p>
                     <p className="text-foreground text-left"><strong>Email:</strong> {account.email}</p>
                     <p className="text-foreground text-left"><strong>Address:</strong> {account.address}</p>
@@ -316,6 +330,8 @@ AccountDetailsPage.propTypes = {
         account_id: PropTypes.number.isRequired,
         business_name: PropTypes.string.isRequired,
         contact_name: PropTypes.string,
+        primary_contact_id: PropTypes.number,
+        primary_contact_name: PropTypes.string,
         phone_number: PropTypes.string,
         email: PropTypes.string,
         address: PropTypes.string,

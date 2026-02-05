@@ -28,6 +28,7 @@ const ContactsPage = ({ user }) => {
     contact_owner_user_id: "",
     account_id: "",
   });
+  const [createError, setCreateError] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -85,6 +86,7 @@ const ContactsPage = ({ user }) => {
 
   const handleCreate = async () => {
     if (!createForm.first_name && !createForm.last_name) return;
+    setCreateError("");
     setCreating(true);
     const payload = {
       ...createForm,
@@ -95,10 +97,19 @@ const ContactsPage = ({ user }) => {
       actor_user_id: user?.user_id,
       actor_email: user?.email,
     };
-    const created = await createContact(payload);
-    setCreating(false);
-    if (created?.contact_id) {
-      navigate(`/contacts/${created.contact_id}`);
+    try {
+      const created = await createContact(payload);
+      setCreating(false);
+      if (created?.contact_id) {
+        navigate(`/contacts/${created.contact_id}`, {
+          state: { toast: { type: "success", message: "Contact created successfully." } },
+        });
+      } else {
+        setCreateError("Contact was not created. Please try again.");
+      }
+    } catch (error) {
+      setCreating(false);
+      setCreateError(error.response?.data?.error || "Contact was not created. Please try again.");
     }
   };
 
@@ -137,6 +148,9 @@ const ContactsPage = ({ user }) => {
       {showCreate && (
         <div className="mt-4 rounded-lg border border-border bg-card p-4">
           <h2 className="text-sm font-semibold text-foreground">Create Contact</h2>
+          {createError && (
+            <p className="mt-2 text-sm text-destructive">{createError}</p>
+          )}
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <input
               className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"

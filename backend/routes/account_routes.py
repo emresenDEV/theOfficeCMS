@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from models import Account, Industry, Region, Users, Branches, Tasks, Invoice, InvoiceServices, Service
+from models import Account, Industry, Region, Users, Branches, Tasks, Invoice, InvoiceServices, Service, AccountContacts, Contact
 from sqlalchemy import func
 from database import db
 from notifications import create_notification
@@ -82,12 +82,26 @@ def get_account_details(account_id):
                         "phone_number": branch.phone_number,
                     }
 
+    primary_contact_id = None
+    primary_contact_name = None
+    primary_link = AccountContacts.query.filter_by(account_id=account.account_id).order_by(
+        AccountContacts.is_primary.desc(),
+        AccountContacts.created_at.asc(),
+    ).first()
+    if primary_link:
+        contact = Contact.query.get(primary_link.contact_id)
+        if contact:
+            primary_contact_id = contact.contact_id
+            primary_contact_name = f"{contact.first_name or ''} {contact.last_name or ''}".strip() or None
+
     return jsonify({
         "account_id": account.account_id,
         "business_name": account.business_name,
         "contact_name": _compose_contact_name(account.contact_first_name, account.contact_last_name) or account.contact_name,
         "contact_first_name": account.contact_first_name,
         "contact_last_name": account.contact_last_name,
+        "primary_contact_id": primary_contact_id,
+        "primary_contact_name": primary_contact_name,
         "phone_number": account.phone_number,
         "email": account.email,
         "address": account.address,

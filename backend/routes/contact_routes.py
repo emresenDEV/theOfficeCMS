@@ -250,8 +250,12 @@ def get_contact(contact_id):
 def create_contact():
     data = request.json or {}
     account_ids = data.get("account_ids") or []
+    if not account_ids and data.get("account_id"):
+        account_ids = [data.get("account_id")]
     actor_user_id = data.get("actor_user_id")
     actor_email = data.get("actor_email")
+
+    account_ids = [int(account_id) for account_id in account_ids if account_id]
 
     owner_id = data.get("contact_owner_user_id")
     if not owner_id and account_ids:

@@ -58,6 +58,7 @@ const ContactDetailsPage = ({ user }) => {
     assigned_to: "",
   });
   const [highlightTaskId, setHighlightTaskId] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const storedAutosave = localStorage.getItem("contacts_autosave");
   const autosaveDefault = user?.contacts_autosave ?? (storedAutosave === null ? true : storedAutosave === "true");
@@ -83,6 +84,14 @@ const ContactDetailsPage = ({ user }) => {
       setHighlightTaskId(null);
     }
   }, [location.search]);
+
+  useEffect(() => {
+    const toastState = location.state?.toast;
+    if (!toastState) return;
+    setToast(toastState);
+    const timeoutId = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timeoutId);
+  }, [location.state]);
 
   useEffect(() => {
     let mounted = true;
@@ -384,6 +393,11 @@ const ContactDetailsPage = ({ user }) => {
 
   return (
     <div className="flex-1 p-6">
+      {toast && (
+        <div className="fixed right-6 top-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+          {toast.message}
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <button
