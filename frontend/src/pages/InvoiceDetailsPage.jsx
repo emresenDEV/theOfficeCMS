@@ -115,43 +115,16 @@ const closePaymentModal = () => {
 
 useEffect(() => {
     async function loadData() {
-    try {
-        const data = await fetchInvoiceById(invoiceId);
-        if (!data) throw new Error("Invoice not found");
-        setInvoice(data);
-        setPayments(data.payments || []);
-
-        const account = await fetchAccountDetails(data.account_id);
-        setAccountDetails(account);
-
-        setPaymentForm((prev) => ({
-            ...prev,
-            total_paid: "",
-        }));
-    
-        setInvoiceForm({
-            discount_percent: data.discount_percent || 0,
-            tax_rate: data.tax_rate || 0,
-            sales_rep_id: data.sales_rep_id || null,
-            due_date: data.due_date,
-            });
-        
-        setServices(data.services);
-    } catch (error) {
-        console.error("Error fetching invoice:", error);
-    }
+    await refreshInvoiceData();
+    setPaymentForm((prev) => ({
+        ...prev,
+        total_paid: "",
+    }));
     try {
         const reps = await fetchSalesReps();
         setSalesReps(reps);
         } catch (err) {
         console.error("❌ Error loading sales reps:", err);
-    }
-
-    try {
-        const notes = await fetchNotesByInvoice(invoiceId);
-        setNotes(notes);
-    } catch (error) {
-        console.error("Error fetching notes:", error);
     }
 
     try {
@@ -275,6 +248,53 @@ const formatDateTime = (rawDate) => {
     return formatted === "—" ? "N/A" : formatted;
 };
 
+const refreshInvoiceData = async ({
+    refreshNotes = true,
+    refreshTasks = true,
+    refreshPipeline = true,
+    refreshAccount = true,
+} = {}) => {
+    try {
+        const data = await fetchInvoiceById(invoiceId);
+        if (!data) throw new Error("Invoice not found");
+        setInvoice(data);
+        setPayments(data.payments || []);
+        setServices(data.services || []);
+        setInvoiceForm({
+            discount_percent: data.discount_percent || 0,
+            tax_rate: data.tax_rate || 0,
+            sales_rep_id: data.sales_rep_id || null,
+            due_date: data.due_date,
+        });
+        if (refreshAccount) {
+            const account = await fetchAccountDetails(data.account_id);
+            setAccountDetails(account);
+            setBranch(account.branch);
+        }
+        if (refreshNotes) {
+            const notes = await fetchNotesByInvoice(invoiceId);
+            setNotes(notes);
+        }
+        if (refreshTasks) {
+            const tasks = await fetchTasksByInvoice(invoiceId);
+            setInvoiceTasks(tasks || []);
+        }
+        if (refreshPipeline) {
+            const actorId = user?.user_id ?? user?.id;
+            if (actorId) {
+                const detail = await fetchPipelineDetail(invoiceId, actorId);
+                if (detail) {
+                    setPipelineDetail(detail);
+                    setPipelineStage(detail.effective_stage || detail.pipeline?.current_stage || "order_placed");
+                    setPipelineFollowing(!!detail.is_following);
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching invoice:", error);
+    }
+};
+
 const refreshInvoiceTasks = async () => {
     const tasks = await fetchTasksByInvoice(invoiceId);
     setInvoiceTasks(tasks || []);
@@ -303,7 +323,7 @@ const handleCreateInvoiceTask = async () => {
         setNewTaskDescription("");
         setNewTaskDueDate("");
         setNewTaskAssignee("");
-        refreshInvoiceTasks();
+        await refreshInvoiceData({ refreshNotes: false, refreshAccount: false });
     }
 };
 
@@ -315,7 +335,7 @@ const handleToggleInvoiceTask = async (task) => {
         actor_email: user?.email,
     });
     if (updated) {
-        refreshInvoiceTasks();
+        await refreshInvoiceData({ refreshNotes: false, refreshAccount: false });
     }
 };
 
@@ -347,13 +367,14 @@ const handleEditService = (index) => {
 setEditingIndex(index);
 };
 
-const handleSaveEdit = (index) => {
+const handleSaveEdit = async (index) => {
     const updatedService = services[index];
     if (updatedService.service_id) {
-        updateService(updatedService.service_id, updatedService);
+        await updateService(updatedService.service_id, updatedService);
     }
     setEditingIndex(null);
-    updateInvoice(invoiceId, { services, actor_user_id: user.id, actor_email: user.email });
+    await updateInvoice(invoiceId, { services, actor_user_id: user.id, actor_email: user.email });
+    await refreshInvoiceData({ refreshNotes: false });
     };
 
 const handleServiceFieldChange = (index, field, value) => {
@@ -404,15 +425,7 @@ const handleLogPayment = async () => {
     
         const response = await logInvoicePayment(invoiceId, payload);
         if (response && response.payment_id) {
-            const updatedInvoice = await fetchInvoiceById(invoiceId);
-            setInvoice(updatedInvoice);
-            setPayments(updatedInvoice.payments || []);
-            const refreshedPipeline = await fetchPipelineDetail(invoiceId, actorId);
-            if (refreshedPipeline) {
-                setPipelineDetail(refreshedPipeline);
-                setPipelineStage(refreshedPipeline.effective_stage || refreshedPipeline.pipeline?.current_stage || "order_placed");
-                setPipelineFollowing(!!refreshedPipeline.is_following);
-            }
+            await refreshInvoiceData({ refreshNotes: false, refreshTasks: false, refreshAccount: false });
     
             // Reset form and close
             closePaymentModal();
@@ -493,9 +506,7 @@ const handleDeleteService = async (index) => {
         });
 
         // 🧼 Refresh invoice data from DB
-        const updated = await fetchInvoiceById(invoiceId);
-        setInvoice(updated);
-        setServices(updated.services || []);
+        await refreshInvoiceData({ refreshNotes: false, refreshTasks: false, refreshAccount: false });
     } catch (error) {
         console.error("❌ Failed to delete invoice service:", error);
         alert("Error deleting service.");
@@ -550,9 +561,7 @@ const handleAddServiceSave = async () => {
         actor_email: user.email,
     });
     
-    const updated = await fetchInvoiceById(invoiceId);
-    setInvoice(updated);
-    setServices(updated.services);
+    await refreshInvoiceData({ refreshNotes: false, refreshTasks: false, refreshAccount: false });
 
     setNewServiceRow({
         service_name: "",
@@ -791,9 +800,7 @@ const isPaidInFull = invoiceTotal <= 0 || paymentTotal >= invoiceTotal;
                                     actor_user_id: user.id,
                                     actor_email: user.email,
                                 });
-                            
-                                const updated = await fetchInvoiceById(invoiceId);
-                                setInvoice(updated);
+                                await refreshInvoiceData({ refreshNotes: false, refreshTasks: false, refreshAccount: false });
                                 setShowEditInvoiceForm(false);
                                 } catch (error) {
                                 console.error("❌ Failed to update invoice:", error);
@@ -1549,16 +1556,13 @@ const isPaidInFull = invoiceTotal <= 0 || paymentTotal >= invoiceTotal;
                                             onUpdate={async (updatedPayment) => {
                                                 const res = await updatePayment(payment.payment_id, updatedPayment, user.id, user.email);
                                                 if (res) {
-                                                    const updatedPayments = [...payments];
-                                                    updatedPayments[idx] = res;
-                                                    setPayments(updatedPayments);
+                                                    await refreshInvoiceData({ refreshNotes: false, refreshTasks: false, refreshAccount: false });
                                                 }
                                             }}
                                             onDelete={async (paymentId) => {
                                                 const res = await deletePayment(paymentId, user.id, user.email);
                                                 if (res) {
-                                                    const updated = payments.filter(p => p.payment_id !== paymentId);
-                                                    setPayments(updated);
+                                                    await refreshInvoiceData({ refreshNotes: false, refreshTasks: false, refreshAccount: false });
                                                 }
                                             }}
                                         />
