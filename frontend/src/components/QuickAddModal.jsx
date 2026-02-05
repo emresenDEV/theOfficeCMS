@@ -10,6 +10,7 @@ const QuickAddModal = ({ open, onClose, user }) => {
   const [mode, setMode] = useState("task");
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [contactForm, setContactForm] = useState({
     first_name: "",
@@ -41,6 +42,8 @@ const QuickAddModal = ({ open, onClose, user }) => {
   useEffect(() => {
     if (!open) return;
     setMode("task");
+    setSuccessMessage("");
+    setErrorMessage("");
     setContactForm({ first_name: "", last_name: "", email: "", phone: "", account_id: "" });
     setTaskForm({
       task_description: "",
@@ -58,6 +61,7 @@ const QuickAddModal = ({ open, onClose, user }) => {
 
   const handleCreateContact = async () => {
     if (!contactForm.first_name && !contactForm.last_name) return;
+    setSuccessMessage("");
     setErrorMessage("");
     setLoading(true);
     const payload = {
@@ -73,10 +77,13 @@ const QuickAddModal = ({ open, onClose, user }) => {
       const created = await createContact(payload);
       setLoading(false);
       if (created?.contact_id) {
-        onClose();
-        navigate(`/contacts/${created.contact_id}`, {
-          state: { toast: { type: "success", message: "Contact created successfully." } },
-        });
+        setSuccessMessage("Contact created successfully.");
+        setTimeout(() => {
+          onClose();
+          navigate(`/contacts/${created.contact_id}`, {
+            state: { toast: { type: "success", message: "Contact created successfully." } },
+          });
+        }, 700);
       } else {
         setErrorMessage("Contact was not created. Please try again.");
       }
@@ -144,6 +151,9 @@ const QuickAddModal = ({ open, onClose, user }) => {
           </button>
         </div>
 
+        {successMessage && (
+          <p className="mt-3 text-sm text-emerald-600">{successMessage}</p>
+        )}
         {errorMessage && (
           <p className="mt-3 text-sm text-destructive">{errorMessage}</p>
         )}

@@ -18,6 +18,7 @@ const ContactsPage = ({ user }) => {
   const [creating, setCreating] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
   const [backfillMessage, setBackfillMessage] = useState("");
+  const [createToast, setCreateToast] = useState("");
   const [createForm, setCreateForm] = useState({
     first_name: "",
     last_name: "",
@@ -87,6 +88,7 @@ const ContactsPage = ({ user }) => {
   const handleCreate = async () => {
     if (!createForm.first_name && !createForm.last_name) return;
     setCreateError("");
+    setCreateToast("");
     setCreating(true);
     const payload = {
       ...createForm,
@@ -101,9 +103,12 @@ const ContactsPage = ({ user }) => {
       const created = await createContact(payload);
       setCreating(false);
       if (created?.contact_id) {
-        navigate(`/contacts/${created.contact_id}`, {
-          state: { toast: { type: "success", message: "Contact created successfully." } },
-        });
+        setCreateToast("Contact created successfully.");
+        setTimeout(() => {
+          navigate(`/contacts/${created.contact_id}`, {
+            state: { toast: { type: "success", message: "Contact created successfully." } },
+          });
+        }, 700);
       } else {
         setCreateError("Contact was not created. Please try again.");
       }
@@ -148,6 +153,9 @@ const ContactsPage = ({ user }) => {
       {showCreate && (
         <div className="mt-4 rounded-lg border border-border bg-card p-4">
           <h2 className="text-sm font-semibold text-foreground">Create Contact</h2>
+          {createToast && (
+            <p className="mt-2 text-sm text-emerald-600">{createToast}</p>
+          )}
           {createError && (
             <p className="mt-2 text-sm text-destructive">{createError}</p>
           )}
