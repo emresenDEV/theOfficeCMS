@@ -106,20 +106,44 @@ def _effective_stage(invoice, pipeline):
     paid_in_full = final_total <= 0 or total_paid >= final_total
 
     if not paid_in_full:
-        return "payment_not_received"
+        if pipeline.payment_not_received_at:
+            return "payment_not_received"
+        order_date = pipeline.order_placed_at or invoice.date_created
+        if order_date:
+            days_since = (datetime.utcnow().date() - order_date.date()).days
+            if days_since >= 1:
+                return "payment_not_received"
+        if pipeline.current_stage in ("contact_customer", "order_placed"):
+            return pipeline.current_stage
+        return "order_placed"
 
-    payment_date = pipeline.payment_received_at or latest_payment or invoice.date_updated or invoice.date_created
+    payment_date = pipeline.payment_received_at or latest_payment
     if not payment_date:
-        return "payment_received"
+        return pipeline.current_stage or "payment_received"
 
     days_since = (datetime.utcnow().date() - payment_date.date()).days
     if days_since >= 3:
-        return "order_delivered"
-    if days_since >= 2:
-        return "order_shipped"
-    if days_since >= 1:
-        return "order_packaged"
-    return "payment_received"
+        computed = "order_delivered"
+    elif days_since >= 2:
+        computed = "order_shipped"
+    elif days_since >= 1:
+        computed = "order_packaged"
+    else:
+        computed = "payment_received"
+
+    stage_order = {
+        "contact_customer": 0,
+        "order_placed": 1,
+        "payment_not_received": 2,
+        "payment_received": 3,
+        "order_packaged": 4,
+        "order_shipped": 5,
+        "order_delivered": 6,
+    }
+    current = pipeline.current_stage or computed
+    if stage_order.get(current, 0) > stage_order.get(computed, 0):
+        return current
+    return computed
 
 
 def _notify_pipeline_followers(invoice, account, stage, actor_user_id=None, action_required=False):
