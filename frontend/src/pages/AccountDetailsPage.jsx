@@ -129,6 +129,12 @@ const AccountDetailsPage = ({ user }) => {
             actor_email: user?.email,
         };
         const created = await createContactInteraction(interactionModal.contact_id, payload);
+        if (created?.duplicate) {
+            setContactsToast("Duplicate interaction prevented.");
+            setTimeout(() => setContactsToast(""), 3000);
+            setInteractionSaving(false);
+            return;
+        }
         if (created) {
             const contactName = `${interactionModal.first_name || ""} ${interactionModal.last_name || ""}`.trim() || "Contact";
             const noteTextParts = [
@@ -248,7 +254,7 @@ const AccountDetailsPage = ({ user }) => {
     return (
         <div className="p-6 max-w-6xl mx-auto bg-card border border-border shadow-lg rounded-lg">
             {contactsToast && (
-                <div className="mb-4 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                <div className="fixed right-6 bottom-6 z-50 rounded-md border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
                     {contactsToast}
                 </div>
             )}

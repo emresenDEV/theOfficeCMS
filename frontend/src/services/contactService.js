@@ -77,8 +77,34 @@ export const createContactInteraction = async (contactId, payload) => {
     const response = await api.post(`/contacts/${contactId}/interactions`, payload);
     return response.data;
   } catch (error) {
+    if (error.response?.status === 409) {
+      return {
+        duplicate: true,
+        interaction: error.response?.data?.interaction || null,
+      };
+    }
     console.error("❌ Error creating interaction:", error.response?.data || error.message);
     return null;
+  }
+};
+
+export const updateContactInteraction = async (contactId, interactionId, payload) => {
+  try {
+    const response = await api.put(`/contacts/${contactId}/interactions/${interactionId}`, payload);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error updating interaction:", error.response?.data || error.message);
+    return null;
+  }
+};
+
+export const deleteContactInteraction = async (contactId, interactionId, payload = {}) => {
+  try {
+    await api.delete(`/contacts/${contactId}/interactions/${interactionId}`, { data: payload });
+    return true;
+  } catch (error) {
+    console.error("❌ Error deleting interaction:", error.response?.data || error.message);
+    return false;
   }
 };
 

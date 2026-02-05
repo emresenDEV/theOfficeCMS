@@ -6,6 +6,8 @@ import {
   fetchContactById,
   followContact,
   unfollowContact,
+  updateContactInteraction,
+  deleteContactInteraction,
   updateContact,
   updateContactAccounts,
 } from "../services/contactService";
@@ -52,6 +54,16 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
     phone_custom: "",
     email_option: "",
     email_custom: "",
+  });
+  const [interactionSaving, setInteractionSaving] = useState(false);
+  const [editInteraction, setEditInteraction] = useState(null);
+  const [editInteractionForm, setEditInteractionForm] = useState({
+    interaction_type: "call",
+    subject: "",
+    notes: "",
+    account_id: "",
+    phone_number: "",
+    email_address: "",
   });
   const [taskForm, setTaskForm] = useState({
     task_description: "",
@@ -496,6 +508,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
   };
 
   const handleInteractionSubmit = async () => {
+    if (interactionSaving) return;
     if (!interactionForm.subject && !interactionForm.notes) return;
 
     let phoneNumber = null;
@@ -527,9 +540,19 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
       actor_email: user?.email,
     };
 
+    setInteractionSaving(true);
     const created = await createContactInteraction(contact.contact_id, payload);
-    if (created) {
-      setInteractions((prev) => [created, ...prev]);
+    if (created?.duplicate) {
+      showToast("Duplicate interaction prevented.");
+      setInteractionSaving(false);
+      return;
+    }
+    if (created?.interaction_id) {
+      setInteractions((prev) => {
+        const exists = prev.some((item) => item.interaction_id === created.interaction_id);
+        if (exists) return prev;
+        return [created, ...prev];
+      });
       setInteractionForm({
         interaction_type: "call",
         subject: "",
@@ -542,6 +565,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
       });
       showToast("Interaction logged.");
     }
+    setInteractionSaving(false);
   };
 
   const handleTaskCreate = async () => {
@@ -574,6 +598,56 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
       }
       setTaskAssigneeOpen(false);
       showToast("Task created.");
+    }
+  };
+
+  const handleEditInteractionOpen = (interaction) => {
+    setEditInteraction(interaction);
+    setEditInteractionForm({
+      interaction_type: interaction.interaction_type || "call",
+      subject: interaction.subject || "",
+      notes: interaction.notes || "",
+      account_id: interaction.account_id ? String(interaction.account_id) : "",
+      phone_number: interaction.phone_number || "",
+      email_address: interaction.email_address || "",
+    });
+  };
+
+  const handleEditInteractionSave = async () => {
+    if (!editInteraction || !contact) return;
+    const payload = {
+      interaction_type: editInteractionForm.interaction_type,
+      subject: editInteractionForm.subject,
+      notes: editInteractionForm.notes,
+      account_id: editInteractionForm.account_id ? Number(editInteractionForm.account_id) : null,
+      phone_number: editInteractionForm.phone_number || null,
+      email_address: editInteractionForm.email_address || null,
+      actor_user_id: currentUserId,
+      actor_email: user?.email,
+    };
+    const updated = await updateContactInteraction(contact.contact_id, editInteraction.interaction_id, payload);
+    if (updated) {
+      setInteractions((prev) =>
+        prev.map((item) =>
+          item.interaction_id === updated.interaction_id ? updated : item
+        )
+      );
+      showToast("Interaction updated.");
+      setEditInteraction(null);
+    }
+  };
+
+  const handleDeleteInteraction = async (interactionId) => {
+    if (!contact) return;
+    const confirmed = window.confirm("Delete this interaction? This cannot be undone.");
+    if (!confirmed) return;
+    const deleted = await deleteContactInteraction(contact.contact_id, interactionId, {
+      actor_user_id: currentUserId,
+      actor_email: user?.email,
+    });
+    if (deleted) {
+      setInteractions((prev) => prev.filter((item) => item.interaction_id !== interactionId));
+      showToast("Interaction deleted.");
     }
   };
 
@@ -659,7 +733,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
         actor_email: user?.email,
       };
       const created = await createContactInteraction(contact.contact_id, interactionPayload);
-      if (created) {
+      if (created?.interaction_id) {
         setInteractions((prev) => [created, ...prev]);
       }
     }
@@ -679,7 +753,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
   return (
     <div className={embedded ? "p-4" : "flex-1 p-6"}>
       {toast && (
-        <div className="fixed right-6 top-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+        <div className="fixed right-6 bottom-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
           {toast.message}
         </div>
       )}
@@ -1092,8 +1166,9 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                     <button
                       className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                       onClick={handleInteractionSubmit}
+                      disabled={interactionSaving}
                     >
-                      Log Interaction
+                      {interactionSaving ? "Logging..." : "Log Interaction"}
                     </button>
                   </div>
                 </div>
@@ -1316,16 +1391,30 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                               {(interaction.interaction_type || "interaction").replace(/_/g, " ")}
                               {interaction.subject ? ` • ${interaction.subject}` : ""}
                             </p>
-                            <span className="text-xs text-muted-foreground">
-                              {interaction.created_at
-                                ? formatDateTimeInTimeZone(interaction.created_at, user, {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                  })
-                                : ""}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {interaction.created_at
+                                  ? formatDateTimeInTimeZone(interaction.created_at, user, {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                    })
+                                  : ""}
+                              </span>
+                              <button
+                                className="text-xs font-semibold text-primary hover:underline"
+                                onClick={() => handleEditInteractionOpen(interaction)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="text-xs font-semibold text-destructive hover:underline"
+                                onClick={() => handleDeleteInteraction(interaction.interaction_id)}
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
                           {interaction.notes && (
                             <p className="mt-2 text-sm text-muted-foreground">{interaction.notes}</p>
@@ -1584,6 +1673,101 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                 disabled={saving || !dirty}
               >
                 {saving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editInteraction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Edit Interaction</h2>
+                <p className="text-xs text-muted-foreground">Update details and save.</p>
+              </div>
+              <button
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setEditInteraction(null)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-4 space-y-3">
+              <select
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                value={editInteractionForm.interaction_type}
+                onChange={(e) =>
+                  setEditInteractionForm((prev) => ({ ...prev, interaction_type: e.target.value }))
+                }
+              >
+                <option value="call">Phone Call</option>
+                <option value="email">Email</option>
+                <option value="followup">Follow-up</option>
+                <option value="note">Note</option>
+              </select>
+              <select
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                value={editInteractionForm.account_id}
+                onChange={(e) =>
+                  setEditInteractionForm((prev) => ({ ...prev, account_id: e.target.value }))
+                }
+              >
+                <option value="">No account</option>
+                {accounts.map((acc) => (
+                  <option key={acc.account_id} value={acc.account_id}>
+                    {acc.business_name}
+                  </option>
+                ))}
+              </select>
+              <input
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                placeholder="Subject"
+                value={editInteractionForm.subject}
+                onChange={(e) =>
+                  setEditInteractionForm((prev) => ({ ...prev, subject: e.target.value }))
+                }
+              />
+              <textarea
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                placeholder="Notes"
+                rows={3}
+                value={editInteractionForm.notes}
+                onChange={(e) =>
+                  setEditInteractionForm((prev) => ({ ...prev, notes: e.target.value }))
+                }
+              />
+              <input
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                placeholder="Phone number"
+                value={editInteractionForm.phone_number}
+                onChange={(e) =>
+                  setEditInteractionForm((prev) => ({ ...prev, phone_number: e.target.value }))
+                }
+              />
+              <input
+                className="w-full rounded border border-border bg-card p-2 text-sm text-foreground"
+                placeholder="Email address"
+                value={editInteractionForm.email_address}
+                onChange={(e) =>
+                  setEditInteractionForm((prev) => ({ ...prev, email_address: e.target.value }))
+                }
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-muted"
+                onClick={() => setEditInteraction(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                onClick={handleEditInteractionSave}
+              >
+                Save
               </button>
             </div>
           </div>

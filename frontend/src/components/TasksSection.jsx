@@ -86,6 +86,12 @@ const TasksSection = ({ tasks, users, userId, userEmail, accountId, setTasks, re
             setCreating(true);
             const response = await createTask(taskData);
             if (response && response.task_id) {
+                const optimisticTask = {
+                    ...response,
+                    date_created: response.date_created || new Date().toISOString(),
+                    created_by: response.user_id,
+                };
+                setTasks((prev) => [optimisticTask, ...prev]);
                 setNewTaskDescription(""); // Clear form inputs
                 setAssignedTo(null);
                 setAssignedToSearch("");
@@ -140,7 +146,12 @@ const TasksSection = ({ tasks, users, userId, userEmail, accountId, setTasks, re
             )
         );
         try {
-            await updateTask(taskId, { is_completed: !currentStatus, actor_user_id: userId, actor_email: userEmail });
+            const updated = await updateTask(taskId, { is_completed: !currentStatus, actor_user_id: userId, actor_email: userEmail });
+            if (!updated) {
+                setTasks(previous);
+                setTaskToast("Could not update task status.");
+                return;
+            }
             await refreshTasks();
         } catch (error) {
             console.error("❌ Error updating task status:", error);

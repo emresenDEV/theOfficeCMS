@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy import or_, func
+from datetime import datetime, timedelta
 from models import Contact, Account, AccountContacts, ContactFollowers, ContactInteractions, Tasks, Users
 from database import db
 from audit import create_audit_log
@@ -71,6 +72,20 @@ def _notify_contact_followers(contact_id, actor_user_id, title, message, link):
             source_type="contact",
             source_id=contact_id,
         )
+
+
+def _serialize_interaction(interaction):
+    return {
+        "interaction_id": interaction.interaction_id,
+        "interaction_type": interaction.interaction_type,
+        "subject": interaction.subject,
+        "notes": interaction.notes,
+        "phone_number": interaction.phone_number,
+        "email_address": interaction.email_address,
+        "account_id": interaction.account_id,
+        "user_id": interaction.user_id,
+        "created_at": interaction.created_at.isoformat() if interaction.created_at else None,
+    }
 
 
 def _backfill_contacts_from_accounts(actor_user_id=None, actor_email=None):
@@ -514,14 +529,37 @@ def unfollow_contact(contact_id):
 @contact_bp.route("/<int:contact_id>/interactions", methods=["POST"])
 def create_contact_interaction(contact_id):
     data = request.json or {}
-    actor_user_id = data.get("actor_user_id")
+    actor_user_id = data.get("actor_user_id") or data.get("user_id")
     actor_email = data.get("actor_email")
+    interaction_type = data.get("interaction_type")
+
+    if not interaction_type:
+        return jsonify({"error": "interaction_type is required"}), 400
+
+    cutoff = datetime.utcnow() - timedelta(seconds=60)
+    duplicate = ContactInteractions.query.filter(
+        ContactInteractions.contact_id == contact_id,
+        ContactInteractions.user_id == actor_user_id,
+        ContactInteractions.interaction_type == interaction_type,
+        ContactInteractions.subject == data.get("subject"),
+        ContactInteractions.notes == data.get("notes"),
+        ContactInteractions.phone_number == data.get("phone_number"),
+        ContactInteractions.email_address == data.get("email_address"),
+        ContactInteractions.account_id == data.get("account_id"),
+        ContactInteractions.created_at >= cutoff,
+    ).order_by(ContactInteractions.created_at.desc()).first()
+
+    if duplicate:
+        return jsonify({
+            "duplicate": True,
+            "interaction": _serialize_interaction(duplicate),
+        }), 409
 
     interaction = ContactInteractions(
         contact_id=contact_id,
         account_id=data.get("account_id"),
         user_id=actor_user_id,
-        interaction_type=data.get("interaction_type"),
+        interaction_type=interaction_type,
         subject=data.get("subject"),
         notes=data.get("notes"),
         phone_number=data.get("phone_number"),
@@ -556,14 +594,96 @@ def create_contact_interaction(contact_id):
         f"/contacts/{contact_id}",
     )
 
-    return jsonify({
-        "interaction_id": interaction.interaction_id,
-        "interaction_type": interaction.interaction_type,
-        "subject": interaction.subject,
-        "notes": interaction.notes,
-        "phone_number": interaction.phone_number,
-        "email_address": interaction.email_address,
-        "account_id": interaction.account_id,
-        "user_id": interaction.user_id,
-        "created_at": interaction.created_at.isoformat() if interaction.created_at else None,
-    }), 201
+    return jsonify(_serialize_interaction(interaction)), 201
+
+
+@contact_bp.route("/<int:contact_id>/interactions/<int:interaction_id>", methods=["PUT"])
+def update_contact_interaction(contact_id, interaction_id):
+    interaction = ContactInteractions.query.filter_by(
+        contact_id=contact_id, interaction_id=interaction_id
+    ).first()
+    if not interaction:
+        return jsonify({"error": "Interaction not found"}), 404
+
+    data = request.json or {}
+    actor_user_id = data.get("actor_user_id") or data.get("user_id") or interaction.user_id
+    actor_email = data.get("actor_email")
+
+    before_data = _serialize_interaction(interaction)
+
+    if "interaction_type" in data:
+        interaction.interaction_type = data.get("interaction_type")
+    if "subject" in data:
+        interaction.subject = data.get("subject")
+    if "notes" in data:
+        interaction.notes = data.get("notes")
+    if "phone_number" in data:
+        interaction.phone_number = data.get("phone_number")
+    if "email_address" in data:
+        interaction.email_address = data.get("email_address")
+    if "account_id" in data:
+        interaction.account_id = data.get("account_id")
+
+    create_audit_log(
+        entity_type="contact_interaction",
+        entity_id=interaction.interaction_id,
+        action="update",
+        user_id=actor_user_id,
+        user_email=actor_email,
+        before_data=before_data,
+        after_data=_serialize_interaction(interaction),
+        contact_id=contact_id,
+        account_id=interaction.account_id,
+    )
+
+    db.session.commit()
+
+    _notify_contact_followers(
+        contact_id,
+        actor_user_id,
+        "Contact interaction updated",
+        interaction.subject or interaction.interaction_type,
+        f"/contacts/{contact_id}",
+    )
+
+    return jsonify(_serialize_interaction(interaction)), 200
+
+
+@contact_bp.route("/<int:contact_id>/interactions/<int:interaction_id>", methods=["DELETE"])
+def delete_contact_interaction(contact_id, interaction_id):
+    interaction = ContactInteractions.query.filter_by(
+        contact_id=contact_id, interaction_id=interaction_id
+    ).first()
+    if not interaction:
+        return jsonify({"error": "Interaction not found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    actor_user_id = data.get("actor_user_id") or request.args.get("actor_user_id", type=int) or interaction.user_id
+    actor_email = data.get("actor_email") or request.args.get("actor_email")
+
+    before_data = _serialize_interaction(interaction)
+    db.session.delete(interaction)
+
+    create_audit_log(
+        entity_type="contact_interaction",
+        entity_id=interaction_id,
+        action="delete",
+        user_id=actor_user_id,
+        user_email=actor_email,
+        before_data=before_data,
+        after_data=None,
+        contact_id=contact_id,
+        account_id=before_data.get("account_id"),
+    )
+
+    db.session.commit()
+
+    _notify_contact_followers(
+        contact_id,
+        actor_user_id,
+        "Contact interaction deleted",
+        before_data.get("subject") or before_data.get("interaction_type"),
+        f"/contacts/{contact_id}",
+    )
+
+    return jsonify({"message": "Interaction deleted"}), 200
