@@ -141,3 +141,44 @@
 .high-contrast .text-muted-foreground {
     color: yellow !important;
 }
+
+/* Calendar polish */
+.calendar-shell .fc {
+    --fc-border-color: hsl(var(--border));
+    --fc-page-bg-color: hsl(var(--card));
+    --fc-neutral-bg-color: hsl(var(--muted));
+    --fc-today-bg-color: hsl(var(--accent));
+    --fc-event-bg-color: hsl(var(--primary));
+    --fc-event-border-color: hsl(var(--primary));
+    --fc-event-text-color: hsl(var(--primary-foreground));
+    --fc-button-bg-color: hsl(var(--primary));
+    --fc-button-border-color: hsl(var(--primary));
+    --fc-button-text-color: hsl(var(--primary-foreground));
+    --fc-button-hover-bg-color: hsl(var(--primary) / 0.9);
+    --fc-button-active-bg-color: hsl(var(--primary) / 0.85);
+}
+
+.calendar-shell .fc .fc-toolbar-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.calendar-shell .fc .fc-button {
+    border-radius: 0.375rem;
+    box-shadow: var(--shadow-card);
+}
+
+.calendar-shell .fc .fc-col-header-cell-cushion {
+    color: hsl(var(--muted-foreground));
+    font-weight: 600;
+}
+
+.calendar-shell .fc .fc-daygrid-day-number {
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
+}
+
+.calendar-shell .fc .fc-daygrid-event {
+    border-radius: 0.35rem;
+    padding: 0 4px;
+}

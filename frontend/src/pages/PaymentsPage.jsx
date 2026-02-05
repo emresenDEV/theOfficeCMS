@@ -3,12 +3,18 @@ import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { fetchInvoices, fetchPaymentMethods, logInvoicePayment } from "../services/invoiceService";
+import { fetchAccounts } from "../services/accountService";
+import { fetchSalesReps } from "../services/userService";
 import { fetchPayments } from "../services/paymentService";
 
 const PaymentsPage = ({ user }) => {
     const [invoices, setInvoices] = useState([]);
     const [payments, setPayments] = useState([]);
     const [paymentMethods, setPaymentMethods] = useState([]);
+    const [accounts, setAccounts] = useState([]);
+    const [salesReps, setSalesReps] = useState([]);
+    const [invoiceStatusFilter, setInvoiceStatusFilter] = useState("All");
+    const [salesRepFilter, setSalesRepFilter] = useState(user?.user_id ? String(user.user_id) : "All");
     const [formState, setFormState] = useState({
         invoice_id: "",
         account_id: "",
@@ -19,25 +25,66 @@ const PaymentsPage = ({ user }) => {
     });
 
     const invoiceMap = useMemo(() => new Map(invoices.map((inv) => [inv.invoice_id, inv])), [invoices]);
+    const accountMap = useMemo(() => new Map(accounts.map((acc) => [acc.account_id, acc])), [accounts]);
+
+    const invoiceStatusOptions = useMemo(() => {
+        const unique = Array.from(new Set(invoices.map((inv) => inv.status).filter(Boolean))).sort();
+        return ["All", ...unique];
+    }, [invoices]);
+
+    const filteredInvoices = useMemo(() => {
+        let filtered = invoices;
+        if (invoiceStatusFilter !== "All") {
+            filtered = filtered.filter((inv) => inv.status === invoiceStatusFilter);
+        }
+        if (salesRepFilter !== "All") {
+            filtered = filtered.filter(
+                (inv) => String(inv.sales_rep_id) === String(salesRepFilter)
+            );
+        }
+        return filtered;
+    }, [invoices, invoiceStatusFilter, salesRepFilter]);
+
+    useEffect(() => {
+        if (!formState.invoice_id) return;
+        const stillVisible = filteredInvoices.some(
+            (inv) => String(inv.invoice_id) === String(formState.invoice_id)
+        );
+        if (!stillVisible) {
+            setFormState((prev) => ({
+                ...prev,
+                invoice_id: "",
+                account_id: "",
+                sales_rep_id: "",
+            }));
+        }
+    }, [filteredInvoices, formState.invoice_id]);
 
     useEffect(() => {
         const load = async () => {
-            const [invoiceList, methodList, paymentList] = await Promise.all([
-                fetchInvoices(user.user_id),
+            const [invoiceList, methodList, accountList, salesRepList] = await Promise.all([
+                fetchInvoices(),
                 fetchPaymentMethods(),
-                fetchPayments({ sales_rep_id: user.user_id }),
+                fetchAccounts(),
+                fetchSalesReps(),
             ]);
             setInvoices(invoiceList);
             setPaymentMethods(methodList);
-            setPayments(paymentList);
+            setAccounts(accountList);
+            setSalesReps(salesRepList);
         };
         load();
     }, [user.user_id]);
 
-    const refreshPayments = async () => {
-        const paymentList = await fetchPayments({ sales_rep_id: user.user_id });
+    const refreshPayments = async (repFilter = salesRepFilter) => {
+        const params = repFilter === "All" ? {} : { sales_rep_id: Number(repFilter) };
+        const paymentList = await fetchPayments(params);
         setPayments(paymentList);
     };
+
+    useEffect(() => {
+        refreshPayments(salesRepFilter);
+    }, [salesRepFilter]);
 
     const handleCreatePayment = async (e) => {
         e.preventDefault();
@@ -78,7 +125,34 @@ const PaymentsPage = ({ user }) => {
 
                 <form onSubmit={handleCreatePayment} className="rounded-md border border-border bg-card p-4 shadow-card">
                     <h2 className="text-lg font-semibold text-foreground">Log a Payment</h2>
-                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    <div className="mt-4 grid gap-3 md:grid-cols-4">
+                        <select
+                            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                            value={invoiceStatusFilter}
+                            onChange={(e) => setInvoiceStatusFilter(e.target.value)}
+                        >
+                            {invoiceStatusOptions.map((status) => (
+                                <option key={status} value={status}>
+                                    {status} invoices
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                            value={salesRepFilter}
+                            onChange={(e) => setSalesRepFilter(e.target.value)}
+                        >
+                            <option value="All">All sales reps</option>
+                            {salesReps.map((rep) => (
+                                <option key={rep.user_id} value={rep.user_id}>
+                                    {rep.first_name} {rep.last_name}
+                                    {rep.user_id === user.user_id ? " (Me)" : ""}
+                                </option>
+                            ))}
+                            {!salesReps.some((rep) => rep.user_id === user.user_id) && (
+                                <option value={String(user.user_id)}>My invoices</option>
+                            )}
+                        </select>
                         <select
                             className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
                             value={formState.invoice_id}
@@ -95,11 +169,16 @@ const PaymentsPage = ({ user }) => {
                             required
                         >
                             <option value="">Select invoice</option>
-                            {invoices.map((inv) => (
-                                <option key={inv.invoice_id} value={inv.invoice_id}>
-                                    #{inv.invoice_id} • Account {inv.account_id}
-                                </option>
-                            ))}
+                            {filteredInvoices.map((inv) => {
+                                const accountName =
+                                    accountMap.get(inv.account_id)?.business_name || `Account ${inv.account_id}`;
+                                const dueDate = inv.due_date ? format(new Date(inv.due_date), "MMM d, yyyy") : "No due date";
+                                return (
+                                    <option key={inv.invoice_id} value={inv.invoice_id}>
+                                        #{inv.invoice_id} • {accountName} • {inv.status} • Due {dueDate}
+                                    </option>
+                                );
+                            })}
                         </select>
                         <select
                             className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"

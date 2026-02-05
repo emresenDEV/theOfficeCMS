@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
     fetchCalendarEvents, 
@@ -12,10 +12,8 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import CreateCalendarEvent from "../components/CreateCalendarEvent";
-// import EditCalendarEvent from "../components/EditCalendarEvent";
-import SelectedEventDetails from "../components/SelectedEventDetails";
 import PropTypes from "prop-types";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 
 const CalendarPage = ({ user }) => {
     const location = useLocation();
@@ -29,7 +27,6 @@ const CalendarPage = ({ user }) => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
     const [selectedDateEvents, setSelectedDateEvents] = useState([]);
-    const [showModal, setShowModal] = useState(false);
     const [showPastEvents, setShowPastEvents] = useState(false);
     const [showCreateEvent, setShowCreateEvent] = useState(false);
     
@@ -38,37 +35,34 @@ const CalendarPage = ({ user }) => {
     const [selectedDepartment, setSelectedDepartment] = useState(user.department_id || "");
     const [selectedUserId, setSelectedUserId] = useState(user.user_id || "");
 
-    const [editingEventId, setEditingEventId] = useState(null);
     const [filteredDepartments, setFilteredDepartments] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [calendarView, setCalendarView] = useState("dayGridMonth");
 
-    // Define Time Ranges
     const today = new Date();
-    const weekStart = startOfWeek(today);
-    const weekEnd = endOfWeek(today);
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
+    const selectedDateLabel = selectedDate
+        ? selectedDate === format(today, "yyyy-MM-dd")
+            ? "Today"
+            : format(new Date(selectedDate), "MMM d, yyyy")
+        : "Select a date";
 
-    // Sort Events Based on View
-    const sortedEvents = events
-        .sort((a, b) => 
-            new Date(`${a.start_date}T${a.start_time}`) - new Date(`${b.start_date}T${b.start_time}`)
-        );
+    const sortByStart = (a, b) =>
+        new Date(`${a.start_date}T${a.start_time}`) - new Date(`${b.start_date}T${b.start_time}`);
 
-    const upcomingEvents = sortedEvents.filter(event => new Date(event.start_date) >= today);
-    const pastEvents = sortedEvents.filter(event => new Date(event.start_date) < today);
+    const sortedEvents = useMemo(() => [...events].sort(sortByStart), [events]);
+    const pastEvents = useMemo(
+        () => sortedEvents.filter((event) => new Date(event.start_date) < today),
+        [sortedEvents, today]
+    );
+    const pastEventList = useMemo(() => pastEvents.slice(0, 8), [pastEvents]);
+    const selectedDateEventList = useMemo(
+        () => [...selectedDateEvents].sort(sortByStart),
+        [selectedDateEvents]
+    );
 
-    const viewEvents = {
-        "dayGridMonth": events.filter(event => 
-            event.start_date >= format(monthStart, "yyyy-MM-dd") && 
-            event.start_date <= format(monthEnd, "yyyy-MM-dd")
-        ),
-        "timeGridWeek": events.filter(event => 
-            event.start_date >= format(weekStart, "yyyy-MM-dd") && 
-            event.start_date <= format(weekEnd, "yyyy-MM-dd")
-        ),
-        "timeGridDay": events.filter(event => event.start_date === selectedDate),
+    const formatEventTime = (timeValue) => {
+        if (!timeValue) return "";
+        return format(new Date(`1970-01-01T${timeValue}`), "h:mm a");
     };
 
     useEffect(() => {
@@ -167,6 +161,7 @@ const CalendarPage = ({ user }) => {
         const formattedDate = format(localDate, "yyyy-MM-dd"); 
         setSelectedDate(formattedDate);
         setSelectedDateEvents(events.filter(event => event.start_date === formattedDate));
+        setSelectedEvent(null);
         navigate(`?date=${formattedDate}`, { replace: true });
     };
     
@@ -174,7 +169,6 @@ const CalendarPage = ({ user }) => {
     /** ✅ Handle Clicking on an Event */
     const handleEventClick = (clickInfo) => {
         setSelectedEvent(clickInfo.event.extendedProps);
-        setEditingEventId(clickInfo.event.extendedProps.event_id);
     };
 
     /** ✅ Filter Departments Based on Selected Branch */
@@ -236,168 +230,235 @@ const CalendarPage = ({ user }) => {
     
     return (
         <div className="bg-background min-h-screen p-6">
-                <h1 className="text-2xl font-bold text-foreground pb-4">📅 Calendar</h1>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-foreground">Calendar</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Manage schedules, filter by branch and team, and review daily agendas.
+                    </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                        onClick={() => setShowCreateEvent(!showCreateEvent)}
+                    >
+                        {showCreateEvent ? "Close Event Form" : "Create Event"}
+                    </button>
+                    <button
+                        className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/40"
+                        onClick={() => setShowPastEvents(!showPastEvents)}
+                    >
+                        {showPastEvents ? "Hide Past Events" : "Show Past Events"}
+                    </button>
+                </div>
+            </div>
 
-                {/* ✅ Branch, Department, and Employee Selection */}
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                    <div>
-                        <label className="block text-muted-foreground">Select Branch:</label>
-                        <select 
-                            value={selectedBranch}
-                            onChange={(e) => setSelectedBranch(e.target.value)}
-                            className="border border-border bg-card text-foreground p-2 rounded w-full mt-2"
-                            
-                        >
-                            {branches.map(branch => (
-                                <option 
-                                    key={branch.branch_id} 
-                                    value={branch.branch_id}>
-                                    {branch.branch_name}
-                                </option>
-                            ))}
-                        </select>
+            <div className="mt-6 grid gap-6 lg:grid-cols-[320px,1fr]">
+                <div className="space-y-6">
+                    <div className="rounded-md border border-border bg-card p-4 shadow-card">
+                        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Filters
+                        </h2>
+                        <div className="mt-4 space-y-3">
+                            <div>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Branch
+                                </label>
+                                <select
+                                    value={selectedBranch}
+                                    onChange={(e) => setSelectedBranch(e.target.value)}
+                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                >
+                                    {branches.map((branch) => (
+                                        <option key={branch.branch_id} value={branch.branch_id}>
+                                            {branch.branch_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Department
+                                </label>
+                                <select
+                                    value={selectedDepartment}
+                                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                >
+                                    {filteredDepartments.map((dept) => (
+                                        <option key={dept.department_id} value={dept.department_id}>
+                                            {dept.department_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    Employee
+                                </label>
+                                <select
+                                    value={filteredUsers.length > 0 ? selectedUserId : ""}
+                                    onChange={(e) => setSelectedUserId(parseInt(e.target.value, 10))}
+                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                >
+                                    {filteredUsers.length > 0 ? (
+                                        filteredUsers.map((user) => (
+                                            <option key={user.user_id} value={user.user_id}>
+                                                {user.first_name} {user.last_name}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option value="">No employees available</option>
+                                    )}
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-muted-foreground">Select Department:</label>
-                        <select 
-                            value={selectedDepartment}
-                            onChange={(e) => setSelectedDepartment(e.target.value)}
-                            className="border border-border bg-card text-foreground p-2 rounded w-full mt-2"
-                            
-                        >
-                            {filteredDepartments.map(dept => (
-                                <option 
-                                    key={dept.department_id} 
-                                    value={dept.department_id}>
-                                    {dept.department_name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-muted-foreground">Select Employee:</label>
-                        <select 
-                            value={filteredUsers.length > 0 ? selectedUserId : ""}
-                            onChange={(e) => setSelectedUserId(parseInt(e.target.value, 10))}
-                            className="border border-border bg-card text-foreground p-2 rounded w-full mt-2"
-                            
-                        >
-                            {filteredUsers.length > 0 ? (
-                                filteredUsers.map(user => (
-                                    <option 
-                                        key={user.user_id} 
-                                        value={user.user_id}>
-                                        {user.first_name} {user.last_name}
-                                    </option>
+                    <div className="rounded-md border border-border bg-card p-4 shadow-card">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-base font-semibold text-foreground">
+                                Agenda: {selectedDateLabel}
+                            </h2>
+                            <span className="text-xs text-muted-foreground">
+                                {selectedDateEventList.length} event
+                                {selectedDateEventList.length === 1 ? "" : "s"}
+                            </span>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                            {selectedDateEventList.length > 0 ? (
+                                selectedDateEventList.map((event) => (
+                                    <button
+                                        key={event.event_id}
+                                        type="button"
+                                        className={`w-full rounded-md border border-border p-3 text-left transition hover:bg-muted/40 ${
+                                            selectedEvent?.event_id === event.event_id ? "bg-muted/40" : "bg-card"
+                                        }`}
+                                        onClick={() => setSelectedEvent(event)}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-semibold text-foreground">
+                                                    {event.event_title}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {formatEventTime(event.start_time)} - {formatEventTime(event.end_time)}
+                                                </p>
+                                                {event.location && (
+                                                    <p className="text-xs text-muted-foreground">{event.location}</p>
+                                                )}
+                                            </div>
+                                            {event.account_id && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Account {event.account_id}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </button>
                                 ))
                             ) : (
-                                <option value="">No employees available</option>
+                                <p className="text-sm text-muted-foreground italic">No events scheduled.</p>
                             )}
-                        </select>
-
+                        </div>
                     </div>
-                </div>
 
-                {/* ✅ Full Calendar Component */}
-                <div className="p-6 bg-card border border-border rounded-lg shadow-md mt-6">
-                    <FullCalendar
-                        ref={calendarRef}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                        initialView={calendarView}
-                        headerToolbar={{
-                            left: "prev,next today",
-                            center: "title",
-                            right: "dayGridMonth,timeGridWeek,timeGridDay",
-                        }}
-                        events={events.map(event => ({
-                            id: event.event_id,
-                            title: event.event_title,
-                            start: new Date(`${event.start_date}T${event.start_time}`),
-                            end: new Date(`${event.end_date}T${event.end_time}`),
-                            extendedProps: event,
-                        }))}
-                        eventClick={handleEventClick}
-                        dateClick={handleDateClick}
-                        viewDidMount={({ view }) => setCalendarView(view.type)}
-                    />
-                </div>
-                {/* Create Event Button & Form */}
-                <button 
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg mb-4 mt-6"
-                    onClick={() => setShowCreateEvent(!showCreateEvent)}
-                >
-                    {showCreateEvent ? "Close Event Form" : "Create Event"}
-                </button>
+                    {selectedEvent && (
+                        <div className="rounded-md border border-border bg-card p-4 shadow-card">
+                            <h2 className="text-base font-semibold text-foreground">Event Details</h2>
+                            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                                <p className="text-foreground font-semibold">{selectedEvent.event_title}</p>
+                                <p>
+                                    {selectedEvent.start_date} • {formatEventTime(selectedEvent.start_time)} -{" "}
+                                    {formatEventTime(selectedEvent.end_time)}
+                                </p>
+                                {selectedEvent.location && <p>Location: {selectedEvent.location}</p>}
+                                {selectedEvent.contact_name && <p>Contact: {selectedEvent.contact_name}</p>}
+                                {selectedEvent.phone_number && <p>Phone: {selectedEvent.phone_number}</p>}
+                                {selectedEvent.notes && <p>Notes: {selectedEvent.notes}</p>}
+                            </div>
+                        </div>
+                    )}
 
-                {showCreateEvent && (
-                    <CreateCalendarEvent 
-                        userId={selectedUserId} 
-                        setEvents={setEvents} 
-                        closeForm={() => setShowCreateEvent(false)} 
-                        selectedDate={selectedDate ? new Date(selectedDate) : null}
-                    />
-                )}
-
-                {/* ✅ Display Events for Selected Date or Today */}
-                <div className="mt-6 bg-card border border-border p-6 rounded-lg shadow-md">
-                    <h2 className="text-lg font-bold text-foreground mb-4">
-                        📅 Events on {selectedDate === format(new Date(), "yyyy-MM-dd") 
-                            ? "Today" 
-                            : format(new Date(selectedDate), "MM/dd/yyyy")} 
-                    </h2>
-
-                    {selectedDateEvents.length > 0 ? (
-                        selectedDateEvents.map(event => (
-                            editingEventId === event.event_id ? (
-                                // ✅ Show inline edit form if the event is being edited
-                                <EditCalendarEvent
-                                    key={event.event_id}
-                                    event={event}
-                                    setEvents={setEvents}
-                                    saveEvent={(updatedEvent) => {
-                                        setEvents(events.map(e => e.event_id === updatedEvent.event_id ? updatedEvent : e));
-                                        setEditingEventId(null); // ✅ Exit edit mode after saving
-                                    }}
-                                />
-                            ) : (
-                                // ✅ Show normal event details with an Edit button
-                                <SelectedEventDetails
-                                    key={event.event_id}
-                                    event={event}
-                                    onEdit={() => setEditingEventId(event.event_id)} // ✅ Enables inline editing
-                                />
-                            )
-                        ))
-                    ) : (
-                        <p className="text-muted-foreground text-sm italic">No events on this day.</p>
+                    {showPastEvents && (
+                        <div className="rounded-md border border-border bg-card p-4 shadow-card">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-base font-semibold text-foreground">Past Events</h2>
+                                <span className="text-xs text-muted-foreground">
+                                    Showing {pastEventList.length} of {pastEvents.length}
+                                </span>
+                            </div>
+                            <div className="mt-4 space-y-3">
+                                {pastEventList.length > 0 ? (
+                                    pastEventList.map((event) => (
+                                        <button
+                                            key={event.event_id}
+                                            type="button"
+                                            className="w-full rounded-md border border-border p-3 text-left transition hover:bg-muted/40"
+                                            onClick={() => setSelectedEvent(event)}
+                                        >
+                                            <p className="text-sm font-semibold text-foreground">
+                                                {event.event_title}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {event.start_date} • {formatEventTime(event.start_time)}
+                                            </p>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground italic">No past events found.</p>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
 
-                {/* Past Events Button */}
-                <button 
-                    className="mt-4 bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:bg-secondary/80"
-                    onClick={() => setShowPastEvents(!showPastEvents)}
-                >
-                    {showPastEvents ? "Hide Past Events" : "Show Past Events"}
-                </button>
+                <div className="space-y-6">
+                    <div className="calendar-shell rounded-md border border-border bg-card p-4 shadow-card">
+                        <FullCalendar
+                            ref={calendarRef}
+                            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                            initialView={calendarView}
+                            headerToolbar={{
+                                left: "prev,next today",
+                                center: "title",
+                                right: "dayGridMonth,timeGridWeek,timeGridDay",
+                            }}
+                            buttonText={{
+                                today: "Today",
+                                month: "Month",
+                                week: "Week",
+                                day: "Day",
+                            }}
+                            height="auto"
+                            expandRows
+                            nowIndicator
+                            dayMaxEvents
+                            eventTimeFormat={{ hour: "numeric", minute: "2-digit", meridiem: "short" }}
+                            events={events.map((event) => ({
+                                id: event.event_id,
+                                title: event.event_title,
+                                start: new Date(`${event.start_date}T${event.start_time}`),
+                                end: new Date(`${event.end_date}T${event.end_time}`),
+                                extendedProps: event,
+                            }))}
+                            eventClick={handleEventClick}
+                            dateClick={handleDateClick}
+                            viewDidMount={({ view }) => setCalendarView(view.type)}
+                        />
+                    </div>
 
-                {showPastEvents && (
-                    <SelectedEventDetails 
-                        events={events.filter(event => new Date(event.start_date) < new Date())}
-                        selectedDate={selectedDate} 
-                        onEdit={setSelectedEvent} 
-                    />    
-                )}
-                {/* ✅ Show Edit Event Modal */}
-                {showModal && selectedEvent && (
-                    <EditCalendarEvent 
-                        event={selectedEvent} 
-                        setShowModal={setShowModal} 
-                        setEvents={setEvents} 
-                    />
-                )}
+                    {showCreateEvent && (
+                        <CreateCalendarEvent
+                            userId={selectedUserId}
+                            setEvents={setEvents}
+                            closeForm={() => setShowCreateEvent(false)}
+                            selectedDate={selectedDate ? new Date(selectedDate) : null}
+                        />
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
@@ -411,33 +472,6 @@ CalendarPage.propTypes = {
         branch_id: PropTypes.number.isRequired,
         department_id: PropTypes.number.isRequired,
     }).isRequired,
-    employees: PropTypes.arrayOf(
-        PropTypes.shape({
-            user_id: PropTypes.number.isRequired,
-            first_name: PropTypes.string.isRequired,
-            last_name: PropTypes.string.isRequired,
-            branch_id: PropTypes.number.isRequired,
-            department_id: PropTypes.number.isRequired,
-        })
-    ),
-    calendar_event: PropTypes.arrayOf( 
-        PropTypes.shape({
-            event_id: PropTypes.number.isRequired,
-            event_title: PropTypes.string.isRequired,
-            start_date: PropTypes.string.isRequired,
-            end_date: PropTypes.string.isRequired,
-            start_time: PropTypes.string.isRequired,
-            end_time: PropTypes.string.isRequired,
-            location: PropTypes.string,
-            account_id: PropTypes.number,
-            contact_name: PropTypes.string,
-            phone_number: PropTypes.string,
-            notes: PropTypes.string,
-            user_id: PropTypes.number.isRequired,
-        })
-    ),
-    selectedDate: PropTypes.string.isRequired,
-    onEdit: PropTypes.func.isRequired,
 };
 
 export default CalendarPage;
