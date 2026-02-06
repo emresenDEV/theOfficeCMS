@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchAccounts } from "../services/accountService";
 import { fetchUsers } from "../services/userService";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import AccountsPageMobile from "../components/AccountsPageMobile";
 
@@ -12,6 +12,10 @@ const AccountsPage = ({ user }) => {
     const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [selectedSalesRepId, setSelectedSalesRepId] = useState(
+        searchParams.get("sales_rep_id") || "All"
+    );
 
     // Handle window resize for mobile detection
     useEffect(() => {
@@ -41,6 +45,11 @@ const AccountsPage = ({ user }) => {
 
         loadData();
     }, [user]); 
+
+    useEffect(() => {
+        const param = searchParams.get("sales_rep_id") || "All";
+        setSelectedSalesRepId(param);
+    }, [searchParams]);
     
     useEffect(() => {
         const lowerQuery = searchQuery.toLowerCase();
@@ -50,22 +59,31 @@ const AccountsPage = ({ user }) => {
                 ...acc,
                 sales_rep: salesRep
             };        
-        }).filter(acc =>
-                acc.business_name.toLowerCase().includes(lowerQuery) ||
-                acc.contact_name.toLowerCase().includes(lowerQuery) ||
-                acc.phone_number.includes(searchQuery) ||
-                acc.email.toLowerCase().includes(lowerQuery) ||
-                acc.address.toLowerCase().includes(lowerQuery) ||
-                acc.city.toLowerCase().includes(lowerQuery) ||
-                acc.state.toLowerCase().includes(lowerQuery) ||
-                acc.zip_code.includes(searchQuery) ||
-                (acc.sales_rep && (
-                    acc.sales_rep.first_name.toLowerCase().includes(lowerQuery) ||
-                    acc.sales_rep.last_name.toLowerCase().includes(lowerQuery)
-                ))
-            );
+        }).filter(acc => {
+                const matchesSearch =
+                    acc.business_name?.toLowerCase().includes(lowerQuery) ||
+                    acc.contact_name?.toLowerCase().includes(lowerQuery) ||
+                    acc.phone_number?.includes(searchQuery) ||
+                    acc.email?.toLowerCase().includes(lowerQuery) ||
+                    acc.address?.toLowerCase().includes(lowerQuery) ||
+                    acc.city?.toLowerCase().includes(lowerQuery) ||
+                    acc.state?.toLowerCase().includes(lowerQuery) ||
+                    acc.zip_code?.includes(searchQuery) ||
+                    (acc.sales_rep && (
+                        acc.sales_rep.first_name?.toLowerCase().includes(lowerQuery) ||
+                        acc.sales_rep.last_name?.toLowerCase().includes(lowerQuery)
+                    ));
+
+                const matchesRep =
+                    selectedSalesRepId === "All" ||
+                    (selectedSalesRepId === "unassigned"
+                        ? !acc.sales_rep_id
+                        : String(acc.sales_rep_id) === String(selectedSalesRepId));
+
+                return matchesSearch && matchesRep;
+            });
         setFilteredAccounts(filtered);
-    }, [searchQuery, accounts, users]);
+    }, [searchQuery, accounts, users, selectedSalesRepId]);
 
     const formatPhoneNumber = (phone) => {
         if (!phone) return "N/A";
@@ -86,14 +104,27 @@ const AccountsPage = ({ user }) => {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             filteredAccounts={filteredAccounts}
+            salesReps={users}
+            selectedSalesRepId={selectedSalesRepId}
+            onSalesRepChange={(value) => {
+                setSelectedSalesRepId(value);
+                const nextParams = new URLSearchParams(searchParams);
+                if (value === "All") {
+                    nextParams.delete("sales_rep_id");
+                } else {
+                    nextParams.set("sales_rep_id", value);
+                }
+                setSearchParams(nextParams, { replace: true });
+            }}
+            currentUserId={user?.user_id}
         />
     ) : (
         <div className="w-full">
             <div className="flex-1 p-4 sm:p-6">
                 <h1 className="text-2xl font-bold text-foreground">Accounts</h1>
                 {/* Search Bar and New Account Button*/}
-                <div className="flex justify-between items-center gap-4">
-                    <div className="flex-grow">
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                    <div className="flex-grow min-w-[220px]">
                         <input
                             type="text"
                             placeholder="Search Accounts"
@@ -101,6 +132,37 @@ const AccountsPage = ({ user }) => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full p-2 border border-border bg-card text-foreground rounded my-4"
                         />
+                    </div>
+                    <div className="min-w-[220px]">
+                        <select
+                            className="w-full p-2 border border-border bg-card text-foreground rounded my-4"
+                            value={selectedSalesRepId}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setSelectedSalesRepId(value);
+                                const nextParams = new URLSearchParams(searchParams);
+                                if (value === "All") {
+                                    nextParams.delete("sales_rep_id");
+                                } else {
+                                    nextParams.set("sales_rep_id", value);
+                                }
+                                setSearchParams(nextParams, { replace: true });
+                            }}
+                        >
+                            <option value="All">All Sales Reps</option>
+                            {users
+                                .slice()
+                                .sort((a, b) => (a.last_name || "").localeCompare(b.last_name || ""))
+                                .map((rep) => (
+                                    <option key={rep.user_id} value={rep.user_id}>
+                                        {rep.first_name} {rep.last_name}
+                                        {rep.user_id === user?.user_id ? " (Me)" : ""}
+                                    </option>
+                                ))}
+                            {accounts.some((acc) => !acc.sales_rep_id) && (
+                                <option value="unassigned">Unassigned</option>
+                            )}
+                        </select>
                     </div>
                     <div>
                         <button

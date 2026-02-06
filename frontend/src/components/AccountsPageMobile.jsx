@@ -9,7 +9,11 @@ const AccountsPageMobile = ({
     onCreateNew,
     searchQuery,
     onSearchChange,
-    filteredAccounts
+    filteredAccounts,
+    salesReps,
+    selectedSalesRepId,
+    onSalesRepChange,
+    currentUserId,
 }) => {
     const [sortBy, setSortBy] = useState("name"); // name, date, rep
 
@@ -43,6 +47,28 @@ const AccountsPageMobile = ({
                         onChange={(e) => onSearchChange(e.target.value)}
                         className="w-full p-2 border rounded text-sm"
                     />
+                </div>
+
+                <div className="mb-4">
+                    <select
+                        className="w-full p-2 border rounded text-sm"
+                        value={selectedSalesRepId}
+                        onChange={(e) => onSalesRepChange(e.target.value)}
+                    >
+                        <option value="All">All Sales Reps</option>
+                        {salesReps
+                            .slice()
+                            .sort((a, b) => (a.last_name || "").localeCompare(b.last_name || ""))
+                            .map((rep) => (
+                                <option key={rep.user_id} value={rep.user_id}>
+                                    {rep.first_name} {rep.last_name}
+                                    {rep.user_id === currentUserId ? " (Me)" : ""}
+                                </option>
+                            ))}
+                        {accounts.some((acc) => !acc.sales_rep_id) && (
+                            <option value="unassigned">Unassigned</option>
+                        )}
+                    </select>
                 </div>
 
                 {/* New Account Button - Full Width on Mobile */}
@@ -134,6 +160,10 @@ AccountsPageMobile.propTypes = {
     searchQuery: PropTypes.string.isRequired,
     onSearchChange: PropTypes.func.isRequired,
     filteredAccounts: PropTypes.array.isRequired,
+    salesReps: PropTypes.array.isRequired,
+    selectedSalesRepId: PropTypes.string.isRequired,
+    onSalesRepChange: PropTypes.func.isRequired,
+    currentUserId: PropTypes.number,
 };
 
 export default AccountsPageMobile;

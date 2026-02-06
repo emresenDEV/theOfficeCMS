@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
     fetchCommissions,
     fetchCurrentMonthCommissions,
@@ -36,6 +37,25 @@ const CommissionsPage = ({ user }) => {
     const [yearlyData, setYearlyData] = useState({});
     const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
     const [weeklyData, setWeeklyData] = useState(Array(4).fill(0));
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        const viewParam = searchParams.get("view");
+        const monthParam = Number(searchParams.get("month"));
+        const yearParam = Number(searchParams.get("year"));
+
+        if (viewParam && ["weekly", "monthly", "yearly"].includes(viewParam)) {
+            setViewMode(viewParam);
+        }
+
+        if (Number.isInteger(monthParam) && monthParam >= 1 && monthParam <= 12) {
+            setSelectedMonth(monthParam);
+        }
+
+        if (Number.isInteger(yearParam) && yearParam > 2000) {
+            setSelectedYear(yearParam);
+        }
+    }, [searchParams]);
 
     // Fetch all available years for filtering
     useEffect(() => {

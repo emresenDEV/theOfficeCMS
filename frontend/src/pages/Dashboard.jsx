@@ -222,6 +222,10 @@ const Dashboard = ({ user }) => {
         return best;
     }, null);
 
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
+
     return (
         <div className="w-full">
             <div className="flex-1 px-4 pb-6 pt-0 sm:px-6 sm:pb-6 sm:pt-0">
@@ -236,6 +240,14 @@ const Dashboard = ({ user }) => {
                         activeAccounts={summary.activeAccounts}
                         openInvoices={summary.openInvoices}
                         currentCommission={summary.currentCommission}
+                        onActiveAccountsClick={() => {
+                            if (!userData?.user_id) return;
+                            navigate(`/accounts?sales_rep_id=${userData.user_id}`);
+                        }}
+                        onOpenInvoicesClick={() => navigate("/invoices?status=open")}
+                        onCommissionClick={() =>
+                            navigate(`/commissions?view=monthly&month=${currentMonth}&year=${currentYear}`)
+                        }
                     /> 
 
                     <div className="rounded-lg border border-border bg-card p-5 shadow-lg">

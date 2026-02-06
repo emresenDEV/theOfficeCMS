@@ -13,9 +13,12 @@ const CreateTaskModal = ({
     const [taskDescription, setTaskDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [accountId, setAccountId] = useState("");
+    const [accountQuery, setAccountQuery] = useState("");
+    const [accountOpen, setAccountOpen] = useState(false);
     const [assignedUserId, setAssignedUserId] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredEmployees, setFilteredEmployees] = useState(employees);
+    const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState("");
 
@@ -29,6 +32,18 @@ const CreateTaskModal = ({
         );
         setFilteredEmployees(filtered);
     }, [searchQuery, employees]);
+
+    useEffect(() => {
+        const term = accountQuery.trim().toLowerCase();
+        if (!term) {
+            setFilteredAccounts([]);
+            return;
+        }
+        const filtered = accounts
+            .filter((acc) => (acc.business_name || "").toLowerCase().includes(term))
+            .slice(0, 8);
+        setFilteredAccounts(filtered);
+    }, [accountQuery, accounts]);
 
     const handleCreate = async () => {
         if (!taskDescription.trim()) {
@@ -70,6 +85,7 @@ const CreateTaskModal = ({
             setAccountId("");
             setAssignedUserId("");
             setSearchQuery("");
+            setAccountQuery("");
             onClose();
         } catch (err) {
             setError("Failed to create task. Please try again.");
@@ -143,21 +159,45 @@ const CreateTaskModal = ({
                         <label className="block text-sm font-semibold text-muted-foreground mb-1">
                             Account
                         </label>
-                        <select
-                            value={accountId}
-                            onChange={(e) => {
-                                setAccountId(e.target.value);
-                                setError("");
-                            }}
-                            className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Select Account...</option>
-                            {accounts.map((acc) => (
-                                <option key={acc.account_id} value={acc.account_id}>
-                                    {acc.business_name}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={accountQuery}
+                                onFocus={() => setAccountOpen(true)}
+                                onBlur={() => setTimeout(() => setAccountOpen(false), 150)}
+                                onChange={(e) => {
+                                    setAccountQuery(e.target.value);
+                                    setAccountId("");
+                                    setError("");
+                                }}
+                                placeholder="Search account..."
+                                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            {accountOpen && filteredAccounts.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded shadow-lg z-10 max-h-48 overflow-y-auto">
+                                    {filteredAccounts.map((acc) => (
+                                        <button
+                                            key={acc.account_id}
+                                            type="button"
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onClick={() => {
+                                                setAccountId(String(acc.account_id));
+                                                setAccountQuery(acc.business_name || "");
+                                                setAccountOpen(false);
+                                            }}
+                                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b last:border-b-0"
+                                        >
+                                            {acc.business_name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {accountQuery && filteredAccounts.length === 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded shadow-lg z-10 p-3 text-sm text-muted-foreground text-center">
+                                    No accounts found
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Assign User with Search */}

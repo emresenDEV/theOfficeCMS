@@ -8,8 +8,13 @@ const formatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
 });
 
-const SummaryCard = ({ title, value, helper, icon: Icon, accent }) => (
-    <div className="rounded-md border border-border bg-card p-4 shadow-card">
+const SummaryCard = ({ title, value, helper, icon: Icon, accent, onClick }) => {
+    const cardClass = cn(
+        "w-full rounded-md border border-border bg-card p-4 shadow-card text-left transition",
+        onClick && "cursor-pointer hover:shadow-lg hover:bg-muted/30"
+    );
+
+    const content = (
         <div className="flex items-start justify-between">
             <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -29,8 +34,18 @@ const SummaryCard = ({ title, value, helper, icon: Icon, accent }) => (
                 <Icon className="h-5 w-5" />
             </div>
         </div>
-    </div>
-);
+    );
+
+    if (onClick) {
+        return (
+            <button type="button" onClick={onClick} className={cardClass}>
+                {content}
+            </button>
+        );
+    }
+
+    return <div className={cardClass}>{content}</div>;
+};
 
 SummaryCard.propTypes = {
     title: PropTypes.string.isRequired,
@@ -38,6 +53,7 @@ SummaryCard.propTypes = {
     helper: PropTypes.string,
     icon: PropTypes.elementType.isRequired,
     accent: PropTypes.string.isRequired,
+    onClick: PropTypes.func,
 };
 
 const DashboardSummaryCards = ({
@@ -45,6 +61,9 @@ const DashboardSummaryCards = ({
     activeAccounts,
     openInvoices,
     currentCommission,
+    onActiveAccountsClick,
+    onOpenInvoicesClick,
+    onCommissionClick,
 }) => {
     return (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -61,6 +80,7 @@ const DashboardSummaryCards = ({
                 helper="Accounts assigned to you"
                 icon={Users}
                 accent="bg-info/10 text-info"
+                onClick={onActiveAccountsClick}
             />
             <SummaryCard
                 title="Open Invoices"
@@ -68,6 +88,7 @@ const DashboardSummaryCards = ({
                 helper="Pending or past due"
                 icon={FileText}
                 accent="bg-warning/15 text-warning"
+                onClick={onOpenInvoicesClick}
             />
             <SummaryCard
                 title="Commission (MTD)"
@@ -75,6 +96,7 @@ const DashboardSummaryCards = ({
                 helper="Month-to-date"
                 icon={Percent}
                 accent="bg-success/15 text-success"
+                onClick={onCommissionClick}
             />
         </div>
     );
@@ -85,6 +107,9 @@ DashboardSummaryCards.propTypes = {
     activeAccounts: PropTypes.number.isRequired,
     openInvoices: PropTypes.number.isRequired,
     currentCommission: PropTypes.number.isRequired,
+    onActiveAccountsClick: PropTypes.func,
+    onOpenInvoicesClick: PropTypes.func,
+    onCommissionClick: PropTypes.func,
 };
 
 export default DashboardSummaryCards;

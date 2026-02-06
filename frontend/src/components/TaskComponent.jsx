@@ -8,22 +8,18 @@ import { fetchUsers } from "../services/userService";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Check, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { cn } from "../lib/utils";
+import CreateTaskModal from "./CreateTaskModal";
 
 const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [visibleTasks, setVisibleTasks] = useState([]);
     const [completingTask, setCompletingTask] = useState({});
-    const [newTaskDescription, setNewTaskDescription] = useState("");
-    const [dueDate, setDueDate] = useState("");
-    const [selectedAccount, setSelectedAccount] = useState(null);
-    const [searchAccount, setSearchAccount] = useState("");
-    const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [users, setUsers] = useState([]);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     const getUsername = useCallback((userId) => {
         const userObj = users.find(user => user.user_id === userId);
@@ -81,65 +77,23 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
         setVisibleTasks(updatedTasks);
     }, [tasks, accounts, users, getUsername]);
 
-    // Dynamic Account Search
-    useEffect(() => {
-        if (!searchAccount.trim()) {
-            // setFilteredAccounts(accounts); 
-            setFilteredAccounts([]);
-            return;
-        }
-    
-        setFilteredAccounts(
-            accounts.filter(acc =>
-                acc.business_name.toLowerCase().includes(searchAccount.toLowerCase().trim())
-            )
-        );
-    }, [searchAccount, accounts]);
-    
     /** Create a New Task */
-    const handleCreateTask = async () => {
-        if (!newTaskDescription.trim()) return alert("❌ Task description cannot be empty.");
-        if (!user.user_id) {
+    const handleCreateTask = async (taskPayload) => {
+        if (!user?.user_id) {
             console.error("❌ Missing user ID when creating task:", user);
             alert("User ID is missing. Please refresh the page or log in again.");
             return;
         }
 
-        const formattedDueDate = dueDate ? new Date(dueDate).toISOString().slice(0, 19).replace("T", " ") : null;
-
-        const taskData = {
-            user_id: user.user_id,
-            assigned_to: user.user_id,
-            task_description: newTaskDescription.trim(),
-            due_date: formattedDueDate,
-            is_completed: false,
-            account_id: selectedAccount?.account_id || null,
-            actor_user_id: user.user_id,
-            actor_email: user.email,
-        };
-
-        console.log("📤 Creating Task:", taskData); // Debugging log
-
         try {
-            await createTask(taskData);
-            setNewTaskDescription("");
-            setDueDate("");
-            setSelectedAccount(null);
-            setSearchAccount("");
-
-            // Fetch the latest tasks after creation
-            const updatedTasks = await fetchTasks(user.user_id);
-            console.log("✅ Fetched Updated Tasks:", updatedTasks);
-
-            // Ensure `tasks` are correctly updated
-            if (updatedTasks.length > 0) {
-                setVisibleTasks(updatedTasks);
-            }
-
+            await createTask({
+                ...taskPayload,
+                user_id: user.user_id,
+                actor_user_id: user.user_id,
+                actor_email: user.email,
+            });
             if (typeof refreshTasks === "function") {
                 await refreshTasks();
-            } else {
-                console.warn("⚠️ `refreshTasks` is not a function.");
             }
         } catch (error) {
             console.error("❌ Error creating task:", error);
@@ -199,6 +153,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                         variant="outline"
                         onClick={(e) => {
                             e.stopPropagation();
+                            setShowCreateModal(true);
                         }}
                     >
                         <Plus className="h-4 w-4 mr-1" />
@@ -214,56 +169,8 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
 
             {!isCollapsed && (
                 <div className="px-4 pb-4">
-                    {/* New Task Inputs */}
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-center mb-4">
-                        <Input
-                            type="text"
-                            placeholder="New task..."
-                            className="md:col-span-4"
-                            value={newTaskDescription}
-                            onChange={(e) => setNewTaskDescription(e.target.value)}
-                        />
-                        <Input
-                            type="date"
-                            className="md:col-span-2"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                        />
-                        <div className="relative md:col-span-4">
-                            <Input
-                                type="text"
-                                placeholder="Search by account"
-                                value={searchAccount}
-                                onChange={(e) => setSearchAccount(e.target.value)}
-                            />
-                            {searchAccount.trim() && filteredAccounts.length > 0 && (
-                                <div className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
-                                    {filteredAccounts.map((acc) => (
-                                        <div
-                                            key={acc.account_id}
-                                            className="cursor-pointer px-3 py-2 text-sm text-foreground hover:bg-muted/60"
-                                            onClick={() => {
-                                                setSelectedAccount(acc);
-                                                setSearchAccount(acc.business_name);
-                                                setFilteredAccounts([]);
-                                            }}
-                                        >
-                                            {acc.business_name}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        <Button
-                            onClick={handleCreateTask}
-                            className="md:col-span-2"
-                        >
-                            Create
-                        </Button>
-                    </div>
-
                     {/* Tasks Table */}
-                    <div className="max-h-[350px] overflow-auto">
+                    <div>
                         <table className="min-w-[800px] w-full">
                             <thead className="sticky top-0 bg-muted/40">
                                 <tr>
@@ -285,7 +192,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {visibleTasks.map((task) => (
+                                {visibleTasks.slice(0, 6).map((task) => (
                                     <tr key={task.task_id} className="hover:bg-muted/60 transition-colors">
                                         <td className="px-4 py-3 text-sm font-medium text-foreground">
                                             {task.task_description}
@@ -344,8 +251,23 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                             </div>
                         )}
                     </div>
+                    {visibleTasks.length > 6 && (
+                        <div className="mt-3 flex justify-end">
+                            <Button variant="ghost" size="sm" onClick={() => navigate("/tasks")}>
+                                View all tasks
+                            </Button>
+                        </div>
+                    )}
                 </div>
             )}
+            <CreateTaskModal
+                isOpen={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onCreateTask={handleCreateTask}
+                accounts={accounts}
+                employees={users}
+                user={user}
+            />
         </div>
     );
 };

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchTasks, createTask, deleteTask, fetchDepartments, fetchEmployees, fetchUsers, updateTask } from "../services/tasksService";
-import { fetchBranches } from "../services/branchService";
+import { fetchTasks, createTask, deleteTask, fetchEmployees, fetchUsers, updateTask } from "../services/tasksService";
 import { fetchAccounts } from "../services/accountService";
 import { fetchContacts } from "../services/contactService";
 import { fetchAllInvoices } from "../services/invoiceService";
@@ -8,7 +7,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import { formatDateInTimeZone } from "../utils/timezone";
 import { FiChevronDown, FiChevronUp, FiEdit2 } from "react-icons/fi";
-import CreateTaskComponent from "../components/CreateTaskComponent";
 import TaskListMobile from "../components/TaskListMobile";
 import CreateTaskModal from "../components/CreateTaskModal"; 
 
@@ -20,8 +18,6 @@ const [completedTasks, setCompletedTasks] = useState([]);
 const [accounts, setAccounts] = useState([]);
 const [contacts, setContacts] = useState([]);
 const [invoices, setInvoices] = useState([]);
-const [branches, setBranches] = useState([]);
-const [departments, setDepartments] = useState([]);
 const [employees, setEmployees] = useState([]);
 const [showCompleted, setShowCompleted] = useState(false);
 // const [users, setUsers] = useState([]);
@@ -33,6 +29,7 @@ const [showCreateModal, setShowCreateModal] = useState(false);
 const [highlightTaskId, setHighlightTaskId] = useState(null);
 const [taskToast, setTaskToast] = useState("");
 const [createdSortOrder, setCreatedSortOrder] = useState("desc");
+const [taskFilter, setTaskFilter] = useState("all");
 const [editModalTask, setEditModalTask] = useState(null);
 const [editForm, setEditForm] = useState(null);
 const [editSaving, setEditSaving] = useState(false);
@@ -136,6 +133,17 @@ useEffect(() => {
 }, [location.search, tasks, completedTasks]);
 
 useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const filter = params.get("filter");
+    const validFilters = new Set(["all", "created", "completed", "overdue"]);
+    if (filter && validFilters.has(filter)) {
+        setTaskFilter(filter);
+    } else if (filter === null) {
+        setTaskFilter("all");
+    }
+}, [location.search]);
+
+useEffect(() => {
     if (!taskToast) return;
     const timeoutId = setTimeout(() => setTaskToast(""), 3000);
     return () => clearTimeout(timeoutId);
@@ -144,19 +152,13 @@ useEffect(() => {
 
 useEffect(() => {
     async function loadDropdownData() {
-    try {
-        // Fetch sequentially to avoid overwhelming Cloudflare tunnel
-        const fetchedBranches = await fetchBranches();
-        setBranches(fetchedBranches);
-
-        const fetchedDepartments = await fetchDepartments();
-        setDepartments(fetchedDepartments);
-
-        const fetchedEmployees = await fetchEmployees();
-        setEmployees(fetchedEmployees);
-    } catch (error) {
-        console.error("❌ Error fetching dropdown data:", error);
-    }
+        try {
+            // Fetch sequentially to avoid overwhelming Cloudflare tunnel
+            const fetchedEmployees = await fetchEmployees();
+            setEmployees(fetchedEmployees);
+        } catch (error) {
+            console.error("❌ Error fetching dropdown data:", error);
+        }
     }
 
     loadDropdownData();
@@ -460,6 +462,21 @@ const parseCreatedDate = (value) => {
     return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
 };
 
+const parseDueDate = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    const normalized = typeof value === "string" ? value.replace(" ", "T") : value;
+    const parsed = new Date(normalized);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const isOverdueTask = (task) => {
+    if (task.is_completed) return false;
+    const due = parseDueDate(task.due_date);
+    if (!due) return false;
+    return due < new Date();
+};
+
 const sortedActiveTasks = [...tasks].sort((a, b) => {
     const diff = parseCreatedDate(a.date_created) - parseCreatedDate(b.date_created);
     return createdSortOrder === "asc" ? diff : -diff;
@@ -469,6 +486,15 @@ const sortedCompletedTasks = [...completedTasks].sort((a, b) => {
     const diff = parseCreatedDate(a.date_created) - parseCreatedDate(b.date_created);
     return createdSortOrder === "asc" ? diff : -diff;
 });
+
+const filteredActiveTasks = taskFilter === "overdue"
+    ? sortedActiveTasks.filter(isOverdueTask)
+    : sortedActiveTasks;
+
+const filteredCompletedTasks = sortedCompletedTasks;
+
+const showActiveSection = taskFilter === "all" || taskFilter === "created" || taskFilter === "overdue";
+const showCompletedSection = taskFilter === "all" || taskFilter === "completed";
 
 const filteredEditAssignees = useMemo(() => {
     const term = editAssigneeQuery.trim().toLowerCase();
@@ -493,7 +519,46 @@ const filteredEditAccounts = useMemo(() => {
 return (
     <div className="w-full">
     <div className="flex-1 p-4 sm:p-6">
-        <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>
+            {!isMobile && (
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                    + New Task
+                </button>
+            )}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+            {[
+                { key: "all", label: "All" },
+                { key: "created", label: "Created" },
+                { key: "completed", label: "Completed" },
+                { key: "overdue", label: "Overdue" },
+            ].map((filter) => (
+                <button
+                    key={filter.key}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        taskFilter === filter.key
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                    }`}
+                    onClick={() => {
+                        setTaskFilter(filter.key);
+                        const params = new URLSearchParams(location.search);
+                        if (filter.key === "all") {
+                            params.delete("filter");
+                        } else {
+                            params.set("filter", filter.key);
+                        }
+                        navigate({ search: params.toString() }, { replace: true });
+                    }}
+                >
+                    {filter.label}
+                </button>
+            ))}
+        </div>
         {taskToast && (
             <div className="mt-3 inline-flex rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-sm">
                 {taskToast}
@@ -518,12 +583,12 @@ return (
                 </div>
                 <div className="mt-6">
                     <TaskListMobile
-                        tasks={sortedActiveTasks.map((task) => ({
+                        tasks={filteredActiveTasks.map((task) => ({
                             ...task,
                             business_name: task.business_name || "No Account",
                             associations: buildAssociations(task),
                         }))}
-                        completedTasks={sortedCompletedTasks.map((task) => ({
+                        completedTasks={filteredCompletedTasks.map((task) => ({
                             ...task,
                             business_name: task.business_name || "No Account",
                             associations: buildAssociations(task),
@@ -536,6 +601,8 @@ return (
                         onTaskClick={(taskId) => navigate(`/tasks/${taskId}`)}
                         user={user}
                         highlightTaskId={highlightTaskId}
+                        showActive={showActiveSection}
+                        showCompletedByDefault={taskFilter === "completed"}
                     />
                 </div>
                 <CreateTaskModal
@@ -548,22 +615,27 @@ return (
                 />
             </>
         ) : (
-            <CreateTaskComponent
-            user={user}
-            branches={branches}
-            departments={departments}
-            employees={employees}
-            accounts={accounts}
-            onCreateTask={handleCreateTask}
-            />
+            <>
+                <CreateTaskModal
+                    isOpen={showCreateModal}
+                    onClose={() => setShowCreateModal(false)}
+                    onCreateTask={handleCreateTask}
+                    accounts={accounts}
+                    employees={employees}
+                    user={user}
+                />
+            </>
         )}
 
         {!isMobile && (
         <>
         {/* Active Tasks */}
+        {showActiveSection && (
         <div className="bg-card border border-border p-4 sm:p-6 rounded-lg shadow-md mt-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <h2 className="text-lg font-semibold text-foreground">Active Tasks</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+                {taskFilter === "overdue" ? "Overdue Tasks" : "Active Tasks"}
+            </h2>
             <button
                 className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-foreground hover:bg-muted"
                 onClick={() => setCreatedSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))}
@@ -584,7 +656,7 @@ return (
             </tr>
             </thead>
             <tbody>
-            {sortedActiveTasks.map((task) => (
+            {filteredActiveTasks.map((task) => (
                 <tr
                     key={task.task_id}
                     id={`task-row-${task.task_id}`}
@@ -688,17 +760,19 @@ return (
             </div>
         )}
         </div>
+        )}
 
         {/* Completed Tasks */}
+        {showCompletedSection && (
         <div className="bg-card border border-border p-4 sm:p-6 rounded-lg shadow-md mt-6">
         <button
             className="flex items-center text-lg font-semibold w-full text-left text-foreground"
             onClick={() => setShowCompleted(!showCompleted)}
         >
-            {showCompleted ? <FiChevronUp className="mr-2" /> : <FiChevronDown className="mr-2" />}
+            {showCompleted || taskFilter === "completed" ? <FiChevronUp className="mr-2" /> : <FiChevronDown className="mr-2" />}
             Completed Tasks
         </button>
-        {showCompleted && (
+        {(showCompleted || taskFilter === "completed") && (
             <div className="overflow-x-auto">
             <table className="min-w-[900px] w-full border-collapse mt-4">
                 <thead className="bg-muted text-foreground">
@@ -712,7 +786,7 @@ return (
                 </tr>
             </thead>
             <tbody>
-                {sortedCompletedTasks.map((task, index) => (
+                {filteredCompletedTasks.map((task, index) => (
                     <tr
                         key={`completed-${task.task_id}-${index}`}
                         id={`task-row-${task.task_id}`}
@@ -802,6 +876,7 @@ return (
             </div>
         )}
         </div>
+        )}
         </>
         )}
     </div>

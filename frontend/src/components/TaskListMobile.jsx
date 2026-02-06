@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { FiEdit2 } from "react-icons/fi";
 import { formatDateInTimeZone } from "../utils/timezone";
@@ -14,10 +14,16 @@ const TaskListMobile = ({
     onTaskClick,
     user,
     highlightTaskId,
+    showActive = true,
+    showCompletedByDefault = false,
 }) => {
-    const [showCompleted, setShowCompleted] = useState(false);
+    const [showCompleted, setShowCompleted] = useState(showCompletedByDefault);
     const [completingTask, setCompletingTask] = useState({});
     const [confirmDelete, setConfirmDelete] = useState(null);
+
+    useEffect(() => {
+        setShowCompleted(showCompletedByDefault);
+    }, [showCompletedByDefault]);
 
     const handleTaskCompletion = (task) => {
         if (completingTask[task.task_id]) {
@@ -77,21 +83,22 @@ const TaskListMobile = ({
     return (
         <div className="bg-card border border-border rounded-lg shadow-md p-4 w-full">
             {/* Active Tasks Section */}
-            <div>
-                <h2 className="text-lg font-semibold mb-3">Active Tasks</h2>
-                {tasks.length > 0 ? (
-                    <div className="space-y-3">
-                        {tasks.map((task) => (
-                            <div
-                                key={task.task_id}
-                                id={`task-row-${task.task_id}`}
-                                className={`border border-border rounded-lg p-4 transition cursor-pointer ${
-                                    highlightTaskId === String(task.task_id)
-                                        ? "bg-accent/40"
-                                        : "bg-card hover:bg-muted/60"
-                                }`}
-                                onClick={() => onTaskClick(task.task_id)}
-                            >
+            {showActive && (
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">Active Tasks</h2>
+                    {tasks.length > 0 ? (
+                        <div className="space-y-3">
+                            {tasks.map((task) => (
+                                <div
+                                    key={task.task_id}
+                                    id={`task-row-${task.task_id}`}
+                                    className={`border border-border rounded-lg p-4 transition cursor-pointer ${
+                                        highlightTaskId === String(task.task_id)
+                                            ? "bg-accent/40"
+                                            : "bg-card hover:bg-muted/60"
+                                    }`}
+                                    onClick={() => onTaskClick(task.task_id)}
+                                >
                                 {/* Task Name and Status Row */}
                                 <div className="flex justify-between items-start gap-2 mb-2">
                                     <div className="flex-1">
@@ -188,16 +195,16 @@ const TaskListMobile = ({
                                             : "Complete"}
                                     </button>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-xs text-muted-foreground text-center py-4">No active tasks</p>
-                )}
-            </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-muted-foreground text-center py-4">No active tasks</p>
+                    )}
+                </div>
+            )}
 
             {/* Completed Tasks Section */}
-            <div className="mt-6 pt-6 border-t">
+            <div className={`mt-6 pt-6 border-t ${showActive ? "" : "mt-0 pt-0 border-t-0"}`}>
                 <button
                     onClick={() => setShowCompleted(!showCompleted)}
                     className="w-full flex justify-between items-center text-lg font-semibold mb-3"
@@ -323,6 +330,8 @@ TaskListMobile.propTypes = {
     onTaskClick: PropTypes.func.isRequired,
     user: PropTypes.object.isRequired,
     highlightTaskId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    showActive: PropTypes.bool,
+    showCompletedByDefault: PropTypes.bool,
 };
 
 export default TaskListMobile;

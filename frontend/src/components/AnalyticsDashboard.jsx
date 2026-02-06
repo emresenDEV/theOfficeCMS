@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import {
     ResponsiveContainer,
@@ -78,6 +79,7 @@ ChartCard.propTypes = {
 };
 
 const AnalyticsDashboard = ({ user, adminView }) => {
+    const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [users, setUsers] = useState([]);
     const [repFilter, setRepFilter] = useState("all");
@@ -371,7 +373,13 @@ const AnalyticsDashboard = ({ user, adminView }) => {
                             </div>
                             <div className="flex items-center justify-between">
                                 <span>Overdue</span>
-                                <span className="font-semibold text-rose-500">{data?.tasks?.overdue || 0}</span>
+                                <button
+                                    type="button"
+                                    className="font-semibold text-rose-500 hover:underline"
+                                    onClick={() => navigate("/tasks?filter=overdue")}
+                                >
+                                    {data?.tasks?.overdue || 0}
+                                </button>
                             </div>
                         </div>
                     </ChartCard>
@@ -398,7 +406,13 @@ const AnalyticsDashboard = ({ user, adminView }) => {
                             <div className="space-y-3 text-sm text-foreground">
                                 {data.contacts.top_contacts.map((contact) => (
                                     <div key={contact.contact_id} className="flex items-center justify-between">
-                                        <span className="truncate">{contact.name}</span>
+                                        <button
+                                            type="button"
+                                            className="truncate text-left text-primary hover:underline"
+                                            onClick={() => navigate(`/contacts/${contact.contact_id}`)}
+                                        >
+                                            {contact.name}
+                                        </button>
                                         <span className="font-semibold">{contact.count}</span>
                                     </div>
                                 ))}

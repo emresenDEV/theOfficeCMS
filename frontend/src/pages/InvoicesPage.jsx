@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchAllInvoices } from "../services/invoiceService";
 import { fetchAccounts } from "../services/accountService";
 import { fetchSalesReps } from "../services/userService";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PropTypes from "prop-types";
 
 const InvoicesPage = ({ user }) => {
@@ -17,7 +17,9 @@ const InvoicesPage = ({ user }) => {
         endDate: "",
     });
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const currentUserId = user?.user_id ?? user?.id ?? null;
+    const openStatuses = ["Pending", "Past Due", "Partial"];
 
     useEffect(() => {
         if (!user) return;
@@ -45,6 +47,21 @@ const InvoicesPage = ({ user }) => {
         }
     }, [currentUserId, showAll]);
 
+    useEffect(() => {
+        const statusParam = searchParams.get("status");
+        if (!statusParam) return;
+        const normalized = statusParam.toLowerCase();
+        if (normalized === "open") {
+            setFilters((prev) => ({ ...prev, status: "Open" }));
+            return;
+        }
+        const formatted = statusParam
+            .split("-")
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(" ");
+        setFilters((prev) => ({ ...prev, status: formatted }));
+    }, [searchParams]);
+
     const accountMap = useMemo(
         () => new Map(accounts.map((acc) => [acc.account_id, acc])),
         [accounts]
@@ -64,7 +81,7 @@ const InvoicesPage = ({ user }) => {
         const unique = Array.from(
             new Set(invoices.map((inv) => inv.status).filter(Boolean))
         ).sort();
-        return ["All", ...unique];
+        return Array.from(new Set(["All", "Open", ...unique]));
     }, [invoices]);
 
     const parseDate = (value) => (value ? new Date(`${value}T00:00:00`) : null);
@@ -79,8 +96,12 @@ const InvoicesPage = ({ user }) => {
                     return false;
                 }
             }
-            if (filters.status !== "All" && inv.status !== filters.status) {
-                return false;
+            if (filters.status !== "All") {
+                if (filters.status === "Open") {
+                    if (!openStatuses.includes(inv.status)) return false;
+                } else if (inv.status !== filters.status) {
+                    return false;
+                }
             }
             if (showAll && filters.salesRep !== "All") {
                 if (filters.salesRep === "unassigned") {
