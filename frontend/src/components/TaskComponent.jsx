@@ -169,81 +169,64 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
 
             {!isCollapsed && (
                 <div className="px-4 pb-4">
-                    {/* Tasks Table */}
-                    <div>
-                        <table className="w-full table-fixed text-xs sm:text-sm">
-                            <thead className="sticky top-0 bg-muted/40">
-                                <tr>
-                                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[32%]">
-                                        Task
-                                    </th>
-                                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[16%]">
-                                        Due Date
-                                    </th>
-                                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[16%]">
-                                        Assigned By
-                                    </th>
-                                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">
-                                        Account
-                                    </th>
-                                    <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[16%]">
-                                        Status
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {visibleTasks.slice(0, 6).map((task) => (
-                                    <tr key={task.task_id} className="hover:bg-muted/60 transition-colors">
-                                        <td className="px-3 py-2 font-medium text-foreground break-words">
+                    <div className="space-y-3">
+                        {visibleTasks.slice(0, 6).map((task) => (
+                            <div
+                                key={task.task_id}
+                                className="rounded-lg border border-border bg-background px-3 py-2 shadow-sm"
+                            >
+                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-semibold text-foreground break-words">
                                             {task.task_description}
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <div className="flex items-center gap-1 text-muted-foreground">
-                                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                {formatDateInTimeZone(task.due_date, user, {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                    year: "numeric",
-                                                })}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-2 text-muted-foreground break-words">
-                                            {task.assigned_by_username || "N/A"}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {task.account_id && task.business_name ? (
-                                                <Button
-                                                    variant="link"
-                                                    className="h-auto p-0 text-xs text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200 truncate max-w-full"
-                                                    onClick={() => navigate(`/accounts/details/${task.account_id}`)}
-                                                >
-                                                    {task.business_name}
-                                                </Button>
-                                            ) : (
-                                                <span className="text-xs text-muted-foreground">No Account</span>
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-2 text-right">
+                                        </p>
+                                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Calendar className="h-3.5 w-3.5" />
+                                            {formatDateInTimeZone(task.due_date, user, {
+                                                month: "short",
+                                                day: "numeric",
+                                                year: "numeric",
+                                            })}
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        variant={completingTask[task.task_id] ? "destructive" : "success"}
+                                        className={cn("min-w-[92px] text-xs px-2 py-1")}
+                                        onClick={() => handleTaskCompletion(task)}
+                                    >
+                                        {completingTask[task.task_id] ? (
+                                            `Undo (${completingTask[task.task_id]}s)`
+                                        ) : (
+                                            <>
+                                                <Check className="h-4 w-4 mr-1" />
+                                                Complete
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                                    <span>
+                                        <span className="font-semibold text-foreground">By:</span>{" "}
+                                        {task.assigned_by_username || "N/A"}
+                                    </span>
+                                    <span>
+                                        <span className="font-semibold text-foreground">Account:</span>{" "}
+                                        {task.account_id && task.business_name ? (
                                             <Button
-                                                size="sm"
-                                                variant={completingTask[task.task_id] ? "destructive" : "success"}
-                                                className={cn("min-w-[92px] text-xs px-2 py-1")}
-                                                onClick={() => handleTaskCompletion(task)}
+                                                variant="link"
+                                                className="h-auto p-0 text-xs text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200"
+                                                onClick={() => navigate(`/accounts/details/${task.account_id}`)}
                                             >
-                                                {completingTask[task.task_id] ? (
-                                                    `Undo (${completingTask[task.task_id]}s)`
-                                                ) : (
-                                                    <>
-                                                        <Check className="h-4 w-4 mr-1" />
-                                                        Complete
-                                                    </>
-                                                )}
+                                                {task.business_name}
                                             </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                        ) : (
+                                            "No Account"
+                                        )}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
 
                         {visibleTasks.length === 0 && (
                             <div className="py-10 text-center text-sm text-muted-foreground">
