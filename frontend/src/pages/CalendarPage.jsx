@@ -251,37 +251,38 @@ const CalendarPage = ({ user }) => {
 
     
     return (
-        <div className="bg-background min-h-screen px-4 py-4 sm:px-6 sm:py-6">
-            <div className="rounded-md border border-border bg-card px-4 py-3 shadow-card">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
-                        <p className="text-xs text-muted-foreground">
-                            Manage schedules, filter by branch and team, and review daily agendas.
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <button
-                            className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
-                            onClick={() => setShowCreateEvent(!showCreateEvent)}
-                        >
-                            {showCreateEvent ? "Close Event Form" : "Create Event"}
-                        </button>
-                        <button
-                            className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/40"
-                            onClick={() => setShowPastEvents(!showPastEvents)}
-                        >
-                            {showPastEvents ? "Hide Past Events" : "Show Past Events"}
-                        </button>
-                        <button
-                            className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/40"
-                            onClick={() => setShowIntegrations(true)}
-                        >
-                            Connect Calendar
-                        </button>
+        <>
+            <div className="bg-background min-h-screen px-4 py-4 sm:px-6 sm:py-6">
+                <div className="rounded-md border border-border bg-card px-4 py-3 shadow-card">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
+                            <p className="text-xs text-muted-foreground">
+                                Manage schedules, filter by branch and team, and review daily agendas.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                                onClick={() => setShowCreateEvent(!showCreateEvent)}
+                            >
+                                {showCreateEvent ? "Close Event Form" : "Create Event"}
+                            </button>
+                            <button
+                                className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/40"
+                                onClick={() => setShowPastEvents(!showPastEvents)}
+                            >
+                                {showPastEvents ? "Hide Past Events" : "Show Past Events"}
+                            </button>
+                            <button
+                                className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/40"
+                                onClick={() => setShowIntegrations(true)}
+                            >
+                                Connect Calendar
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
 
             <div className="mt-4 grid gap-4 lg:grid-cols-[300px,1fr]">
                 <div className="space-y-6">
@@ -492,99 +493,100 @@ const CalendarPage = ({ user }) => {
                     )}
                 </div>
             </div>
-            {showIntegrations && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4"
-                    onClick={() => setShowIntegrations(false)}
-                >
+                {showIntegrations && (
                     <div
-                        className="w-full max-w-xl rounded-lg border border-border bg-card p-4 shadow-lg"
-                        onClick={(e) => e.stopPropagation()}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4"
+                        onClick={() => setShowIntegrations(false)}
                     >
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold text-foreground">Calendar Integrations</h2>
-                                <p className="text-xs text-muted-foreground">
-                                    Connect external calendars for two-way visibility. Demo mode simulates connections.
-                                </p>
-                            </div>
-                            <button
-                                className="text-muted-foreground hover:text-foreground"
-                                onClick={() => setShowIntegrations(false)}
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-md border border-border bg-muted/30 p-3">
-                                <p className="text-sm font-semibold text-foreground">Google Calendar</p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    Sync events, availability, and reminders.
-                                </p>
+                        <div
+                            className="w-full max-w-xl rounded-lg border border-border bg-card p-4 shadow-lg"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-foreground">Calendar Integrations</h2>
+                                    <p className="text-xs text-muted-foreground">
+                                        Connect external calendars for two-way visibility. Demo mode simulates connections.
+                                    </p>
+                                </div>
                                 <button
-                                    className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
-                                    onClick={() => {
-                                        setCalendarIntegrations((prev) => ({ ...prev, google: true }));
-                                        setEventToast("Google Calendar linked.");
-                                        setShowIntegrations(false);
-                                    }}
-                                    disabled={calendarIntegrations.google}
+                                    className="text-muted-foreground hover:text-foreground"
+                                    onClick={() => setShowIntegrations(false)}
                                 >
-                                    {calendarIntegrations.google ? "Connected" : "Connect Google"}
+                                    ✕
                                 </button>
                             </div>
 
-                            <div className="rounded-md border border-border bg-muted/30 p-3">
-                                <p className="text-sm font-semibold text-foreground">Apple Calendar</p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    Add an iCloud calendar URL for syncing.
-                                </p>
-                                <input
-                                    value={appleCalUrl}
-                                    onChange={(e) => setAppleCalUrl(e.target.value)}
-                                    placeholder="iCloud calendar URL"
-                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground"
-                                />
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                <div className="rounded-md border border-border bg-muted/30 p-3">
+                                    <p className="text-sm font-semibold text-foreground">Google Calendar</p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Sync events, availability, and reminders.
+                                    </p>
+                                    <button
+                                        className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                                        onClick={() => {
+                                            setCalendarIntegrations((prev) => ({ ...prev, google: true }));
+                                            setEventToast("Google Calendar linked.");
+                                            setShowIntegrations(false);
+                                        }}
+                                        disabled={calendarIntegrations.google}
+                                    >
+                                        {calendarIntegrations.google ? "Connected" : "Connect Google"}
+                                    </button>
+                                </div>
+
+                                <div className="rounded-md border border-border bg-muted/30 p-3">
+                                    <p className="text-sm font-semibold text-foreground">Apple Calendar</p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Add an iCloud calendar URL for syncing.
+                                    </p>
+                                    <input
+                                        value={appleCalUrl}
+                                        onChange={(e) => setAppleCalUrl(e.target.value)}
+                                        placeholder="iCloud calendar URL"
+                                        className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground"
+                                    />
+                                    <button
+                                        className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                                        onClick={() => {
+                                            setCalendarIntegrations((prev) => ({ ...prev, apple: true }));
+                                            setEventToast("Apple Calendar linked.");
+                                            setShowIntegrations(false);
+                                        }}
+                                        disabled={calendarIntegrations.apple || !appleCalUrl.trim()}
+                                    >
+                                        {calendarIntegrations.apple ? "Connected" : "Connect Apple"}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                                <span>
+                                    Connected: {calendarIntegrations.google ? "Google" : "—"}{" "}
+                                    {calendarIntegrations.apple ? "• Apple" : ""}
+                                </span>
                                 <button
-                                    className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                                    className="text-xs font-semibold text-primary hover:underline"
                                     onClick={() => {
-                                        setCalendarIntegrations((prev) => ({ ...prev, apple: true }));
-                                        setEventToast("Apple Calendar linked.");
+                                        setCalendarIntegrations({ google: false, apple: false });
+                                        setAppleCalUrl("");
+                                        setEventToast("Integrations cleared.");
                                         setShowIntegrations(false);
                                     }}
-                                    disabled={calendarIntegrations.apple || !appleCalUrl.trim()}
                                 >
-                                    {calendarIntegrations.apple ? "Connected" : "Connect Apple"}
+                                    Disconnect all
                                 </button>
                             </div>
-                        </div>
-                        <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                            <span>
-                                Connected: {calendarIntegrations.google ? "Google" : "—"}{" "}
-                                {calendarIntegrations.apple ? "• Apple" : ""}
-                            </span>
-                            <button
-                                className="text-xs font-semibold text-primary hover:underline"
-                                onClick={() => {
-                                    setCalendarIntegrations({ google: false, apple: false });
-                                    setAppleCalUrl("");
-                                    setEventToast("Integrations cleared.");
-                                    setShowIntegrations(false);
-                                }}
-                            >
-                                Disconnect all
-                            </button>
                         </div>
                     </div>
+                )}
+            </div>
+            {eventToast && (
+                <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+                    {eventToast}
                 </div>
             )}
-        </div>
-        {eventToast && (
-            <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
-                {eventToast}
-            </div>
-        )}
+        </>
     );
 };
 
