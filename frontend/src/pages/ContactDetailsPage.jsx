@@ -1598,13 +1598,20 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                   onChange={(e) => {
                     const value = e.target.value;
                     setOwnerSearch(value);
-                    setForm((prev) => ({ ...prev, contact_owner_user_id: value ? "" : prev.contact_owner_user_id }));
-                    setDirty(true);
+                    setOwnerDropdownOpen(true);
                   }}
                   onFocus={() => setOwnerDropdownOpen(true)}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      setOwnerDropdownOpen(false);
+                      if (!ownerSearch.trim()) {
+                        handleFieldChange("contact_owner_user_id", "");
+                      }
+                    }, 150);
+                  }}
                 />
                 {ownerDropdownOpen && ownerResults.length > 0 && ownerSearch && (
-                  <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
+                  <div className="mt-2 w-full rounded-md border border-border bg-card shadow-lg max-h-48 overflow-y-auto">
                     {ownerResults.map((owner) => (
                       <button
                         key={owner.user_id}
