@@ -17,10 +17,12 @@ import { fetchAllTasks, createTask, updateTask, deleteTask } from "../services/t
 import { fetchAllCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "../services/calendarService";
 import { fetchPayments, updatePayment, deletePayment } from "../services/paymentService";
 import AuditSection from "../components/AuditSection";
+import AnalyticsDashboard from "../components/AnalyticsDashboard";
 import { cn } from "../lib/utils";
 
 const tabs = [
   { id: "overview", label: "Overview" },
+  { id: "analytics", label: "Analytics" },
   { id: "users", label: "Users" },
   { id: "accounts", label: "Accounts" },
   { id: "invoices", label: "Invoices" },
@@ -573,6 +575,12 @@ const AdminPage = ({ user }) => {
                 : "—"}
             </p>
           </div>
+        </div>
+      )}
+
+      {activeTab === "analytics" && (
+        <div className="mt-6">
+          <AnalyticsDashboard user={user} adminView />
         </div>
       )}
 

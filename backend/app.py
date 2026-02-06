@@ -9,6 +9,7 @@ import os
 from routes.account_routes import account_bp
 from routes.auth_routes import auth_bp
 from routes.audit_routes import audit_bp
+from routes.analytics_routes import analytics_bp
 from routes.branch_routes import branch_bp
 from routes.calendar_routes import calendar_bp
 from routes.commission_routes import commission_bp
@@ -50,6 +51,7 @@ CORS(app,
 app.register_blueprint(account_bp, url_prefix="/accounts")
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(audit_bp, url_prefix="/audit")
+app.register_blueprint(analytics_bp, url_prefix="/analytics")
 app.register_blueprint(branch_bp, url_prefix="/branches")
 app.register_blueprint(calendar_bp, url_prefix="/calendar")
 app.register_blueprint(commission_bp, url_prefix="/commissions")
