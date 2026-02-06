@@ -946,14 +946,22 @@ const CalendarPage = ({ user }) => {
                     </div>
 
                     {showCreateEvent && (
-                        <div className="rounded-md border border-border bg-card p-3 shadow-card">
-                            <CreateCalendarEvent
-                                userId={selectedUserId}
-                                setEvents={setEvents}
-                                closeForm={() => setShowCreateEvent(false)}
-                                selectedDate={selectedDate ? new Date(selectedDate) : null}
-                                onCreated={() => setEventToast("Event created.")}
-                            />
+                        <div
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4"
+                            onClick={() => setShowCreateEvent(false)}
+                        >
+                            <div
+                                className="w-full max-w-3xl rounded-lg border border-border bg-card p-4 shadow-lg"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <CreateCalendarEvent
+                                    userId={selectedUserId}
+                                    setEvents={setEvents}
+                                    closeForm={() => setShowCreateEvent(false)}
+                                    selectedDate={selectedDate ? new Date(selectedDate) : null}
+                                    onCreated={() => setEventToast("Event created.")}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>

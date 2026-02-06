@@ -226,20 +226,27 @@ const EventDetailsModal = ({ event, isOpen, onClose, onRefresh }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div
+            className="fixed inset-0 z-50 flex justify-center items-center p-4 bg-transparent"
+            onClick={onClose}
+        >
+            <div
+                className="bg-card border border-border rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
-                <div className="sticky top-0 bg-card border-b border-border p-4 flex justify-between items-center">
-                    <h2 className="text-lg font-bold text-foreground">
-                        {isEditMode ? "Edit Event" : "Event Details"}
-                    </h2>
+                <div className="sticky top-0 bg-card border-b border-border p-4 flex items-center gap-3">
                     <button
                         onClick={onClose}
                         className="text-muted-foreground hover:text-foreground text-2xl font-bold"
                         disabled={loading}
+                        aria-label="Close"
                     >
                         ×
                     </button>
+                    <h2 className="text-lg font-bold text-foreground">
+                        {isEditMode ? "Edit Event" : "Event Details"}
+                    </h2>
                 </div>
 
                 {/* Content */}
