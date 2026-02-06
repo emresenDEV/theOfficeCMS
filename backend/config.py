@@ -16,9 +16,10 @@ class Config:
     SESSION_PERMANENT = True
     SESSION_USE_SIGNER = True
     SESSION_COOKIE_HTTPONLY = True
-    # SESSION_COOKIE_SECURE = False  # Set to False in dev
-    SESSION_COOKIE_SECURE = os.environ.get("FLASK_ENV") == "production" # production only
-    SESSION_COOKIE_SAMESITE = "Lax"  # Allows cross-site requests for authentication
+    # Cross-site cookies require SameSite=None + Secure over HTTPS
+    is_https = os.environ.get("USE_HTTPS", "").lower() == "true" or os.environ.get("FLASK_ENV") == "production"
+    SESSION_COOKIE_SECURE = is_https
+    SESSION_COOKIE_SAMESITE = "None" if is_https else "Lax"
     SESSION_COOKIE_NAME = "session"
     SESSION_FILE_DIR = "/tmp/flask_sessions"  # Ensure the session is stored
     SESSION_KEY_PREFIX = "auth_"  
