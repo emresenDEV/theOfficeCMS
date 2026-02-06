@@ -241,7 +241,7 @@ const Dashboard = ({ user }) => {
                     roleName={userData.role_name || "Sales"}
                 />
 
-                <div className="mt-3 space-y-6">
+                <div className="mt-3 space-y-6"> 
                     <DashboardSummaryCards
                         totalRevenue={summary.totalRevenue}
                         activeAccounts={summary.activeAccounts}
