@@ -18,6 +18,23 @@ export const getSystemTimeZone = () => {
     }
 };
 
+const isValidTimeZone = (timeZone) => {
+    if (!timeZone) return false;
+    try {
+        Intl.DateTimeFormat("en-US", { timeZone });
+        return true;
+    } catch (err) {
+        return false;
+    }
+};
+
+const normalizeTimeZone = (timeZone) => {
+    if (isValidTimeZone(timeZone)) return timeZone;
+    const systemZone = getSystemTimeZone();
+    if (isValidTimeZone(systemZone)) return systemZone;
+    return DEFAULT_BASE_TIMEZONE;
+};
+
 export const getBaseTimeZone = () => {
     return safeLocalStorageGet("base_timezone") || DEFAULT_BASE_TIMEZONE;
 };
@@ -34,7 +51,7 @@ export const getEffectiveTimeZone = (user) => {
     const systemTz = getSystemTimeZone();
     const mode = user?.timezone_mode || getStoredTimeZoneMode();
     const fixed = user?.timezone || getStoredTimeZone() || systemTz;
-    return mode === "fixed" ? fixed : systemTz;
+    return normalizeTimeZone(mode === "fixed" ? fixed : systemTz);
 };
 
 const parseInputToDateTime = (dateInput, baseZone = getBaseTimeZone()) => {
@@ -67,10 +84,18 @@ const parseInputToDateTime = (dateInput, baseZone = getBaseTimeZone()) => {
 
 const formatWithIntl = (dateTime, timeZone, options) => {
     const jsDate = dateTime.toJSDate();
-    return new Intl.DateTimeFormat("en-US", {
-        timeZone,
-        ...options,
-    }).format(jsDate);
+    try {
+        return new Intl.DateTimeFormat("en-US", {
+            timeZone,
+            ...options,
+        }).format(jsDate);
+    } catch (err) {
+        const safeZone = normalizeTimeZone(timeZone);
+        return new Intl.DateTimeFormat("en-US", {
+            timeZone: safeZone,
+            ...options,
+        }).format(jsDate);
+    }
 };
 
 export const formatDateTimeInTimeZone = (dateInput, user, options = {}) => {
