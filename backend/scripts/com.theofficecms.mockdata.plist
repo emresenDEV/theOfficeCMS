@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.theofficecms.mockdata</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/venv/bin/python</string>
+      <string>/Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/scripts/generate_mock_data.py</string>
+      <string>--auto</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend</string>
+
+    <key>StartCalendarInterval</key>
+    <array>
+      <dict>
+        <key>Month</key>
+        <integer>1</integer>
+        <key>Day</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+      </dict>
+      <dict>
+        <key>Month</key>
+        <integer>4</integer>
+        <key>Day</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+      </dict>
+      <dict>
+        <key>Month</key>
+        <integer>7</integer>
+        <key>Day</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+      </dict>
+      <dict>
+        <key>Month</key>
+        <integer>10</integer>
+        <key>Day</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>15</integer>
+      </dict>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>/Users/monicanieckula/Library/Logs/theOfficeCMS-mockdata.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/monicanieckula/Library/Logs/theOfficeCMS-mockdata.log</string>
+  </dict>
+</plist>
