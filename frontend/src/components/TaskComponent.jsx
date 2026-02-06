@@ -171,22 +171,22 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                 <div className="px-4 pb-4">
                     {/* Tasks Table */}
                     <div>
-                        <table className="min-w-[800px] w-full">
+                        <table className="w-full table-fixed">
                             <thead className="sticky top-0 bg-muted/40">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[35%]">
                                         Task
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[18%]">
                                         Due Date
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[17%]">
                                         Assigned By
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[20%]">
                                         Account
                                     </th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[10%]">
                                         Status
                                     </th>
                                 </tr>
@@ -194,7 +194,7 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                             <tbody className="divide-y divide-border">
                                 {visibleTasks.slice(0, 6).map((task) => (
                                     <tr key={task.task_id} className="hover:bg-muted/60 transition-colors">
-                                        <td className="px-4 py-3 text-sm font-medium text-foreground">
+                                        <td className="px-4 py-3 text-sm font-medium text-foreground break-words">
                                             {task.task_description}
                                         </td>
                                         <td className="px-4 py-3">
@@ -207,14 +207,14 @@ const TasksComponent = ({ tasks = [], user = {}, refreshTasks = () => {} }) => {
                                                 })}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                                        <td className="px-4 py-3 text-sm text-muted-foreground break-words">
                                             {task.assigned_by_username || "N/A"}
                                         </td>
                                         <td className="px-4 py-3">
                                             {task.account_id && task.business_name ? (
                                                 <Button
                                                     variant="link"
-                                                    className="h-auto p-0 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200"
+                                                    className="h-auto p-0 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200 truncate max-w-full"
                                                     onClick={() => navigate(`/accounts/details/${task.account_id}`)}
                                                 >
                                                     {task.business_name}

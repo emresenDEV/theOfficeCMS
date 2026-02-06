@@ -98,8 +98,14 @@ const CreateTaskModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
-            <div className="bg-card border border-border rounded-t-lg sm:rounded-lg w-full sm:max-w-md shadow-lg">
+        <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-transparent"
+            onClick={onClose}
+        >
+            <div
+                className="bg-card border border-border rounded-t-lg sm:rounded-lg w-full sm:max-w-md shadow-lg"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="flex justify-between items-center p-4 border-b border-border">
                     <h2 className="text-lg font-semibold text-foreground">Create Task</h2>

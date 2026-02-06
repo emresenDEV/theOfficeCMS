@@ -313,13 +313,6 @@ const Dashboard = ({ user }) => {
                         </div>
                     </div>
 
-                    {/* 🏢 Accounts - Mobile vs Desktop */}
-                    {isMobile ? (
-                        <AccountsMobileMini user={userData} />
-                    ) : (
-                        <AccountsTable user={userData} />
-                    )}
-
                     {/* Calendar + Tasks */}
                     {isMobile ? (
                         <>
@@ -364,6 +357,13 @@ const Dashboard = ({ user }) => {
                                 refreshTasks={handleRefreshTasks}
                             />
                         </div>
+                    )}
+
+                    {/* 🏢 Accounts - Mobile vs Desktop */}
+                    {isMobile ? (
+                        <AccountsMobileMini user={userData} />
+                    ) : (
+                        <AccountsTable user={userData} />
                     )}
             </div>
         </div>
