@@ -13,6 +13,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
     const [selectedPeriod, setSelectedPeriod] = useState(initialTime.split(/[: ]/)[2]);
 
     const [showDropdown, setShowDropdown] = useState(false);
+    const wrapperRef = useRef(null);
     // const timeoutRef = useRef(null);
 
     /** Handle Time Change */
@@ -25,6 +26,7 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
         if (onChange) {
             onChange(formattedTime); 
         }
+        setShowDropdown(false);
     }, [onChange]);
 
 
@@ -66,12 +68,23 @@ const CustomTimePicker = ({ value, onChange, isEndTime, startTime }) => {
         }
     }, [showDropdown, selectedHour, selectedMinute]);
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!showDropdown) return;
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [showDropdown]);
+
     return (
-        <div className="relative w-full">
+        <div className="relative w-full" ref={wrapperRef}>
             <button
                 type="button"
                 onClick={() => setShowDropdown(prev => !prev)}
-                className="w-full p-2 border border-border rounded-lg bg-card text-left text-foreground hover:border-blue-400 focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-left text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                 {`${selectedHour}:${selectedMinute} ${selectedPeriod}`}
             </button>

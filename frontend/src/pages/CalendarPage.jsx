@@ -38,6 +38,18 @@ const CalendarPage = ({ user }) => {
     const [filteredDepartments, setFilteredDepartments] = useState([]);
     const [filteredUsers, setFilteredUsers] = useState([]);
     const [calendarView, setCalendarView] = useState("dayGridMonth");
+    const [eventToast, setEventToast] = useState("");
+    const [showIntegrations, setShowIntegrations] = useState(false);
+    const [calendarIntegrations, setCalendarIntegrations] = useState(() => {
+        const stored = localStorage.getItem("calendar_integrations");
+        if (!stored) return { google: false, apple: false };
+        try {
+            return JSON.parse(stored);
+        } catch (error) {
+            return { google: false, apple: false };
+        }
+    });
+    const [appleCalUrl, setAppleCalUrl] = useState("");
 
     const today = new Date();
     const selectedDateLabel = selectedDate
@@ -70,6 +82,16 @@ const CalendarPage = ({ user }) => {
     
         fetchCalendarEvents(user.user_id).then(setEvents);
     }, [user]);
+
+    useEffect(() => {
+        if (!eventToast) return;
+        const timeoutId = setTimeout(() => setEventToast(""), 2500);
+        return () => clearTimeout(timeoutId);
+    }, [eventToast]);
+
+    useEffect(() => {
+        localStorage.setItem("calendar_integrations", JSON.stringify(calendarIntegrations));
+    }, [calendarIntegrations]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -230,44 +252,52 @@ const CalendarPage = ({ user }) => {
     
     return (
         <div className="bg-background min-h-screen px-4 py-4 sm:px-6 sm:py-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground">Calendar</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Manage schedules, filter by branch and team, and review daily agendas.
-                    </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <button
-                        className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                        onClick={() => setShowCreateEvent(!showCreateEvent)}
-                    >
-                        {showCreateEvent ? "Close Event Form" : "Create Event"}
-                    </button>
-                    <button
-                        className="rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted/40"
-                        onClick={() => setShowPastEvents(!showPastEvents)}
-                    >
-                        {showPastEvents ? "Hide Past Events" : "Show Past Events"}
-                    </button>
+            <div className="rounded-md border border-border bg-card px-4 py-3 shadow-card">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
+                        <p className="text-xs text-muted-foreground">
+                            Manage schedules, filter by branch and team, and review daily agendas.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                            onClick={() => setShowCreateEvent(!showCreateEvent)}
+                        >
+                            {showCreateEvent ? "Close Event Form" : "Create Event"}
+                        </button>
+                        <button
+                            className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/40"
+                            onClick={() => setShowPastEvents(!showPastEvents)}
+                        >
+                            {showPastEvents ? "Hide Past Events" : "Show Past Events"}
+                        </button>
+                        <button
+                            className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/40"
+                            onClick={() => setShowIntegrations(true)}
+                        >
+                            Connect Calendar
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-[320px,1fr]">
+            <div className="mt-4 grid gap-4 lg:grid-cols-[300px,1fr]">
                 <div className="space-y-6">
-                    <div className="rounded-md border border-border bg-card p-4 shadow-card">
-                        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <div className="rounded-md border border-border bg-card p-3 shadow-card">
+                        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                             Filters
                         </h2>
-                        <div className="mt-4 space-y-3">
+                        <div className="mt-3 space-y-3">
                             <div>
-                                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                     Branch
                                 </label>
                                 <select
                                     value={selectedBranch}
                                     onChange={(e) => setSelectedBranch(e.target.value)}
-                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground"
                                 >
                                     {branches.map((branch) => (
                                         <option key={branch.branch_id} value={branch.branch_id}>
@@ -278,13 +308,13 @@ const CalendarPage = ({ user }) => {
                             </div>
 
                             <div>
-                                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                     Department
                                 </label>
                                 <select
                                     value={selectedDepartment}
                                     onChange={(e) => setSelectedDepartment(e.target.value)}
-                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground"
                                 >
                                     {filteredDepartments.map((dept) => (
                                         <option key={dept.department_id} value={dept.department_id}>
@@ -295,13 +325,13 @@ const CalendarPage = ({ user }) => {
                             </div>
 
                             <div>
-                                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                     Employee
                                 </label>
                                 <select
                                     value={filteredUsers.length > 0 ? selectedUserId : ""}
                                     onChange={(e) => setSelectedUserId(parseInt(e.target.value, 10))}
-                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground"
                                 >
                                     {filteredUsers.length > 0 ? (
                                         filteredUsers.map((user) => (
@@ -317,23 +347,23 @@ const CalendarPage = ({ user }) => {
                         </div>
                     </div>
 
-                    <div className="rounded-md border border-border bg-card p-4 shadow-card">
+                    <div className="rounded-md border border-border bg-card p-3 shadow-card">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-base font-semibold text-foreground">
+                            <h2 className="text-sm font-semibold text-foreground">
                                 Agenda: {selectedDateLabel}
                             </h2>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[11px] text-muted-foreground">
                                 {selectedDateEventList.length} event
                                 {selectedDateEventList.length === 1 ? "" : "s"}
                             </span>
                         </div>
-                        <div className="mt-4 space-y-3">
+                        <div className="mt-3 space-y-2">
                             {selectedDateEventList.length > 0 ? (
                                 selectedDateEventList.map((event) => (
                                     <button
                                         key={event.event_id}
                                         type="button"
-                                        className={`w-full rounded-md border border-border p-3 text-left transition hover:bg-muted/40 ${
+                                        className={`w-full rounded-md border border-border p-2 text-left transition hover:bg-muted/40 ${
                                             selectedEvent?.event_id === event.event_id ? "bg-muted/40" : "bg-card"
                                         }`}
                                         onClick={() => setSelectedEvent(event)}
@@ -343,15 +373,15 @@ const CalendarPage = ({ user }) => {
                                                 <p className="text-sm font-semibold text-foreground">
                                                     {event.event_title}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-[11px] text-muted-foreground">
                                                     {formatEventTime(event.start_time)} - {formatEventTime(event.end_time)}
                                                 </p>
                                                 {event.location && (
-                                                    <p className="text-xs text-muted-foreground">{event.location}</p>
+                                                    <p className="text-[11px] text-muted-foreground">{event.location}</p>
                                                 )}
                                             </div>
                                             {event.account_id && (
-                                                <span className="text-xs text-muted-foreground">
+                                                <span className="text-[11px] text-muted-foreground">
                                                     Account {event.account_id}
                                                 </span>
                                             )}
@@ -359,15 +389,15 @@ const CalendarPage = ({ user }) => {
                                     </button>
                                 ))
                             ) : (
-                                <p className="text-sm text-muted-foreground italic">No events scheduled.</p>
+                                <p className="text-xs text-muted-foreground italic">No events scheduled.</p>
                             )}
                         </div>
                     </div>
 
                     {selectedEvent && (
-                        <div className="rounded-md border border-border bg-card p-4 shadow-card">
-                            <h2 className="text-base font-semibold text-foreground">Event Details</h2>
-                            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                        <div className="rounded-md border border-border bg-card p-3 shadow-card">
+                            <h2 className="text-sm font-semibold text-foreground">Event Details</h2>
+                            <div className="mt-3 space-y-2 text-xs text-muted-foreground">
                                 <p className="text-foreground font-semibold">{selectedEvent.event_title}</p>
                                 <p>
                                     {selectedEvent.start_date} • {formatEventTime(selectedEvent.start_time)} -{" "}
@@ -382,32 +412,32 @@ const CalendarPage = ({ user }) => {
                     )}
 
                     {showPastEvents && (
-                        <div className="rounded-md border border-border bg-card p-4 shadow-card">
+                        <div className="rounded-md border border-border bg-card p-3 shadow-card">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-base font-semibold text-foreground">Past Events</h2>
-                                <span className="text-xs text-muted-foreground">
+                                <h2 className="text-sm font-semibold text-foreground">Past Events</h2>
+                                <span className="text-[11px] text-muted-foreground">
                                     Showing {pastEventList.length} of {pastEvents.length}
                                 </span>
                             </div>
-                            <div className="mt-4 space-y-3">
+                            <div className="mt-3 space-y-2">
                                 {pastEventList.length > 0 ? (
                                     pastEventList.map((event) => (
                                         <button
                                             key={event.event_id}
                                             type="button"
-                                            className="w-full rounded-md border border-border p-3 text-left transition hover:bg-muted/40"
+                                            className="w-full rounded-md border border-border p-2 text-left transition hover:bg-muted/40"
                                             onClick={() => setSelectedEvent(event)}
                                         >
                                             <p className="text-sm font-semibold text-foreground">
                                                 {event.event_title}
                                             </p>
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="text-[11px] text-muted-foreground">
                                                 {event.start_date} • {formatEventTime(event.start_time)}
                                             </p>
                                         </button>
                                     ))
                                 ) : (
-                                    <p className="text-sm text-muted-foreground italic">No past events found.</p>
+                                    <p className="text-xs text-muted-foreground italic">No past events found.</p>
                                 )}
                             </div>
                         </div>
@@ -415,7 +445,7 @@ const CalendarPage = ({ user }) => {
                 </div>
 
                 <div className="space-y-6">
-                    <div className="calendar-shell rounded-md border border-border bg-card p-4 shadow-card">
+                    <div className="calendar-shell rounded-md border border-border bg-card p-3 shadow-card">
                         <FullCalendar
                             ref={calendarRef}
                             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -450,16 +480,111 @@ const CalendarPage = ({ user }) => {
                     </div>
 
                     {showCreateEvent && (
-                        <CreateCalendarEvent
-                            userId={selectedUserId}
-                            setEvents={setEvents}
-                            closeForm={() => setShowCreateEvent(false)}
-                            selectedDate={selectedDate ? new Date(selectedDate) : null}
-                        />
+                        <div className="rounded-md border border-border bg-card p-3 shadow-card">
+                            <CreateCalendarEvent
+                                userId={selectedUserId}
+                                setEvents={setEvents}
+                                closeForm={() => setShowCreateEvent(false)}
+                                selectedDate={selectedDate ? new Date(selectedDate) : null}
+                                onCreated={() => setEventToast("Event created.")}
+                            />
+                        </div>
                     )}
                 </div>
             </div>
+            {showIntegrations && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4"
+                    onClick={() => setShowIntegrations(false)}
+                >
+                    <div
+                        className="w-full max-w-xl rounded-lg border border-border bg-card p-4 shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold text-foreground">Calendar Integrations</h2>
+                                <p className="text-xs text-muted-foreground">
+                                    Connect external calendars for two-way visibility. Demo mode simulates connections.
+                                </p>
+                            </div>
+                            <button
+                                className="text-muted-foreground hover:text-foreground"
+                                onClick={() => setShowIntegrations(false)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-md border border-border bg-muted/30 p-3">
+                                <p className="text-sm font-semibold text-foreground">Google Calendar</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Sync events, availability, and reminders.
+                                </p>
+                                <button
+                                    className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                                    onClick={() => {
+                                        setCalendarIntegrations((prev) => ({ ...prev, google: true }));
+                                        setEventToast("Google Calendar linked.");
+                                        setShowIntegrations(false);
+                                    }}
+                                    disabled={calendarIntegrations.google}
+                                >
+                                    {calendarIntegrations.google ? "Connected" : "Connect Google"}
+                                </button>
+                            </div>
+
+                            <div className="rounded-md border border-border bg-muted/30 p-3">
+                                <p className="text-sm font-semibold text-foreground">Apple Calendar</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    Add an iCloud calendar URL for syncing.
+                                </p>
+                                <input
+                                    value={appleCalUrl}
+                                    onChange={(e) => setAppleCalUrl(e.target.value)}
+                                    placeholder="iCloud calendar URL"
+                                    className="mt-2 w-full rounded-md border border-border bg-card px-3 py-2 text-xs text-foreground"
+                                />
+                                <button
+                                    className="mt-3 w-full rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                                    onClick={() => {
+                                        setCalendarIntegrations((prev) => ({ ...prev, apple: true }));
+                                        setEventToast("Apple Calendar linked.");
+                                        setShowIntegrations(false);
+                                    }}
+                                    disabled={calendarIntegrations.apple || !appleCalUrl.trim()}
+                                >
+                                    {calendarIntegrations.apple ? "Connected" : "Connect Apple"}
+                                </button>
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                            <span>
+                                Connected: {calendarIntegrations.google ? "Google" : "—"}{" "}
+                                {calendarIntegrations.apple ? "• Apple" : ""}
+                            </span>
+                            <button
+                                className="text-xs font-semibold text-primary hover:underline"
+                                onClick={() => {
+                                    setCalendarIntegrations({ google: false, apple: false });
+                                    setAppleCalUrl("");
+                                    setEventToast("Integrations cleared.");
+                                    setShowIntegrations(false);
+                                }}
+                            >
+                                Disconnect all
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
+        {eventToast && (
+            <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+                {eventToast}
+            </div>
+        )}
     );
 };
 

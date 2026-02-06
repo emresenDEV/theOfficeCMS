@@ -31,6 +31,7 @@ const Dashboard = ({ user }) => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [eventToast, setEventToast] = useState("");
     const [summary, setSummary] = useState({
         totalRevenue: 0,
         activeAccounts: 0,
@@ -211,6 +212,12 @@ const Dashboard = ({ user }) => {
         setTasks(updatedTasks);
     };
 
+    useEffect(() => {
+        if (!eventToast) return;
+        const timeoutId = setTimeout(() => setEventToast(""), 2500);
+        return () => clearTimeout(timeoutId);
+    }, [eventToast]);
+
     const pipelineSummaryMap = pipelineSummary.reduce((acc, item) => {
         acc[item.stage] = item;
         return acc;
@@ -382,8 +389,14 @@ const Dashboard = ({ user }) => {
 
             {/* MODAL FOR CREATE EVENT */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-                    <div className="bg-card p-4 sm:p-6 rounded-lg w-full max-w-3xl shadow-lg">
+                <div
+                    className="fixed inset-0 z-50 flex justify-center items-center bg-transparent p-4"
+                    onClick={() => setShowCreateModal(false)}
+                >
+                    <div
+                        className="bg-card p-4 sm:p-6 rounded-lg w-full max-w-3xl shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <CreateCalendarEvent
                             userId={userData.user_id}
                             setEvents={setEvents}
@@ -393,8 +406,14 @@ const Dashboard = ({ user }) => {
                             }}
                             refreshDashboardData={refreshDashboardData}
                             selectedDate={selectedDate}
+                            onCreated={() => setEventToast("Event created.")}
                         />
                     </div>
+                </div>
+            )}
+            {eventToast && (
+                <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg">
+                    {eventToast}
                 </div>
             )}
         </div>

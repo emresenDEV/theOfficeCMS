@@ -21,7 +21,14 @@ const addOneHour = (time) => {
     return `${newHour}:${minute} ${newPeriod}`;
 };
 
-const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardData, selectedDate = null }) => {
+const CreateCalendarEvent = ({
+    userId,
+    setEvents,
+    closeForm,
+    refreshDashboardData,
+    selectedDate = null,
+    onCreated,
+}) => {
     const initialDate = selectedDate
         ? (typeof selectedDate.toISODate === "function"
             ? selectedDate.toISODate()
@@ -51,6 +58,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
     const [accountSearch, setAccountSearch] = useState("");
     const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
 
     /** Fetch Account List */
     useEffect(() => {
@@ -157,6 +165,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
     /** Handle Creating an Event */
     const handleCreateEvent = async (e) => {
         e.preventDefault();
+        if (isCreating) return;
 
         if (!newEvent.event_title.trim() || !newEvent.start_date) {
             alert("⚠️ Event title and start date are required.");
@@ -164,6 +173,7 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
         }
 
         try {
+            setIsCreating(true);
             const formattedEvent = {
                 ...newEvent,
                 user_id: userId,
@@ -179,8 +189,19 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
             console.log("✅ Event created successfully:", createdEvent);
 
             if (createdEvent) {
+                if (setEvents && typeof setEvents === "function") {
+                    setEvents((prev) => {
+                        if (prev.some((event) => event.event_id === createdEvent.event_id)) {
+                            return prev;
+                        }
+                        return [createdEvent, ...prev];
+                    });
+                }
+                if (typeof onCreated === "function") {
+                    onCreated(createdEvent);
+                }
                 // Refresh dashboard data to get updated events list
-                if (refreshDashboardData && typeof refreshDashboardData === 'function') {
+                if (refreshDashboardData && typeof refreshDashboardData === "function") {
                     await refreshDashboardData(userId);
                 }
                 closeForm();
@@ -188,12 +209,25 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
         } catch (error) {
             console.error("❌ Error creating event:", error.response?.data || error.message);
             alert("Failed to create event. Check console logs.");
+        } finally {
+            setIsCreating(false);
         }
     };
 
     return (
         <div className="mt-4 p-4 bg-card rounded-lg shadow-md border border-border text-left">
-            <h2 className="text-xl font-semibold text-foreground mb-4">Create Event</h2>
+            <div className="flex items-center justify-between mb-4">
+                <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={closeForm}
+                    aria-label="Close"
+                >
+                    ✕
+                </button>
+                <h2 className="text-xl font-semibold text-foreground">Create Event</h2>
+                <div className="w-6" />
+            </div>
 
             {/* Event Title */}
             <label className="block text-sm font-medium text-muted-foreground">Event Title</label>
@@ -333,8 +367,16 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
 
             {/* Buttons */}
             <div className="flex justify-between mt-4">
-                <button className="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg" onClick={closeForm}>Cancel</button>
-                <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90" onClick={handleCreateEvent}>Save</button>
+                <button className="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg" onClick={closeForm}>
+                    Cancel
+                </button>
+                <button
+                    className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-60"
+                    onClick={handleCreateEvent}
+                    disabled={isCreating}
+                >
+                    {isCreating ? "Saving..." : "Save"}
+                </button>
             </div>
         </div>
     );
@@ -342,10 +384,11 @@ const CreateCalendarEvent = ({ userId, setEvents, closeForm, refreshDashboardDat
 
 CreateCalendarEvent.propTypes = {
     userId: PropTypes.number.isRequired,
-    setEvents: PropTypes.func.isRequired,
+    setEvents: PropTypes.func,
     closeForm: PropTypes.func.isRequired,
-    refreshDashboardData: PropTypes.func.isRequired,
+    refreshDashboardData: PropTypes.func,
     selectedDate: PropTypes.object,
+    onCreated: PropTypes.func,
 };
 
 export default CreateCalendarEvent;
