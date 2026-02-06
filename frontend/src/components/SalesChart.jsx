@@ -28,13 +28,27 @@ const MONTH_LABELS = [
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
-const COLORS = [
-    "hsl(var(--chart-1))",
-    "hsl(var(--chart-2))",
-    "hsl(var(--chart-3))",
-    "hsl(var(--chart-4))",
-    "hsl(var(--chart-5))",
-    "hsl(var(--chart-6))",
+const getChartColor = (index) => {
+    if (typeof window === "undefined") return `hsl(${COLORS_FALLBACK[index % COLORS_FALLBACK.length]})`;
+    const root = getComputedStyle(document.documentElement);
+    const value = root.getPropertyValue(`--chart-${index + 1}`).trim();
+    return value ? `hsl(${value})` : `hsl(${COLORS_FALLBACK[index % COLORS_FALLBACK.length]})`;
+};
+
+const getChartFill = (index) => {
+    if (typeof window === "undefined") return `hsla(${COLORS_FALLBACK[index % COLORS_FALLBACK.length]}, 0.2)`;
+    const root = getComputedStyle(document.documentElement);
+    const value = root.getPropertyValue(`--chart-${index + 1}`).trim();
+    return value ? `hsl(${value} / 0.2)` : `hsla(${COLORS_FALLBACK[index % COLORS_FALLBACK.length]}, 0.2)`;
+};
+
+const COLORS_FALLBACK = [
+    "221 83% 53%",
+    "142 76% 36%",
+    "38 92% 50%",
+    "199 89% 48%",
+    "262 83% 58%",
+    "16 84% 56%",
 ];
 
 const SalesChart = ({ userProfile }) => {
@@ -98,14 +112,34 @@ const SalesChart = ({ userProfile }) => {
     const renderChartData = () => {
         if (activeTab === "company") {
             return [
-                { label: "Company-Wide Sales", data: companySales, borderColor: COLORS[0] },
-                { label: `${userProfile.first_name}'s Sales`, data: userSales, borderColor: COLORS[1] }
+                {
+                    label: "Company-Wide Sales",
+                    data: companySales,
+                    borderColor: getChartColor(0),
+                    backgroundColor: getChartFill(0),
+                    pointBackgroundColor: getChartColor(0),
+                    fill: true,
+                    tension: 0.35,
+                },
+                {
+                    label: `${userProfile.first_name}'s Sales`,
+                    data: userSales,
+                    borderColor: getChartColor(1),
+                    backgroundColor: getChartFill(1),
+                    pointBackgroundColor: getChartColor(1),
+                    fill: true,
+                    tension: 0.35,
+                }
             ];
         } else if (activeTab === "branch") {
             return selectedBranch ? [{
                 label: `${selectedBranch} Sales`,
                 data: branchSales[selectedBranch] || Array(12).fill(0),
-                borderColor: COLORS[2]
+                borderColor: getChartColor(2),
+                backgroundColor: getChartFill(2),
+                pointBackgroundColor: getChartColor(2),
+                fill: true,
+                tension: 0.35,
             }] : [];
         } else {
             return selectedSalesReps.map((rep, i) => {
@@ -113,7 +147,11 @@ const SalesChart = ({ userProfile }) => {
                 return {
                     label: rep,
                     data: found?.sales || Array(12).fill(0),
-                    borderColor: COLORS[i % COLORS.length]
+                    borderColor: getChartColor(i % COLORS_FALLBACK.length),
+                    backgroundColor: getChartFill(i % COLORS_FALLBACK.length),
+                    pointBackgroundColor: getChartColor(i % COLORS_FALLBACK.length),
+                    fill: false,
+                    tension: 0.35,
                 };
             });
         }

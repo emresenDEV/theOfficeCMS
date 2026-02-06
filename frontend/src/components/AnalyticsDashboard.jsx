@@ -81,9 +81,10 @@ const AnalyticsDashboard = ({ user, adminView }) => {
     const [profile, setProfile] = useState(null);
     const [users, setUsers] = useState([]);
     const [repFilter, setRepFilter] = useState("all");
-    const [range, setRange] = useState("month");
+    const [range, setRange] = useState("year");
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         if (!user?.id && !user?.user_id) return;
@@ -125,7 +126,13 @@ const AnalyticsDashboard = ({ user, adminView }) => {
             dateFrom: dateParams.dateFrom,
             dateTo: dateParams.dateTo,
         }).then((response) => {
-            setData(response);
+            if (!response) {
+                setError("Analytics data unavailable. Restart Flask or check the /analytics endpoint.");
+                setData(null);
+            } else {
+                setError("");
+                setData(response);
+            }
             setLoading(false);
         });
     }, [adminView, isAdmin, profile, repFilter, dateParams, user]);
@@ -146,6 +153,13 @@ const AnalyticsDashboard = ({ user, adminView }) => {
 
     if (loading) {
         return <p className="px-4 py-4 text-muted-foreground sm:px-6 sm:py-6">Loading analytics...</p>;
+    }
+    if (error) {
+        return (
+            <div className="px-4 py-4 text-sm text-rose-500 sm:px-6 sm:py-6">
+                {error}
+            </div>
+        );
     }
 
     return (

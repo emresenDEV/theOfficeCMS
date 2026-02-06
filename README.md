@@ -94,7 +94,7 @@
 
    ---
 
-   ## Task Reminders (LaunchAgent on Mac Mini)
+## Task Reminders (LaunchAgent on Mac Mini)
 
    The task reminder/overdue job runs every 15 minutes via launchd.
 
@@ -105,10 +105,39 @@
    launchctl list | grep theofficecms.taskreminders
    ```
 
-   Notes:
-   - Runs automatically every 15 minutes and on login.
-   - Does not require restarting the Flask app.
+Notes:
+- Runs automatically every 15 minutes and on login.
+- Does not require restarting the Flask app.
 
-   **Version:** 1.0.0 | **Updated:** November 25, 2025
+---
+
+## Mock Data Generator (Quarterly on Mac Mini)
+
+The quarterly mock data job runs on the 1st of Jan/Apr/Jul/Oct at 2:15 AM via launchd.
+
+```bash
+cp /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/scripts/com.theofficecms.mockdata.plist ~/Library/LaunchAgents/
+launchctl unload ~/Library/LaunchAgents/com.theofficecms.mockdata.plist 2>/dev/null
+launchctl load ~/Library/LaunchAgents/com.theofficecms.mockdata.plist
+launchctl list | grep com.theofficecms.mockdata
+```
+
+Manual run (prompted):
+```bash
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend
+source venv/bin/activate
+python -m scripts.generate_mock_data
+```
+
+Manual run with explicit date:
+```bash
+python -m scripts.generate_mock_data --month 2 --year 2026
+```
+
+Notes:
+- Auto mode is set in the LaunchAgent and runs with `--auto` (no prompts).
+- Logs: `/Users/monicanieckula/Library/Logs/theOfficeCMS-mockdata.log`
+
+**Version:** 1.0.0 | **Updated:** November 25, 2025
    ENDOFFILE
 EOF

@@ -8,7 +8,8 @@
     <key>ProgramArguments</key>
     <array>
       <string>/Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/venv/bin/python</string>
-      <string>/Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/scripts/generate_mock_data.py</string>
+      <string>-m</string>
+      <string>scripts.generate_mock_data</string>
       <string>--auto</string>
     </array>
 
