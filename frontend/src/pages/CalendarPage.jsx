@@ -79,6 +79,21 @@ const CalendarPage = ({ user }) => {
         [selectedDateEvents]
     );
 
+    const userColorPalette = [
+        "hsl(221 70% 55%)",
+        "hsl(142 60% 45%)",
+        "hsl(38 85% 55%)",
+        "hsl(199 80% 52%)",
+        "hsl(262 70% 62%)",
+        "hsl(16 80% 55%)",
+        "hsl(340 65% 56%)",
+    ];
+
+    const getUserColor = (userId) => {
+        const id = Number(userId) || 0;
+        return userColorPalette[id % userColorPalette.length];
+    };
+
     const resolveViewerStatus = (event) => {
         if (event.viewer_status) return event.viewer_status;
         if (!user?.user_id) return null;
@@ -172,21 +187,6 @@ const CalendarPage = ({ user }) => {
         } else {
             info.revert();
         }
-    };
-
-    const userColorPalette = [
-        "hsl(221 70% 55%)",
-        "hsl(142 60% 45%)",
-        "hsl(38 85% 55%)",
-        "hsl(199 80% 52%)",
-        "hsl(262 70% 62%)",
-        "hsl(16 80% 55%)",
-        "hsl(340 65% 56%)",
-    ];
-
-    const getUserColor = (userId) => {
-        const id = Number(userId) || 0;
-        return userColorPalette[id % userColorPalette.length];
     };
 
     const selectedUserMap = useMemo(() => {
