@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import CalendarEvent, Account
+from models import CalendarEvent, Account, CalendarEventAttendee, Users
 from database import db
 from datetime import datetime
 from notifications import create_notification
@@ -19,44 +19,87 @@ def _parse_time(value):
     raise ValueError(f"Invalid time format: {value}")
 
 
+def _serialize_event(event, viewer_id=None):
+    attendees = CalendarEventAttendee.query.filter_by(event_id=event.event_id).all()
+    attendee_list = []
+    for attendee in attendees:
+        user = Users.query.get(attendee.user_id)
+        attendee_list.append({
+            "user_id": attendee.user_id,
+            "status": attendee.status,
+            "user_name": f"{user.first_name} {user.last_name}".strip() if user else None,
+        })
+
+    viewer_status = None
+    if viewer_id:
+        if event.user_id == viewer_id:
+            viewer_status = "owner"
+        else:
+            match = next((a for a in attendees if a.user_id == viewer_id), None)
+            viewer_status = match.status if match else None
+
+    return {
+        "event_id": event.event_id,
+        "event_title": event.event_title or "Untitled Event",
+        "location": event.location or "No Location",
+        "start_time": event.start_time.strftime("%H:%M"),
+        "end_time": event.end_time.strftime("%H:%M"),
+        "start_date": event.start_date.strftime("%Y-%m-%d"),
+        "end_date": event.end_date.strftime("%Y-%m-%d"),
+        "notes": event.notes or "",
+        "reminder_minutes": event.reminder_minutes,
+        "contact_name": event.contact_name or "",
+        "phone_number": event.phone_number or "",
+        "account_id": event.account_id,
+        "user_id": event.user_id,
+        "attendees": attendee_list,
+        "viewer_status": viewer_status,
+    }
+
+
 # READ
 @calendar_bp.route("/events", methods=["GET"])
 def get_calendar_events():
     user_id = request.args.get("user_id", type=int)
+    user_ids_param = request.args.get("user_ids")
     include_all = request.args.get("all", "false").lower() == "true"
         
     if not user_id:
         user_id = request.args.get("user_id", type=int) 
-    if not user_id and not include_all:
+    if not user_id and not user_ids_param and not include_all:
         return jsonify({"message": "User ID is required"}), 400
 
     query = CalendarEvent.query
-    if user_id:
-        query = query.filter_by(user_id=user_id)
+    viewer_id = None
+    if user_ids_param:
+        try:
+            user_ids = [int(val) for val in user_ids_param.split(",") if val.strip()]
+        except ValueError:
+            return jsonify({"message": "Invalid user_ids"}), 400
+        if user_ids:
+            query = query.outerjoin(
+                CalendarEventAttendee,
+                CalendarEventAttendee.event_id == CalendarEvent.event_id,
+            ).filter(
+                (CalendarEvent.user_id.in_(user_ids))
+                | (CalendarEventAttendee.user_id.in_(user_ids))
+            ).distinct()
+    elif user_id:
+        viewer_id = user_id
+        query = query.outerjoin(
+            CalendarEventAttendee,
+            CalendarEventAttendee.event_id == CalendarEvent.event_id,
+        ).filter(
+            (CalendarEvent.user_id == user_id)
+            | (CalendarEventAttendee.user_id == user_id)
+        ).distinct()
 
     events = query.all()
 
     if not events:
         return jsonify([])
 
-    return jsonify([
-        {
-            "event_id": event.event_id,
-            "event_title": event.event_title or "Untitled Event",
-            "location": event.location or "No Location",
-            "start_time": event.start_time.strftime('%H:%M'),
-            "end_time": event.end_time.strftime('%H:%M'),
-            "start_date": event.start_date.strftime('%Y-%m-%d'),
-            "end_date": event.end_date.strftime('%Y-%m-%d'),
-            "notes": event.notes or "",
-            "reminder_minutes": event.reminder_minutes,
-            "contact_name": event.contact_name or "",
-            "phone_number": event.phone_number or "",
-            "account_id": event.account_id,
-            "user_id": event.user_id
-        }
-        for event in events
-    ])
+    return jsonify([_serialize_event(event, viewer_id) for event in events])
 
 #  Create a New Calendar Event
 @calendar_bp.route("/events", methods=["POST"])
@@ -100,6 +143,33 @@ def create_calendar_event():
 
         db.session.add(new_event)
         db.session.flush()
+        invitee_ids = data.get("invitee_ids") or []
+        try:
+            invitee_ids = [int(val) for val in invitee_ids if val]
+        except ValueError:
+            invitee_ids = []
+        invitee_ids = [val for val in invitee_ids if val != user_id]
+
+        if invitee_ids:
+            for invitee_id in invitee_ids:
+                db.session.add(
+                    CalendarEventAttendee(
+                        event_id=new_event.event_id,
+                        user_id=invitee_id,
+                        status="pending",
+                    )
+                )
+                invitee = Users.query.get(invitee_id)
+                creator = Users.query.get(user_id)
+                create_notification(
+                    user_id=invitee_id,
+                    notif_type="event_invite",
+                    title=f"Event invite: {new_event.event_title}",
+                    message=f"Invited by {creator.first_name} {creator.last_name}" if creator else "Event invitation",
+                    link=f"/calendar?date={new_event.start_date.strftime('%Y-%m-%d')}",
+                    source_type="calendar_event",
+                    source_id=new_event.event_id,
+                )
         account = Account.query.get(account_id) if account_id else None
         create_notification(
             user_id=user_id,
@@ -128,11 +198,12 @@ def create_calendar_event():
                 "reminder_minutes": new_event.reminder_minutes,
                 "account_id": new_event.account_id,
                 "user_id": new_event.user_id,
+                "invitee_ids": invitee_ids,
             },
             account_id=new_event.account_id,
         )
         db.session.commit()
-        return jsonify({"message": "Event created successfully", "event_id": new_event.event_id}), 201
+        return jsonify(_serialize_event(new_event, viewer_id=user_id)), 201
 
     except ValueError as e:
         return jsonify({"error": f"Invalid data format: {str(e)}"}), 400
@@ -184,6 +255,42 @@ def update_calendar_event(event_id):
             event.reminder_minutes = int(reminder_minutes) if reminder_minutes not in (None, "") else None
         event.contact_name = data.get("contact_name", event.contact_name)
         event.phone_number = data.get("phone_number", event.phone_number)
+        if "invitee_ids" in data:
+            invitee_ids = data.get("invitee_ids") or []
+            try:
+                invitee_ids = [int(val) for val in invitee_ids if val]
+            except ValueError:
+                invitee_ids = []
+            invitee_ids = [val for val in invitee_ids if val != event.user_id]
+            existing = CalendarEventAttendee.query.filter_by(event_id=event.event_id).all()
+            existing_ids = {att.user_id for att in existing}
+            new_ids = set(invitee_ids)
+            to_add = new_ids - existing_ids
+            to_remove = existing_ids - new_ids
+            if to_remove:
+                CalendarEventAttendee.query.filter(
+                    CalendarEventAttendee.event_id == event.event_id,
+                    CalendarEventAttendee.user_id.in_(list(to_remove)),
+                ).delete(synchronize_session=False)
+            for invitee_id in to_add:
+                db.session.add(
+                    CalendarEventAttendee(
+                        event_id=event.event_id,
+                        user_id=invitee_id,
+                        status="pending",
+                    )
+                )
+                invitee = Users.query.get(invitee_id)
+                creator = Users.query.get(event.user_id)
+                create_notification(
+                    user_id=invitee_id,
+                    notif_type="event_invite",
+                    title=f"Event invite: {event.event_title}",
+                    message=f"Invited by {creator.first_name} {creator.last_name}" if creator else "Event invitation",
+                    link=f"/calendar?date={event.start_date.strftime('%Y-%m-%d')}",
+                    source_type="calendar_event",
+                    source_id=event.event_id,
+                )
 
         print(f"✅ Updated event fields. Committing to database...")
         create_notification(
@@ -272,3 +379,50 @@ def delete_calendar_event(event_id):
     )
     db.session.commit()
     return jsonify({"message": "Event deleted successfully"}), 200
+
+
+@calendar_bp.route("/events/<int:event_id>/rsvp", methods=["POST"])
+def rsvp_calendar_event(event_id):
+    data = request.json or {}
+    user_id = data.get("user_id") or data.get("actor_user_id")
+    status = data.get("status")
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+    if status not in ("accepted", "declined"):
+        return jsonify({"error": "Invalid RSVP status"}), 400
+
+    event = CalendarEvent.query.get_or_404(event_id)
+    attendee = CalendarEventAttendee.query.filter_by(event_id=event_id, user_id=int(user_id)).first()
+    if not attendee:
+        return jsonify({"error": "Invite not found"}), 404
+
+    attendee.status = status
+    attendee.responded_at = datetime.utcnow()
+
+    user = Users.query.get(int(user_id))
+    create_notification(
+        user_id=event.user_id,
+        notif_type="event_rsvp",
+        title=f"{user.first_name if user else 'A user'} {status} the invite",
+        message=event.event_title,
+        link=f"/calendar?date={event.start_date.strftime('%Y-%m-%d')}",
+        source_type="calendar_event",
+        source_id=event.event_id,
+    )
+
+    create_audit_log(
+        entity_type="calendar_event",
+        entity_id=event.event_id,
+        action="rsvp",
+        user_id=int(user_id),
+        user_email=data.get("actor_email"),
+        after_data={
+            "event_id": event.event_id,
+            "user_id": int(user_id),
+            "status": status,
+        },
+        account_id=event.account_id,
+    )
+
+    db.session.commit()
+    return jsonify({"message": "RSVP updated", "status": status}), 200

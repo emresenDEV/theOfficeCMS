@@ -26,6 +26,17 @@ export const fetchCalendarEvents = async (userId) => {
     }
 };
 
+export const fetchCalendarEventsByUsers = async (userIds = []) => {
+    if (!userIds.length) return [];
+    try {
+        const response = await api.get(`/calendar/events?user_ids=${userIds.join(",")}`);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error fetching calendar events by users:", error);
+        return [];
+    }
+};
+
 // Fetch All Calendar Events (Admin)
 export const fetchAllCalendarEvents = async () => {
     try {
@@ -72,6 +83,16 @@ export const deleteCalendarEvent = async (eventId, actorUserId, actorEmail) => {
     } catch (error) {
         console.error("Error deleting event:", error.response?.data || error.message);
         return { success: false };
+    }
+};
+
+export const respondToCalendarInvite = async (eventId, payload) => {
+    try {
+        const response = await api.post(`/calendar/events/${eventId}/rsvp`, payload);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Error responding to invite:", error.response?.data || error.message);
+        return null;
     }
 };
 

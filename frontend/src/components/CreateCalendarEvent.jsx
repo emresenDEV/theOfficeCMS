@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { createCalendarEvent } from "../services/calendarService";
+import { createCalendarEvent, fetchUsers } from "../services/calendarService";
 import { fetchAccounts } from "../services/accountService";
 import CustomTimePicker from "./CustomTimePicker";
 import { getCurrentDate, getCurrentTime } from "../utils/dateUtils";
@@ -59,6 +59,11 @@ const CreateCalendarEvent = ({
     const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [inviteSearch, setInviteSearch] = useState("");
+    const [inviteOpen, setInviteOpen] = useState(false);
+    const [inviteResults, setInviteResults] = useState([]);
+    const [invitees, setInvitees] = useState([]);
 
     /** Fetch Account List */
     useEffect(() => {
@@ -68,6 +73,33 @@ const CreateCalendarEvent = ({
         }
         loadAccounts();
     }, []);
+
+    useEffect(() => {
+        async function loadUsers() {
+            const fetchedUsers = await fetchUsers();
+            setUsers(fetchedUsers);
+        }
+        loadUsers();
+    }, []);
+
+    useEffect(() => {
+        const term = inviteSearch.trim().toLowerCase();
+        if (!term) {
+            setInviteResults([]);
+            return;
+        }
+        const results = users
+            .filter((user) => {
+                const name = `${user.first_name || ""} ${user.last_name || ""}`.trim().toLowerCase();
+                return (
+                    name.includes(term) ||
+                    (user.username || "").toLowerCase().includes(term)
+                );
+            })
+            .filter((user) => user.user_id !== userId)
+            .slice(0, 8);
+        setInviteResults(results);
+    }, [inviteSearch, users, userId]);
 
     /** Dynamic Account Search */
     useEffect(() => {
@@ -182,6 +214,7 @@ const CreateCalendarEvent = ({
                 reminder_minutes: newEvent.reminder_minutes
                     ? parseInt(newEvent.reminder_minutes, 10)
                     : null,
+                invitee_ids: invitees.map((invitee) => invitee.user_id),
             };
 
             console.log("📝 Creating event with data:", formattedEvent);
@@ -204,6 +237,7 @@ const CreateCalendarEvent = ({
                 if (refreshDashboardData && typeof refreshDashboardData === "function") {
                     await refreshDashboardData(userId);
                 }
+                setInvitees([]);
                 closeForm();
             }
         } catch (error) {
@@ -364,6 +398,60 @@ const CreateCalendarEvent = ({
 
             <label className="block text-sm font-medium text-muted-foreground mt-4">Notes</label>
             <textarea name="notes" value={newEvent.notes} onChange={handleInputChange} className="w-full p-2 border border-border bg-card text-foreground rounded-lg" rows="3"></textarea>
+
+            <div className="mt-4">
+                <label className="block text-sm font-medium text-muted-foreground">Invite Team Members</label>
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={inviteSearch}
+                        onFocus={() => setInviteOpen(true)}
+                        onBlur={() => setTimeout(() => setInviteOpen(false), 150)}
+                        onChange={(e) => setInviteSearch(e.target.value)}
+                        placeholder="Search users..."
+                        className="w-full p-2 border border-border bg-card text-foreground rounded-lg"
+                    />
+                    {inviteOpen && inviteResults.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded shadow-lg z-50 max-h-48 overflow-y-auto">
+                            {inviteResults.map((user) => (
+                                <button
+                                    key={user.user_id}
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => {
+                                        setInvitees((prev) =>
+                                            prev.some((invitee) => invitee.user_id === user.user_id)
+                                                ? prev
+                                                : [...prev, user]
+                                        );
+                                        setInviteSearch("");
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted border-b last:border-b-0"
+                                >
+                                    {user.first_name} {user.last_name}{" "}
+                                    <span className="text-xs text-muted-foreground">({user.username})</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                {invitees.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {invitees.map((invitee) => (
+                            <button
+                                key={invitee.user_id}
+                                type="button"
+                                className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground"
+                                onClick={() =>
+                                    setInvitees((prev) => prev.filter((item) => item.user_id !== invitee.user_id))
+                                }
+                            >
+                                {invitee.first_name} {invitee.last_name} ✕
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             {/* Buttons */}
             <div className="flex justify-between mt-4">

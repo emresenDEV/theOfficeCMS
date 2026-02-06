@@ -163,6 +163,18 @@ class CalendarEvent(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), nullable=False)
     contact_name = db.Column(db.String(100))
     phone_number = db.Column(db.String(20))
+
+
+class CalendarEventAttendee(db.Model):
+    __tablename__ = "calendar_event_attendees"
+    event_id = db.Column(db.Integer, db.ForeignKey("calendar_events.event_id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.user_id"), primary_key=True)
+    status = db.Column(db.String(20), default="pending")
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    responded_at = db.Column(db.DateTime)
+
+    event = db.relationship("CalendarEvent", backref=db.backref("attendees", lazy="joined", cascade="all, delete-orphan"))
+    user = db.relationship("Users")
     
 class Commissions(db.Model):
     __tablename__ = 'commissions'
