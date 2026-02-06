@@ -1,5 +1,6 @@
 @config "../tailwind.config.js";
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
 /* @import "tailwindcss/base";
 @import "tailwindcss/components";

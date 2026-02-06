@@ -30,6 +30,7 @@ const ContactsPage = ({ user }) => {
     account_id: "",
   });
   const [createError, setCreateError] = useState("");
+  const hasFilters = search.trim().length > 0 || status !== "all" || ownerId !== "all";
 
   useEffect(() => {
     let mounted = true;
@@ -272,16 +273,36 @@ const ContactsPage = ({ user }) => {
           <p className="text-sm text-muted-foreground">Loading contacts...</p>
         ) : contacts.length === 0 ? (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">No contacts found.</p>
-            <button
-              className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 disabled:opacity-60"
-              onClick={handleBackfill}
-              disabled={backfilling}
-            >
-              {backfilling ? "Backfilling..." : "Backfill from Accounts"}
-            </button>
-            {backfillMessage && (
-              <p className="text-xs text-muted-foreground">{backfillMessage}</p>
+            <p className="text-sm text-muted-foreground">
+              {hasFilters ? "No contacts match the selected filters." : "No contacts found."}
+            </p>
+            {hasFilters ? (
+              <button
+                className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                onClick={() => {
+                  setSearch("");
+                  setStatus("all");
+                  setOwnerId("all");
+                }}
+              >
+                Clear filters
+              </button>
+            ) : (
+              <>
+                <button
+                  className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 disabled:opacity-60"
+                  onClick={handleBackfill}
+                  disabled={backfilling}
+                >
+                  {backfilling ? "Importing..." : "Import contacts from Accounts"}
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  Imports account contact names into Contacts so you can start tracking interactions.
+                </p>
+                {backfillMessage && (
+                  <p className="text-xs text-muted-foreground">{backfillMessage}</p>
+                )}
+              </>
             )}
           </div>
         ) : (

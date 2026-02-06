@@ -18,6 +18,17 @@ def _coerce_empty(value):
     return value
 
 
+def _coerce_int(value):
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _split_contact_name(name):
     if not name:
         return None, None
@@ -323,12 +334,15 @@ def update_account(account_id):
         account.city = data.get("city", account.city)
         account.state = data.get("state", account.state)
         account.zip_code = data.get("zip_code", account.zip_code)
-        account.industry_id = data.get("industry_id", account.industry_id) or None
-        account.sales_rep_id = data.get("sales_rep_id", account.sales_rep_id) or None
-        account.branch_id = data.get("branch_id", account.branch_id) or None
+        if "industry_id" in data:
+            account.industry_id = _coerce_int(data.get("industry_id"))
+        if "sales_rep_id" in data:
+            account.sales_rep_id = _coerce_int(data.get("sales_rep_id"))
+        if "branch_id" in data:
+            account.branch_id = _coerce_int(data.get("branch_id"))
         account.notes = data.get("notes", account.notes) or None
         if "region_id" in data:
-            account.region_id = int(data.get("region_id")) if data.get("region_id") else None
+            account.region_id = _coerce_int(data.get("region_id"))
         if "region" in data and "region_id" not in data:
             account.region = _coerce_empty(data.get("region"))
         if "branch_id" in data and "region_id" not in data:
@@ -340,7 +354,8 @@ def update_account(account_id):
 
         # Automatically update the timestamp
         account.date_updated = db.func.current_timestamp()
-        account.updated_by_user_id = data.get("updated_by_user_id", account.updated_by_user_id)
+        if "updated_by_user_id" in data:
+            account.updated_by_user_id = _coerce_int(data.get("updated_by_user_id"))
 
 
         # Notifications (skip admin-triggered changes)

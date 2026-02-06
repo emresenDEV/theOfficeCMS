@@ -326,11 +326,22 @@ const UpdateAccountPage = () => {
     
             // ✅ Preserve existing values if dropdowns aren't changed
             const sanitizedData = {
-                ...accountData,
-                branch_id: accountData.branch_id || accountData.branch?.branch_id || null,
+                account_id: accountData.account_id,
+                business_name: accountData.business_name,
+                contact_first_name: accountData.contact_first_name,
+                contact_last_name: accountData.contact_last_name,
+                contact_name: accountData.contact_name,
+                phone_number: accountData.phone_number,
+                email: accountData.email,
+                address: accountData.address,
+                city: accountData.city,
+                state: accountData.state,
+                zip_code: accountData.zip_code,
                 industry_id: accountData.industry_id || null,
+                sales_rep_id: accountData.sales_rep_id || accountData.user_id || null,
+                branch_id: accountData.branch_id || accountData.branch?.branch_id || null,
                 region_id: accountData.region_id || null,
-                user_id: accountData.user_id || null,
+                notes: accountData.notes || null,
                 updated_by_user_id: user?.user_id || null // Track the user performing the update
             };
     

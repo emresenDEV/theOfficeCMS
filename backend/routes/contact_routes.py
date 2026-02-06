@@ -362,6 +362,20 @@ def update_contact(contact_id):
 
     contact.contact_owner_user_id = data.get("contact_owner_user_id", contact.contact_owner_user_id)
 
+    after_data = {
+        "first_name": contact.first_name,
+        "last_name": contact.last_name,
+        "title": contact.title,
+        "phone": contact.phone,
+        "email": contact.email,
+        "status": contact.status,
+        "do_not_call": contact.do_not_call,
+        "do_not_call_date": contact.do_not_call_date.isoformat() if contact.do_not_call_date else None,
+        "email_opt_out": contact.email_opt_out,
+        "email_opt_out_date": contact.email_opt_out_date.isoformat() if contact.email_opt_out_date else None,
+        "contact_owner_user_id": contact.contact_owner_user_id,
+    }
+
     create_audit_log(
         entity_type="contact",
         entity_id=contact.contact_id,
@@ -369,7 +383,7 @@ def update_contact(contact_id):
         user_id=actor_user_id,
         user_email=actor_email,
         before_data=before_data,
-        after_data=_serialize_contact(contact),
+        after_data=after_data,
         contact_id=contact.contact_id,
     )
 

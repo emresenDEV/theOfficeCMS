@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import PropTypes from "prop-types";
 import {
@@ -40,6 +40,8 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
   const [dirty, setDirty] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [autosaveOverride, setAutosaveOverride] = useState(null);
+  const [ownerDropdownOpen, setOwnerDropdownOpen] = useState(false);
+  const ownerDropdownRef = useRef(null);
   const [accountAdds, setAccountAdds] = useState([]);
   const [accountRemoves, setAccountRemoves] = useState([]);
   const [accountSaving, setAccountSaving] = useState(false);
@@ -202,6 +204,21 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
     }, 800);
     return () => clearTimeout(timeoutId);
   }, [autosaveEnabled, dirty, form]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!ownerDropdownOpen) return;
+      if (ownerDropdownRef.current && !ownerDropdownRef.current.contains(event.target)) {
+        setOwnerDropdownOpen(false);
+        const owner = users.find((u) => u.user_id === Number(form?.contact_owner_user_id));
+        if (owner) {
+          setOwnerSearch(`${owner.first_name || ""} ${owner.last_name || ""}`.trim());
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [ownerDropdownOpen, users, form?.contact_owner_user_id]);
 
   useEffect(() => {
     if (!contact) return;
@@ -490,10 +507,18 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
         contact_owner_user_id: updated.contact_owner_user_id || "",
       });
       setDirty(false);
-      setSaveMessage("Saved");
+      setSaveMessage(autosaveEnabled ? "Auto-saved" : "Saved");
     }
     setSaving(false);
     setTimeout(() => setSaveMessage(""), 1500);
+  };
+
+  const handleCloseEditModal = () => {
+    if (!autosaveEnabled && dirty) {
+      handleManualSave();
+      return;
+    }
+    setShowEditModal(false);
   };
 
   const handleFollowToggle = async () => {
@@ -1515,19 +1540,29 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
       </div>
 
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={handleCloseEditModal}
+        >
+          <div
+            className="w-full max-w-2xl rounded-lg border border-border bg-card p-4 shadow-lg sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Edit Contact</h2>
                 <p className="text-xs text-muted-foreground">
                   {autosaveEnabled ? "Auto-save on" : "Auto-save off"}
-                  {saveMessage ? ` • ${saveMessage}` : ""}
+                  {saveMessage ? (
+                    <span className={`ml-2 inline-flex items-center gap-1 ${autosaveEnabled ? "animate-pulse-subtle" : ""}`}>
+                      • {saveMessage}
+                    </span>
+                  ) : null}
                 </p>
               </div>
               <button
                 className="text-muted-foreground hover:text-foreground"
-                onClick={() => setShowEditModal(false)}
+                onClick={handleCloseEditModal}
                 aria-label="Close"
               >
                 ✕
@@ -1552,7 +1587,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                 value={form.title}
                 onChange={(e) => handleFieldChange("title", e.target.value)}
               />
-              <div className="relative md:col-span-2">
+              <div className="relative md:col-span-2" ref={ownerDropdownRef}>
                 <label className="mb-1 block text-xs font-semibold uppercase text-muted-foreground">
                   Contact Owner
                 </label>
@@ -1566,8 +1601,9 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                     setForm((prev) => ({ ...prev, contact_owner_user_id: value ? "" : prev.contact_owner_user_id }));
                     setDirty(true);
                   }}
+                  onFocus={() => setOwnerDropdownOpen(true)}
                 />
-                {ownerResults.length > 0 && ownerSearch && (
+                {ownerDropdownOpen && ownerResults.length > 0 && ownerSearch && (
                   <div className="absolute z-10 mt-1 w-full rounded-md border border-border bg-card shadow-lg">
                     {ownerResults.map((owner) => (
                       <button
@@ -1576,6 +1612,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                         onClick={() => {
                           handleFieldChange("contact_owner_user_id", owner.user_id);
                           setOwnerSearch(`${owner.first_name || ""} ${owner.last_name || ""}`.trim());
+                          setOwnerDropdownOpen(false);
                         }}
                       >
                         <span>
@@ -1672,7 +1709,7 @@ const ContactDetailsPage = ({ user, embedded = false, contactIdOverride, onClose
                 onClick={handleManualSave}
                 disabled={saving || !dirty}
               >
-                {saving ? "Saving..." : "Save"}
+                {autosaveEnabled ? (saving ? "Auto-saving..." : "Auto-save") : saving ? "Saving..." : "Save"}
               </button>
             </div>
           </div>
