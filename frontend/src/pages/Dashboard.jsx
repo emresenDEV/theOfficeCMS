@@ -200,14 +200,6 @@ const Dashboard = ({ user }) => {
         loadPipelineSummary();
     }, [userData, pipelineRange]);
 
-    if (!userData) {
-        return <p className="text-center text-muted-foreground">Loading user profile...</p>;
-    }
-
-    if (loading) {
-        return <p className="text-center text-muted-foreground">Loading dashboard...</p>;
-    }
-
     const handleRefreshTasks = async () => {
         const updatedTasks = await fetchTasks(userData.user_id);
         setTasks(updatedTasks);
@@ -218,6 +210,14 @@ const Dashboard = ({ user }) => {
         const timeoutId = setTimeout(() => setEventToast(""), 2500);
         return () => clearTimeout(timeoutId);
     }, [eventToast]);
+
+    if (!userData) {
+        return <p className="text-center text-muted-foreground">Loading user profile...</p>;
+    }
+
+    if (loading) {
+        return <p className="text-center text-muted-foreground">Loading dashboard...</p>;
+    }
 
     const pipelineSummaryMap = pipelineSummary.reduce((acc, item) => {
         acc[item.stage] = item;
