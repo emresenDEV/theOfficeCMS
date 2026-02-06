@@ -1,10 +1,22 @@
 from datetime import datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
 
 from app import app
 from database import db
 from models import Tasks, Account, Invoice, InvoicePipeline, InvoicePipelineHistory, Payment, InvoicePipelineFollower
 from audit import create_audit_log
 from notifications import create_notification
+
+
+def _to_decimal(value):
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return Decimal("0")
+
+
+def _to_cents(value):
+    return int((_to_decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)) * 100)
 
 
 def _build_task_link(task):
@@ -151,7 +163,7 @@ def _payment_stats(invoice_id):
     latest_payment = db.session.query(db.func.max(Payment.date_paid)).filter(
         Payment.invoice_id == invoice_id
     ).scalar()
-    return float(total_paid), latest_payment
+    return _to_decimal(total_paid), latest_payment
 
 
 def _notify_pipeline_followers(invoice, account, stage_label, action_required=False):
@@ -183,8 +195,10 @@ def _flag_payment_not_received(now):
 
     for pipeline, invoice, account in pipelines:
         total_paid, _latest_payment = _payment_stats(invoice.invoice_id)
-        final_total = float(invoice.final_total or 0)
-        if final_total <= 0 or total_paid >= final_total:
+        final_total = _to_decimal(invoice.final_total or 0)
+        paid_cents = _to_cents(total_paid)
+        final_cents = _to_cents(final_total)
+        if final_cents <= 0 or paid_cents >= final_cents:
             continue
 
         order_date = pipeline.order_placed_at or invoice.date_created
@@ -283,8 +297,10 @@ def _advance_paid_pipelines(now):
 
     for pipeline, invoice, account in pipelines:
         total_paid, latest_payment = _payment_stats(invoice.invoice_id)
-        final_total = float(invoice.final_total or 0)
-        if final_total > 0 and total_paid < final_total:
+        final_total = _to_decimal(invoice.final_total or 0)
+        paid_cents = _to_cents(total_paid)
+        final_cents = _to_cents(final_total)
+        if final_cents > 0 and paid_cents < final_cents:
             continue
 
         payment_date = pipeline.payment_received_at or latest_payment

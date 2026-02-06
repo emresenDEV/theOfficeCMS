@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from decimal import Decimal, ROUND_HALF_UP
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
@@ -39,6 +40,17 @@ STAGE_LABELS = {
     "order_shipped": "Order shipped",
     "order_delivered": "Order delivered",
 }
+
+
+def _to_decimal(value):
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return Decimal("0")
+
+
+def _to_cents(value):
+    return int((_to_decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)) * 100)
 
 STAGE_FIELDS = {
     "contact_customer": "contacted_at",
@@ -97,13 +109,15 @@ def _payment_stats(invoice_id):
     latest_payment = db.session.query(func.max(Payment.date_paid)).filter(
         Payment.invoice_id == invoice_id
     ).scalar()
-    return float(total_paid), latest_payment
+    return _to_decimal(total_paid), latest_payment
 
 
 def _effective_stage(invoice, pipeline):
     total_paid, latest_payment = _payment_stats(invoice.invoice_id)
-    final_total = float(invoice.final_total or 0)
-    paid_in_full = final_total <= 0 or total_paid >= final_total
+    final_total = _to_decimal(invoice.final_total or 0)
+    paid_cents = _to_cents(total_paid)
+    final_cents = _to_cents(final_total)
+    paid_in_full = final_cents <= 0 or paid_cents >= final_cents
 
     if not paid_in_full:
         if pipeline.current_stage == "payment_not_received" or pipeline.payment_not_received_at or pipeline.payment_issue_notified_at:
@@ -408,8 +422,10 @@ def update_pipeline_status(invoice_id):
         return jsonify({"error": "Invoice not found"}), 404
 
     total_paid, _ = _payment_stats(invoice_id)
-    final_total = float(invoice.final_total or 0)
-    paid_in_full = final_total <= 0 or total_paid >= final_total
+    final_total = _to_decimal(invoice.final_total or 0)
+    paid_cents = _to_cents(total_paid)
+    final_cents = _to_cents(final_total)
+    paid_in_full = final_cents <= 0 or paid_cents >= final_cents
     if stage in ("payment_received", "order_packaged", "order_shipped", "order_delivered") and not paid_in_full:
         return jsonify({"error": "Invoice is not paid in full. Log payment before moving to this stage."}), 400
 

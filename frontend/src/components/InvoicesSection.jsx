@@ -34,9 +34,12 @@ const InvoicesSection = ({ invoices, onCreateInvoice, refreshInvoices }) => {
         const dueDate = invoice.due_date ? new Date(invoice.due_date) : null;
         const today = new Date();
 
-        if (paidTotal >= finalTotal && finalTotal > 0) return "Paid";
-        if (dueDate && dueDate < today && paidTotal < finalTotal) return "Past Due";
-        if (paidTotal > 0 && paidTotal < finalTotal) return "Partial";
+        const paidCents = Math.round(paidTotal * 100);
+        const finalCents = Math.round(finalTotal * 100);
+
+        if (finalCents <= 0 || paidCents >= finalCents) return "Paid";
+        if (dueDate && dueDate < today && paidCents < finalCents) return "Past Due";
+        if (paidCents > 0 && paidCents < finalCents) return "Partial";
         return "Pending";
     };
 

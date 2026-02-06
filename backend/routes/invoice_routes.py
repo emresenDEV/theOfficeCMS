@@ -4,7 +4,7 @@ from database import db
 from datetime import datetime
 import pytz
 from pytz import timezone
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy.sql import func
 from notifications import create_notification
 from audit import create_audit_log
@@ -12,6 +12,17 @@ from audit import create_audit_log
 
 invoice_bp = Blueprint("invoice", __name__, url_prefix="/invoices")
 central = timezone('America/Chicago')
+
+
+def _to_decimal(value):
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return Decimal("0")
+
+
+def _to_cents(value):
+    return int((_to_decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)) * 100)
 
 
 def _serialize_service(service):
@@ -143,14 +154,16 @@ def get_invoice_by_id(invoice_id):
 
         # Payments and dynamic status
         payments = Payment.query.filter_by(invoice_id=invoice.invoice_id).all()
-        paid_total = sum(float(p.total_paid or 0) for p in payments)
+        paid_total_decimal = sum((Decimal(str(p.total_paid or 0)) for p in payments), Decimal("0"))
         today = datetime.now(central).date()
         due = invoice.due_date if invoice.due_date else None
         final_total = invoice.final_total or 0
 
-        if paid_total >= final_total:
+        paid_cents = _to_cents(paid_total_decimal)
+        final_cents = _to_cents(final_total)
+        if final_cents <= 0 or paid_cents >= final_cents:
             current_status = "Paid"
-        elif paid_total == 0:
+        elif paid_total_decimal == 0:
             current_status = "Past Due" if due and today > due else "Pending"
         elif due and today > due:
             current_status = "Past Due"
@@ -223,7 +236,7 @@ def get_invoice_by_id(invoice_id):
             "discount_percent": float(invoice.discount_percent or 0),
             "discount_amount": float(invoice.discount_amount or 0),
             "final_total": float(invoice.final_total or 0),
-            "total_paid": paid_total,
+            "total_paid": float(paid_total_decimal),
             "commission_amount": float(commission or 0),
             "date_paid": max((p.date_paid for p in payments), default=None).strftime("%Y-%m-%d") if payments else None,
             "date_created": invoice.date_created.strftime("%Y-%m-%d %H:%M:%S"),
@@ -261,12 +274,21 @@ def get_invoice_by_id(invoice_id):
 
 # Helper: Determine Invoice Status
 def get_invoice_status(invoice):
-    payments = Payment.query.filter_by(invoice_id=invoice.invoice_id).count()
-    if payments:
+    payments = Payment.query.filter_by(invoice_id=invoice.invoice_id).all()
+    paid_total = sum((Decimal(str(p.total_paid or 0)) for p in payments), Decimal("0"))
+    final_total = invoice.final_total or 0
+    today = datetime.now(central).date()
+    due = invoice.due_date if invoice.due_date else None
+
+    paid_cents = _to_cents(paid_total)
+    final_cents = _to_cents(final_total)
+    if final_cents <= 0 or paid_cents >= final_cents:
         return "Paid"
-    if invoice.due_date and invoice.due_date < datetime.now(central).date():
+    if paid_total == 0:
+        return "Past Due" if due and today > due else "Pending"
+    if due and today > due:
         return "Past Due"
-    return "Unpaid"
+    return "Partial"
 
 # Fetch invoices by account ID
 @invoice_bp.route("/account/<int:account_id>", methods=["GET"])
@@ -457,17 +479,23 @@ def update_invoice(invoice_id):
     tax_amount = subtotal_after_discounts * float(invoice.tax_rate or 0)
     final_total = subtotal_after_discounts + tax_amount
 
+    invoice_discount_amount = round(invoice_discount_amount, 2)
+    tax_amount = round(tax_amount, 2)
+    final_total = round(final_total, 2)
+
     invoice.discount_amount = invoice_discount_amount
     invoice.tax_amount = tax_amount
     invoice.final_total = final_total
 
     # Recalculate status using payment records
     payments = Payment.query.filter_by(invoice_id=invoice.invoice_id).all()
-    paid_total = sum(p.total_paid for p in payments)
+    paid_total = sum((Decimal(str(p.total_paid)) for p in payments), Decimal("0"))
     today = datetime.now(central).date()
     due = invoice.due_date if invoice.due_date else None
 
-    if paid_total >= final_total:
+    paid_cents = _to_cents(paid_total)
+    final_cents = _to_cents(final_total)
+    if final_cents <= 0 or paid_cents >= final_cents:
         invoice.status = "Paid"
     elif paid_total == 0:
         invoice.status = "Pending"
@@ -746,13 +774,15 @@ def log_payment(invoice_id):
         payments = Payment.query.filter_by(invoice_id=invoice_id).all()
 
         # Convert all total_paid to Decimal before summing
-        total_paid = sum(Decimal(str(p.total_paid)) for p in payments)
+        total_paid = sum((Decimal(str(p.total_paid)) for p in payments), Decimal("0"))
         final_total = Decimal(str(invoice.final_total or 0))
 
         today = datetime.now(central).date()
         due = invoice.due_date if invoice.due_date else None
 
-        paid_in_full = total_paid >= final_total or final_total <= 0
+        paid_cents = _to_cents(total_paid)
+        final_cents = _to_cents(final_total)
+        paid_in_full = final_cents <= 0 or paid_cents >= final_cents
 
         if paid_in_full:
             invoice.status = "Paid"
