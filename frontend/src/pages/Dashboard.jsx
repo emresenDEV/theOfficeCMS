@@ -71,10 +71,11 @@ const Dashboard = ({ user }) => {
     }, []);
 
     useEffect(() => {
-        if (!user || !user.id) return;
+        const userId = user?.user_id ?? user?.id ?? null;
+        if (!userId) return;
 
         async function loadUserProfile() {
-            const profile = await fetchUserProfile(user.id);
+            const profile = await fetchUserProfile(userId);
             if (profile) {
                 console.log("✅ Full User Profile in Dashboard:", profile); //debugging
 
