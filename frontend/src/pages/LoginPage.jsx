@@ -29,6 +29,9 @@ const LoginPage = ({ setUser }) => {
     };
     
 
+    const credentialMailto =
+        "mailto:monica.mrez@gmail.com?subject=Requesting%20CRM%2B%20Demo%20Credentials&body=Hi%20Monica%2C%0A%0AI%27d%20like%20to%20request%20credentials%20to%20view%20the%20CRM%2B%20demo.%0A%0AName%3A%0ACompany%3A%0ARole%3A%0AEmail%3A%0APhone%3A%0ATimeline%3A%0AAnything%20else%3A%0A%0AThanks%2C%0A%5BYour%20name%5D";
+
     const coreFeatures = [
         "Pipeline + payment gating",
         "RBAC + audit trail",
@@ -43,6 +46,16 @@ const LoginPage = ({ setUser }) => {
         "Analytics by rep + global view",
         "Mobile-friendly views",
         "Timezone-aware timestamps",
+    ];
+
+    const comingSoonFeatures = [
+        "Lead + opportunity management",
+        "Quotes/estimates before invoices",
+        "Email + calendar sync",
+        "Document storage on accounts",
+        "Workflow automation rules",
+        "Data import/export (CSV)",
+        "Customer portal",
     ];
 
     return (
@@ -68,6 +81,16 @@ const LoginPage = ({ setUser }) => {
                         and relationship intelligence in one workflow. Designed for teams that need more than
                         a traditional CRM.
                     </p>
+
+                    <div className="rounded-lg border border-border bg-card/90 p-4 shadow-card">
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                            What is a CRM?
+                        </h2>
+                        <p className="mt-2 text-sm text-foreground">
+                            CRM (Customer Relationship Management) helps sales teams track relationships,
+                            activity, and revenue across accounts, contacts, tasks, and invoices.
+                        </p>
+                    </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="rounded-lg border border-border bg-card/90 p-4 shadow-card">
@@ -99,6 +122,20 @@ const LoginPage = ({ setUser }) => {
                     </div>
 
                     <div className="rounded-lg border border-border bg-card/90 p-4 shadow-card">
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                            Coming soon
+                        </h2>
+                        <ul className="mt-3 grid gap-2 text-sm text-foreground sm:grid-cols-2">
+                            {comingSoonFeatures.map((feature) => (
+                                <li key={feature} className="flex items-start gap-2">
+                                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-warning" />
+                                    {feature}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div className="rounded-lg border border-border bg-card/90 p-4 shadow-card">
                         <p className="text-sm text-foreground">
                             Problem solved: eliminate the split between CRM and revenue systems. CRM+ turns
                             pipeline, billing, and follow-up into one accountable workflow.
@@ -107,7 +144,7 @@ const LoginPage = ({ setUser }) => {
                             Developed by Monica Nieckula •{" "}
                             <a
                                 className="font-semibold text-primary hover:underline"
-                                href="mailto:monica.mrez@gmail.com"
+                                href={credentialMailto}
                             >
                                 monica.mrez@gmail.com
                             </a>
@@ -163,7 +200,7 @@ const LoginPage = ({ setUser }) => {
                             This is a demo workspace. Reach out to the creator at{" "}
                             <a
                                 className="font-semibold text-primary hover:underline"
-                                href="mailto:monica.mrez@gmail.com"
+                                href={credentialMailto}
                             >
                                 monica.mrez@gmail.com
                             </a>{" "}
