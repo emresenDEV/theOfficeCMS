@@ -195,6 +195,7 @@ const TaskListMobile = ({
                                             : "Complete"}
                                     </button>
                                 </div>
+                            </div>
                             ))}
                         </div>
                     ) : (
