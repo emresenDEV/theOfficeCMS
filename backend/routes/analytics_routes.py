@@ -154,8 +154,10 @@ def analytics_overview():
         remaining_cents = max(final_cents - paid_cents, 0)
 
         if final_cents <= 0 or paid_cents >= final_cents:
-            if latest_paid and start_dt <= latest_paid <= end_dt and invoice.date_created:
-                paid_days.append((latest_paid.date() - invoice.date_created.date()).days)
+            if latest_paid and invoice.date_created:
+                latest_paid_date = latest_paid.date()
+                if start_date <= latest_paid_date <= end_date:
+                    paid_days.append((latest_paid_date - invoice.date_created.date()).days)
         else:
             open_invoice_count += 1
             open_invoice_amount += Decimal(remaining_cents) / Decimal(100)
