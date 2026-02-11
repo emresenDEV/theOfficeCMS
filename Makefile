@@ -4,7 +4,7 @@ AUTO_UPDATE_SCRIPT := backend/scripts/auto_update_restart.sh
 AUTOBOOT_PLIST_SRC := backend/scripts/com.theofficecms.autoboot.plist
 AUTOBOOT_PLIST_DST := $(HOME)/Library/LaunchAgents/com.theofficecms.autoboot.plist
 
-.PHONY: help dev backend restart status update attach start autoboot-install autoboot-uninstall autoboot-status autoboot-run
+.PHONY: help dev backend restart status update attach start autoboot-install autoboot-uninstall autoboot-status autoboot-run tailscale-enable tailscale-disable tailscale-status
 
 help: ## Show available commands
 	@echo "TheOfficeCMS commands"
@@ -54,3 +54,22 @@ autoboot-status: ## Show launchd autoboot job status and recent logs
 
 autoboot-run: ## Run auto-update/restart script immediately
 	@$(AUTO_UPDATE_SCRIPT)
+
+tailscale-enable: ## Enable Tailscale at boot (Homebrew service) and bring node up
+	@sudo brew services start tailscale
+	@sudo /opt/homebrew/bin/tailscale up
+	@echo "Tailscale boot startup enabled"
+
+tailscale-disable: ## Disable Tailscale Homebrew boot service
+	@sudo brew services stop tailscale
+	@echo "Tailscale boot startup disabled"
+
+tailscale-status: ## Show Tailscale daemon/service/funnel status
+	@echo "=== brew services ==="
+	@brew services list | grep tailscale || true
+	@echo
+	@echo "=== tailscale ==="
+	@/opt/homebrew/bin/tailscale status || true
+	@echo
+	@echo "=== funnel ==="
+	@/opt/homebrew/bin/tailscale funnel status || true

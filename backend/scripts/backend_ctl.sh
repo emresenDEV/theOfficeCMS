@@ -63,6 +63,15 @@ has_session() {
   [[ -n "$TMUX_BIN" ]] && "$TMUX_BIN" has-session -t "$1" 2>/dev/null
 }
 
+tailscale_is_running() {
+  [[ -n "$TAILSCALE_BIN" ]] && "$TAILSCALE_BIN" status >/dev/null 2>&1
+}
+
+dir_fingerprint() {
+  local dir="$1"
+  stat -f "%d:%i" "$dir" 2>/dev/null || true
+}
+
 check_port_conflict() {
   local pids
   pids="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
@@ -71,12 +80,15 @@ check_port_conflict() {
     return 0
   fi
 
-  local pid cmd cwd
+  local pid cmd cwd repo_fp cwd_fp
+  repo_fp="$(dir_fingerprint "$BACKEND_DIR")"
+
   for pid in $pids; do
     cmd="$(ps -p "$pid" -o command= 2>/dev/null || true)"
     cwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | awk 'BEGIN{FS=""} /^n/ {print substr($0,2)}')"
+    cwd_fp="$(dir_fingerprint "$cwd")"
 
-    if [[ "$cwd" == "$BACKEND_DIR" && "$cmd" == *"app.py"* ]]; then
+    if [[ -n "$repo_fp" && -n "$cwd_fp" && "$cwd_fp" == "$repo_fp" && "$cmd" == *"app.py"* ]]; then
       warn "[flask] found stale TheOfficeCMS process on port $PORT (PID $pid), stopping it"
       kill "$pid" 2>/dev/null || true
       sleep 1
@@ -99,18 +111,28 @@ check_port_conflict() {
 }
 
 start_tailscale_if_needed() {
-  require_tmux
-
   if [[ -z "$TAILSCALE_BIN" ]]; then
     err "[tailscale] tailscale CLI not found (expected /opt/homebrew/bin/tailscale)"
     exit 1
   fi
 
-  if "$TAILSCALE_BIN" status >/dev/null 2>&1; then
+  if tailscale_is_running; then
     ok "[tailscale] already running"
     return
   fi
 
+  if command -v brew >/dev/null 2>&1; then
+    info "[tailscale] attempting Homebrew service startup"
+    if sudo brew services start tailscale >/dev/null 2>&1; then
+      sleep 2
+      if tailscale_is_running; then
+        ok "[tailscale] started via Homebrew service"
+        return
+      fi
+    fi
+  fi
+
+  require_tmux
   info "[tailscale] starting daemon in tmux session '$TAILSCALE_SESSION'"
   if has_session "$TAILSCALE_SESSION"; then
     "$TMUX_BIN" kill-session -t "$TAILSCALE_SESSION"
@@ -125,7 +147,7 @@ start_tailscale_if_needed() {
   "$TMUX_BIN" new-session -d -s "$TAILSCALE_SESSION" "sudo $TAILSCALED_BIN"
   sleep 2
 
-  if "$TAILSCALE_BIN" status >/dev/null 2>&1; then
+  if tailscale_is_running; then
     ok "[tailscale] daemon started"
   else
     warn "[tailscale] daemon started, but node may need login/auth"
@@ -190,10 +212,16 @@ status() {
     warn "tmux session '$FLASK_SESSION' not running"
   fi
 
+  if tailscale_is_running; then
+    ok "tailscale daemon is running"
+  else
+    warn "tailscale daemon is not running"
+  fi
+
   if has_session "$TAILSCALE_SESSION"; then
     ok "tmux session '$TAILSCALE_SESSION' exists"
   else
-    warn "tmux session '$TAILSCALE_SESSION' not running"
+    info "tmux session '$TAILSCALE_SESSION' not running (ok if using brew service)"
   fi
 
   if lsof -iTCP:"$PORT" -sTCP:LISTEN -nP >/dev/null 2>&1; then

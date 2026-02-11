@@ -59,6 +59,9 @@ Available commands:
 - `make autoboot-status`: check launchd job + recent auto-update logs
 - `make autoboot-run`: run auto-update/restart now
 - `make autoboot-uninstall`: remove auto-run job
+- `make tailscale-enable`: enable Tailscale boot startup via Homebrew service
+- `make tailscale-status`: show Tailscale + Funnel status
+- `make tailscale-disable`: disable Tailscale boot startup service
 
 ### Frontend API Base URL (Current Funnel Path Split)
 

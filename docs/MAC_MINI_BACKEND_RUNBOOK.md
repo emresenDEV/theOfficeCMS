@@ -105,6 +105,34 @@ Remove automation:
 make autoboot-uninstall
 ```
 
+## Tailscale Auto-Start on System Reboot
+
+Enable once on Mac Mini:
+
+```bash
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+make tailscale-enable
+make tailscale-status
+```
+
+What this does:
+
+- Uses Homebrew service to start `tailscaled` at system boot
+- Runs `tailscale up` for node connectivity
+
+Disable if needed:
+
+```bash
+make tailscale-disable
+```
+
+After reboot, verify:
+
+```bash
+make tailscale-status
+make status
+```
+
 ## Why This Avoids Conflicts With `resendezFIRE`
 
 - TheOfficeCMS backend port is `5002`.
