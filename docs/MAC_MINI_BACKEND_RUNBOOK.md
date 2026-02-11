@@ -20,7 +20,7 @@ cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
 Start or restart services:
 
 ```bash
-make restart      # Ensure Tailscale + restart backend
+make restart      # Ensure Tailscale & restart backend
 make status       # Verify tmux + tailscale + port 5002
 ```
 
