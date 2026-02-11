@@ -71,14 +71,28 @@ check_port_conflict() {
     return 0
   fi
 
-  local pid cmd
+  local pid cmd cwd
   for pid in $pids; do
     cmd="$(ps -p "$pid" -o command= 2>/dev/null || true)"
-    if [[ "$cmd" != *"$BACKEND_DIR"* ]]; then
-      echo "[flask] ERROR: port $PORT is already in use by another app"
-      echo "[flask] PID: $pid"
-      echo "[flask] CMD: ${cmd:-unknown}"
-      echo "[flask] Resolve this before starting TheOfficeCMS backend."
+    cwd="$(lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | awk 'BEGIN{FS=""} /^n/ {print substr($0,2)}')"
+
+    if [[ "$cwd" == "$BACKEND_DIR" && "$cmd" == *"app.py"* ]]; then
+      warn "[flask] found stale TheOfficeCMS process on port $PORT (PID $pid), stopping it"
+      kill "$pid" 2>/dev/null || true
+      sleep 1
+      if lsof -p "$pid" >/dev/null 2>&1; then
+        warn "[flask] process $pid still running, forcing stop"
+        kill -9 "$pid" 2>/dev/null || true
+      fi
+      continue
+    fi
+
+    if lsof -p "$pid" >/dev/null 2>&1; then
+      err "[flask] port $PORT is already in use by another app"
+      info "[flask] PID: $pid"
+      info "[flask] CMD: ${cmd:-unknown}"
+      info "[flask] CWD: ${cwd:-unknown}"
+      info "[flask] Resolve this before starting TheOfficeCMS backend."
       return 1
     fi
   done
