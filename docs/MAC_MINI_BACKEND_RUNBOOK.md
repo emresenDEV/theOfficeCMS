@@ -43,6 +43,14 @@ make attach
 # detach with: Ctrl+B then D
 ```
 
+## Frontend API Base URL (TheOfficeCMS)
+
+Because Funnel is path-split, TheOfficeCMS frontend must call the `/officecms` base path.
+
+Set in frontend deployment env:
+
+- `VITE_API_BASE_URL=https://macmini.tailced3de.ts.net/officecms`
+
 ## Make Commands Reference
 
 From repo root (`theOfficeCMS`):
@@ -55,6 +63,47 @@ From repo root (`theOfficeCMS`):
 - `make status` - diagnostics
 - `make update` - `git pull --ff-only` + backend restart
 - `make attach` - attach to backend tmux session
+- `make autoboot-install` - install launchd auto update/restart job
+- `make autoboot-status` - inspect launchd autoboot status + logs
+- `make autoboot-run` - run auto update/restart now
+- `make autoboot-uninstall` - remove launchd autoboot job
+
+## Auto Update + Restart on Reboot/Login
+
+Install once on Mac Mini:
+
+```bash
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+make autoboot-install
+```
+
+What runs automatically:
+
+- Script: `backend/scripts/auto_update_restart.sh`
+- Trigger 1: at login/restart (`RunAtLoad`)
+- Trigger 2: every 30 minutes (`StartInterval=1800`)
+- Pull strategy: `git pull --ff-only origin main` (only if working tree is clean)
+- Backend restart: `backend/scripts/backend_ctl.sh backend`
+
+Check status and logs:
+
+```bash
+make autoboot-status
+tail -n 80 /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/logs/auto-update.log
+tail -n 80 /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/logs/autoboot-launchd-error.log
+```
+
+Run once manually:
+
+```bash
+make autoboot-run
+```
+
+Remove automation:
+
+```bash
+make autoboot-uninstall
+```
 
 ## Why This Avoids Conflicts With `resendezFIRE`
 
@@ -167,6 +216,34 @@ If no listener on 5002, run:
 make backend
 make attach
 ```
+
+### 1b) Login fails with "Network Error" (likely CORS)
+
+Set allowed frontend origins in backend `.env` on Mac Mini:
+
+```bash
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend
+printf '\nCORS_ORIGINS=https://theofficecms.com,https://www.theofficecms.com,https://macmini.tailced3de.ts.net\n' >> .env
+```
+
+Then restart backend:
+
+```bash
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+make backend
+```
+
+Validate preflight from Mac Mini:
+
+```bash
+curl -i -X OPTIONS 'http://127.0.0.1:5002/auth/login' \
+  -H 'Origin: https://theofficecms.com' \
+  -H 'Access-Control-Request-Method: POST'
+```
+
+Expected headers include:
+- `Access-Control-Allow-Origin: https://theofficecms.com`
+- `Access-Control-Allow-Credentials: true`
 
 ### 2) Tailscale shows offline / unavailable
 

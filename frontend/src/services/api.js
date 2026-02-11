@@ -2,7 +2,8 @@ import axios from "axios";
 import { mockAdapter } from "./mockApi";
 
 // Base URL for Flask API
-let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://macmini.tailced3de.ts.net";
+// Path prefix is required because Funnel is shared with multiple apps.
+let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://macmini.tailced3de.ts.net/officecms";
 
 // Ensure HTTPS in production
 if (typeof window !== 'undefined' && window.location.protocol === 'https:') {

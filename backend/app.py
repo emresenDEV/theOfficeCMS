@@ -40,12 +40,24 @@ app.url_map.strict_slashes = False
 Session(app)
 db.init_app(app)
 
-# Global CORS config for localhost, Vercel, and Tailscale Funnel
+def get_cors_origins():
+    env_origins = os.getenv("CORS_ORIGINS", "").strip()
+    if env_origins:
+        return [origin.strip() for origin in env_origins.split(",") if origin.strip()]
+    return [
+        "http://localhost:5174",
+        "https://theofficecms.com",
+        "https://www.theofficecms.com",
+        "https://macmini.tailced3de.ts.net",
+    ]
+
+
+# Global CORS config for frontend origins
 CORS(app,
         supports_credentials=True,
         allow_headers=['Content-Type', 'Authorization'],
         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        origins=["http://localhost:5174", "https://theofficecms.com", "https://www.theofficecms.com", "https://macmini.tailced3de.ts.net"])
+        origins=get_cors_origins())
 
 # Route Blueprints
 app.register_blueprint(account_bp, url_prefix="/accounts")

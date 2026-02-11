@@ -1,7 +1,10 @@
 SHELL := /bin/bash
 BACKEND_CTL := backend/scripts/backend_ctl.sh
+AUTO_UPDATE_SCRIPT := backend/scripts/auto_update_restart.sh
+AUTOBOOT_PLIST_SRC := backend/scripts/com.theofficecms.autoboot.plist
+AUTOBOOT_PLIST_DST := $(HOME)/Library/LaunchAgents/com.theofficecms.autoboot.plist
 
-.PHONY: help dev backend restart status update attach start
+.PHONY: help dev backend restart status update attach start autoboot-install autoboot-uninstall autoboot-status autoboot-run
 
 help: ## Show available commands
 	@echo "TheOfficeCMS commands"
@@ -28,3 +31,26 @@ update: ## Pull latest backend code and restart backend
 
 attach: ## Attach to backend tmux session logs
 	@$(BACKEND_CTL) attach
+
+autoboot-install: ## Install launchd job (run on login/restart + every 30m)
+	@mkdir -p backend/logs
+	@cp $(AUTOBOOT_PLIST_SRC) $(AUTOBOOT_PLIST_DST)
+	@launchctl unload $(AUTOBOOT_PLIST_DST) 2>/dev/null || true
+	@launchctl load $(AUTOBOOT_PLIST_DST)
+	@echo "Installed: $(AUTOBOOT_PLIST_DST)"
+	@launchctl list | grep com.theofficecms.autoboot || true
+
+autoboot-uninstall: ## Remove launchd auto-update/restart job
+	@launchctl unload $(AUTOBOOT_PLIST_DST) 2>/dev/null || true
+	@rm -f $(AUTOBOOT_PLIST_DST)
+	@echo "Removed: $(AUTOBOOT_PLIST_DST)"
+
+autoboot-status: ## Show launchd autoboot job status and recent logs
+	@echo "=== launchd ==="
+	@launchctl list | grep com.theofficecms.autoboot || true
+	@echo
+	@echo "=== recent auto-update log ==="
+	@tail -n 40 backend/logs/auto-update.log 2>/dev/null || echo "No auto-update log yet"
+
+autoboot-run: ## Run auto-update/restart script immediately
+	@$(AUTO_UPDATE_SCRIPT)

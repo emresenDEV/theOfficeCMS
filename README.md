@@ -55,6 +55,38 @@ Available commands:
 - `make update`: pull latest backend code, then restart backend
 - `make status`: show tmux sessions, Tailscale status, and Flask listener
 - `make attach`: attach to backend tmux logs
+- `make autoboot-install`: auto-run update/restart on login/restart + every 30 min
+- `make autoboot-status`: check launchd job + recent auto-update logs
+- `make autoboot-run`: run auto-update/restart now
+- `make autoboot-uninstall`: remove auto-run job
+
+### Frontend API Base URL (Current Funnel Path Split)
+
+Set this in your frontend host environment variables (Vercel/Netlify):
+
+- `VITE_API_BASE_URL=https://macmini.tailced3de.ts.net/officecms`
+
+### Automatic Update + Restart (Mac Mini)
+
+Install once on Mac Mini:
+
+```bash
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+make autoboot-install
+```
+
+What this does:
+
+- Runs `backend/scripts/auto_update_restart.sh` at login/restart (`RunAtLoad`)
+- Re-runs every 30 minutes (`StartInterval=1800`)
+- Pulls latest GitHub updates (fast-forward only when working tree is clean)
+- Restarts TheOfficeCMS backend using `backend/scripts/backend_ctl.sh backend`
+
+Logs:
+
+- `backend/logs/auto-update.log`
+- `backend/logs/autoboot-launchd.log`
+- `backend/logs/autoboot-launchd-error.log`
 
 ### No-Conflict Notes (with resendezFIRE)
 

@@ -24,7 +24,11 @@ const LoginPage = ({ setUser }) => {
             navigate("/"); 
             
         } catch (error) {
-            setError(`Invalid username or password: ${error.message}`);
+            if (!error.response) {
+                setError("Network error: unable to reach login service.");
+            } else {
+                setError(error.response?.data?.message || "Invalid username or password.");
+            }
         }
     };
     
