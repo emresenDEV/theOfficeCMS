@@ -1,62 +1,52 @@
-# Quick Reference: Update Backend Code from MacBook Pro
+# Backend Recovery Quick Reference (Mac Mini)
 
-## Update Backend Code & Restart Flask
+Backend currently runs on port `5002` (`backend/app.py`), not `5000`.
+
+## One-time setup on Mac Mini
 
 ```bash
-# Step 1: SSH into Mac Mini
 ssh monicanieckula@192.168.1.34
-
-# Step 2: Navigate to backend directory
-cd ~/Documents/github/theofficecms/backend
-
-# Step 3: Pull latest code from GitHub
-git pull
-
-# Step 4: Attach to Flask tmux session
-tmux attach -t flask
-
-# Step 5: Stop Flask
-# Press Ctrl+C
-
-# Step 6: Restart Flask
-source venv/bin/activate
-python app.py
-
-# Step 7: Detach from tmux (Flask keeps running)
-# Press Ctrl+B, then D
-
-# Step 8: Exit SSH
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+chmod +x backend/scripts/backend_ctl.sh
 exit
 ```
 
----
-
-## If Mac Mini Restarts (Flask & Tailscale Need Restarting)
+## After Mac Mini restart
 
 ```bash
-# Step 1: SSH into Mac Mini
 ssh monicanieckula@192.168.1.34
-
-# Step 2: Start Tailscale in tmux
-tmux new -s tailscale
-sudo /opt/homebrew/bin/tailscaled
-# Press Ctrl+B, then D to detach
-
-# Step 3: Start Flask in tmux
-tmux new -s flask
-cd ~/Documents/github/theofficecms/backend
-source venv/bin/activate
-python app.py
-# Press Ctrl+B, then D to detach
-
-# Step 4: Done!
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+backend/scripts/backend_ctl.sh start
 exit
 ```
 
----
+## Pull latest code and restart backend
 
-## Notes
-- Flask will continue running in the background after you detach from tmux
-- You can close your MacBook Pro terminal - Flask stays running on Mac Mini
-- If you need to view Flask logs anytime: `ssh monicanieckula@192.168.1.34` then `tmux attach -t flask`
-- Both Flask and Tailscale will keep running until Mac Mini restarts
+```bash
+ssh monicanieckula@192.168.1.34
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+backend/scripts/backend_ctl.sh update
+exit
+```
+
+## Diagnostics
+
+```bash
+# run on Mac Mini
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+backend/scripts/backend_ctl.sh status
+
+# manual port check (Mac Mini or MBP)
+nc -zv 192.168.1.34 5002
+
+# attach to Flask console logs
+backend/scripts/backend_ctl.sh attach
+# detach: Ctrl+B then D
+```
+
+## If Tailscale still is not connected
+
+```bash
+sudo /opt/homebrew/bin/tailscale up
+backend/scripts/backend_ctl.sh start
+```

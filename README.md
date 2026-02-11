@@ -1,119 +1,101 @@
-   # TheOfficeCMS
+# TheOfficeCMS
 
-   A comprehensive CRM and business management application built for small to medium enterprises. Manage accounts, invoices, commissions, employees, and more with a
-   modern, intuitive interface.
+TheOfficeCMS is a CRM and operations platform for small-to-mid sized teams. It combines account management, sales workflow, invoicing, task tracking, reminders, and reporting in a single system.
 
-   **Live Demo:** https://theofficecms.com
+Live app: https://theofficecms.com
 
-   ---
+## Feature Updates (Current)
 
-   ## Documentation
+- Account and contact management with linked records
+- Pipeline tracking with followers and activity visibility
+- Invoice lifecycle: create, edit, paid, unpaid, past-due flows
+- Payment and commission tracking
+- Task management with reminders and overdue notifications
+- Calendar/events with attendee support
+- Department, branch, region, user-role administration
+- Analytics and audit logging endpoints
+- Quarterly mock-data generation automation
+- Background reminder job via launchd on Mac Mini
 
-   - **DEPLOYMENT_GUIDE.md:** Detailed setup, terminal commands, troubleshooting
-     - Complete with expected outputs for each command
-     - Step-by-step instructions for all services
-     - Verification procedures
-     - Architecture decision log
+## Primary Use Cases
 
-   - **frontend/:** React SPA
-   - **backend/:** Flask API + PostgreSQL
+- Track accounts from prospect to customer through pipeline stages
+- Manage invoices/payments and monitor unpaid or overdue balances
+- Coordinate tasks across teams with reminders and notification history
+- Review sales/commission performance for employees and branches
+- Maintain audit history for operational and admin changes
+- Run lightweight production hosting from a Mac Mini with secure tunnel access
 
-   ---
+## Tech Stack
 
-   ## Quick Start
+- Frontend: React + Vite + Tailwind
+- Backend: Flask + Python + PostgreSQL
+- Deployment: Vercel (frontend), Mac Mini + Tailscale Funnel (backend)
 
-   ### Local Development
+## Mac Mini Operations (Simplified)
 
-   **Backend:**
-   ```bash
-   cd backend
-   source venv/bin/activate
-   python app.py
-   ```
+Run these from the project root on the Mac Mini:
 
-   **Frontend:**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
+```bash
+cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS
+make help
+```
 
-   ### Production
+Available commands:
 
-   See: **backend/DEPLOYMENT_GUIDE.md**
+- `make backend`: restart TheOfficeCMS backend only (Flask)
+- `make dev`: alias of `make backend`
+- `make restart`: ensure Tailscale is up, then restart backend
+- `make start`: alias of `make restart`
+- `make update`: pull latest backend code, then restart backend
+- `make status`: show tmux sessions, Tailscale status, and Flask listener
+- `make attach`: attach to backend tmux logs
 
-   ---
+### No-Conflict Notes (with resendezFIRE)
 
-   ## Tech Stack
+- TheOfficeCMS backend port is `5002`.
+- The startup script uses dedicated tmux session names:
+  - `officecms_flask`
+  - `officecms_tailscale`
+- The script checks port `5002` and refuses to start if another app owns it.
+- No broad kill commands (`pkill python`, etc.) are used by these Make targets.
 
-   - **Frontend:** React + Vite + Tailwind
-   - **Backend:** Flask + Python 3.13 + PostgreSQL
-   - **Deployment:** Vercel (frontend) + Mac Mini + Tailscale Funnel (backend)
-   - **Database:** PostgreSQL 15 (localhost only)
+## Local Development
 
-   ---
+Backend:
 
-   ## Key Decision: Why Tailscale Funnel?
+```bash
+cd backend
+source venv/bin/activate
+python app.py
+```
 
-   **Evaluated Options:**
-   - AWS EC2 - Works great but costs $5-15/mo
-   - Caddy + Port Forwarding - FAILED on macOS ARM (IPv6-only issue)
-   - ngrok - Works but costs $15/mo
-   - Cloudflare Tunnel - Legacy, works but complex
-   - **Tailscale Funnel** - CHOSEN: Free, secure, simple, reusable
+Frontend:
 
-   **Why Caddy Failed on macOS:**
-   macOS ARM defaults to IPv6-only binding. Even with explicit `0.0.0.0:443` config, it binds to IPv6. Router port forwarding (IPv4) couldn't reach it. Workaround with
-    socat bridge was too complex.
+```bash
+cd frontend
+npm run dev
+```
 
-   **Why Tailscale Wins:**
-   - Free tier (100 nodes, we use 1)
-   - End-to-end encryption + zero-trust
-   - One command: `tailscale funnel --bg 5002`
-   - No router configuration needed
-   - Reusable for all portfolio projects
+## Security Notes
 
-   ---
+- PostgreSQL is localhost-only on the Mac Mini
+- Backend is exposed through Tailscale Funnel (HTTPS)
+- CORS restricted to approved origins (localhost, Vercel domain, Funnel domain)
+- Secrets are stored in `.env` and should not be committed
 
-   ## Security
+## Scheduled Jobs (Mac Mini)
 
-   - PostgreSQL: localhost-only (not exposed)
-   - pgAdmin: localhost-only (not exposed)
-   - Backend: encrypted Tailscale tunnel only
-   - CORS: restricted to Vercel + Tailscale URLs
-   - Secrets: .env with 600 permissions
-   - Firewall: macOS firewall enabled
-   - HTTPS: Let's Encrypt via Tailscale
+Task reminders (every 15 min):
 
-   ---
+```bash
+cp /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/com.theofficecms.taskreminders.plist ~/Library/LaunchAgents/
+launchctl unload ~/Library/LaunchAgents/com.theofficecms.taskreminders.plist 2>/dev/null
+launchctl load ~/Library/LaunchAgents/com.theofficecms.taskreminders.plist
+launchctl list | grep theofficecms.taskreminders
+```
 
-   ## Support
-
-   For terminal commands, expected outputs, step-by-step setup, troubleshooting, and complete verification procedures, see:
-
-   **backend/DEPLOYMENT_GUIDE.md**
-
-   ---
-
-## Task Reminders (LaunchAgent on Mac Mini)
-
-   The task reminder/overdue job runs every 15 minutes via launchd.
-
-   ```bash
-   cp /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/com.theofficecms.taskreminders.plist ~/Library/LaunchAgents/
-   launchctl unload ~/Library/LaunchAgents/com.theofficecms.taskreminders.plist 2>/dev/null
-   launchctl load ~/Library/LaunchAgents/com.theofficecms.taskreminders.plist
-   launchctl list | grep theofficecms.taskreminders
-   ```
-
-Notes:
-- Runs automatically every 15 minutes and on login.
-- Does not require restarting the Flask app.
-
----
-
-## Mock Data Generator (Quarterly on Mac Mini)
-
-The quarterly mock data job runs on the 1st of Jan/Apr/Jul/Oct at 2:15 AM via launchd.
+Quarterly mock data:
 
 ```bash
 cp /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend/scripts/com.theofficecms.mockdata.plist ~/Library/LaunchAgents/
@@ -122,22 +104,10 @@ launchctl load ~/Library/LaunchAgents/com.theofficecms.mockdata.plist
 launchctl list | grep com.theofficecms.mockdata
 ```
 
-Manual run (prompted):
+Manual mock-data run:
+
 ```bash
 cd /Users/monicanieckula/Documents/GitHub/theOfficeCMS/backend
 source venv/bin/activate
-python -m scripts.generate_mock_data
+python -m scripts.generate_mock_data --month 3 --year 2026
 ```
-
-Manual run with explicit date:
-```bash
-python -m scripts.generate_mock_data --month 2 --year 2026
-```
-
-Notes:
-- Auto mode is set in the LaunchAgent and runs with `--auto` (no prompts).
-- Logs: `/Users/monicanieckula/Library/Logs/theOfficeCMS-mockdata.log`
-
-**Version:** 1.0.0 | **Updated:** November 25, 2025
-   ENDOFFILE
-EOF
