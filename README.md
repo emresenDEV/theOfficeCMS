@@ -4,6 +4,11 @@ TheOfficeCMS is a CRM and operations platform for small-to-mid sized teams. It c
 
 Live app: https://theofficecms.com
 
+## Operations Docs
+
+- Mac Mini backend runbook: `docs/MAC_MINI_BACKEND_RUNBOOK.md`
+- Quick reference: `QUICK_REFERENCE.md`
+
 ## Feature Updates (Current)
 
 - Account and contact management with linked records

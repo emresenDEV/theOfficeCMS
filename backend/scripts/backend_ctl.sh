@@ -8,6 +8,23 @@ PORT="${FLASK_PORT:-5002}"
 TAILSCALED_BIN="/opt/homebrew/bin/tailscaled"
 TAILSCALE_BIN="${TAILSCALE_BIN:-$(command -v tailscale || true)}"
 TMUX_BIN="${TMUX_BIN:-$(command -v tmux || true)}"
+VENV_PY="$BACKEND_DIR/venv/bin/python"
+
+ok() {
+  echo "✅ $*"
+}
+
+warn() {
+  echo "⚠️  $*"
+}
+
+err() {
+  echo "❌ $*"
+}
+
+info() {
+  echo "ℹ️  $*"
+}
 
 if [[ -z "$TAILSCALE_BIN" && -x "/opt/homebrew/bin/tailscale" ]]; then
   TAILSCALE_BIN="/opt/homebrew/bin/tailscale"
@@ -15,7 +32,29 @@ fi
 
 require_tmux() {
   if [[ -z "$TMUX_BIN" ]]; then
-    echo "[setup] ERROR: tmux is not installed or not on PATH"
+    err "[setup] tmux is not installed or not on PATH"
+    exit 1
+  fi
+}
+
+require_backend_runtime() {
+  if [[ ! -d "$BACKEND_DIR" ]]; then
+    err "[backend] directory not found: $BACKEND_DIR"
+    exit 1
+  fi
+
+  if [[ ! -f "$BACKEND_DIR/app.py" ]]; then
+    err "[backend] app.py not found in: $BACKEND_DIR"
+    exit 1
+  fi
+
+  if [[ ! -x "$VENV_PY" ]]; then
+    err "[backend] virtualenv python not found: $VENV_PY"
+    info "Run these on Mac Mini:"
+    echo "  cd $BACKEND_DIR"
+    echo "  python3 -m venv venv"
+    echo "  source venv/bin/activate"
+    echo "  pip install -r requirements.txt"
     exit 1
   fi
 }
@@ -49,23 +88,23 @@ start_tailscale_if_needed() {
   require_tmux
 
   if [[ -z "$TAILSCALE_BIN" ]]; then
-    echo "[tailscale] ERROR: tailscale CLI not found (expected /opt/homebrew/bin/tailscale)"
+    err "[tailscale] tailscale CLI not found (expected /opt/homebrew/bin/tailscale)"
     exit 1
   fi
 
   if "$TAILSCALE_BIN" status >/dev/null 2>&1; then
-    echo "[tailscale] already running"
+    ok "[tailscale] already running"
     return
   fi
 
-  echo "[tailscale] starting daemon in tmux session '$TAILSCALE_SESSION'"
+  info "[tailscale] starting daemon in tmux session '$TAILSCALE_SESSION'"
   if has_session "$TAILSCALE_SESSION"; then
     "$TMUX_BIN" kill-session -t "$TAILSCALE_SESSION"
   fi
 
   if [[ ! -x "$TAILSCALED_BIN" ]]; then
-    echo "[tailscale] ERROR: tailscaled binary not found at $TAILSCALED_BIN"
-    echo "[tailscale] Update TAILSCALED_BIN in backend/scripts/backend_ctl.sh"
+    err "[tailscale] tailscaled binary not found at $TAILSCALED_BIN"
+    info "[tailscale] Update TAILSCALED_BIN in backend/scripts/backend_ctl.sh"
     exit 1
   fi
 
@@ -73,32 +112,39 @@ start_tailscale_if_needed() {
   sleep 2
 
   if "$TAILSCALE_BIN" status >/dev/null 2>&1; then
-    echo "[tailscale] daemon started"
+    ok "[tailscale] daemon started"
   else
-    echo "[tailscale] daemon started, but node may need login/auth"
-    echo "[tailscale] run: sudo /opt/homebrew/bin/tailscale up"
+    warn "[tailscale] daemon started, but node may need login/auth"
+    info "[tailscale] run: sudo /opt/homebrew/bin/tailscale up"
   fi
 }
 
 start_flask() {
   require_tmux
+  require_backend_runtime
   check_port_conflict
-  echo "[flask] starting backend in tmux session '$FLASK_SESSION'"
+  info "[flask] starting backend in tmux session '$FLASK_SESSION'"
 
   if has_session "$FLASK_SESSION"; then
     "$TMUX_BIN" kill-session -t "$FLASK_SESSION"
   fi
 
   "$TMUX_BIN" new-session -d -s "$FLASK_SESSION" \
-    "cd '$BACKEND_DIR' && . venv/bin/activate && python app.py"
+    "cd '$BACKEND_DIR' && '$VENV_PY' app.py"
 
   sleep 2
 
   if lsof -iTCP:"$PORT" -sTCP:LISTEN -nP >/dev/null 2>&1; then
-    echo "[flask] running on port $PORT"
+    ok "[flask] running on port $PORT"
   else
-    echo "[flask] WARNING: did not detect listener on port $PORT yet"
-    echo "[flask] check logs with: tmux attach -t $FLASK_SESSION"
+    warn "[flask] did not detect listener on port $PORT yet"
+    if has_session "$FLASK_SESSION"; then
+      info "[flask] check logs with: tmux attach -t $FLASK_SESSION"
+    else
+      err "[flask] tmux session '$FLASK_SESSION' exited immediately"
+      info "[flask] likely causes: invalid .env, missing deps, database unavailable"
+      info "[flask] test directly: cd $BACKEND_DIR && $VENV_PY app.py"
+    fi
   fi
 }
 
@@ -121,6 +167,26 @@ status() {
   echo
   echo "=== flask port $PORT ==="
   lsof -iTCP:"$PORT" -sTCP:LISTEN -nP || true
+
+  echo
+  echo "=== summary ==="
+  if has_session "$FLASK_SESSION"; then
+    ok "tmux session '$FLASK_SESSION' exists"
+  else
+    warn "tmux session '$FLASK_SESSION' not running"
+  fi
+
+  if has_session "$TAILSCALE_SESSION"; then
+    ok "tmux session '$TAILSCALE_SESSION' exists"
+  else
+    warn "tmux session '$TAILSCALE_SESSION' not running"
+  fi
+
+  if lsof -iTCP:"$PORT" -sTCP:LISTEN -nP >/dev/null 2>&1; then
+    ok "port $PORT is listening"
+  else
+    warn "port $PORT is not listening"
+  fi
 }
 
 update_backend() {
